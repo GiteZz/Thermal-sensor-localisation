@@ -4,4 +4,4 @@ from flask_server.models import *
 
 @app.route("/")
 def home():
-    return render_template('home.html')
+    return "Hello World!"
