@@ -14,8 +14,8 @@ class Measurement(db.Model):
         return f'<Measurement :: sensor_id={self.sensor_id}, sequence_id={self.sequence_id}>'
 
 
-
-a=Measurement.query.all()
-for i in a:
-    print (i.data)
-    print(i.timestamp)
+#
+# a=Measurement.query.all()
+# for i in a:
+#     print (i.data)
+#     print(i.timestamp)
