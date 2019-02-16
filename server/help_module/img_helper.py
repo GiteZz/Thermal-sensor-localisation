@@ -3,7 +3,7 @@ from scipy.interpolate import griddata
 import numpy
 
 def convert_to_thermal_image(width, height, pixels, scale=1, interpolate=False):
-    img = Image.new('RGB', (width * scale, height * scale))
+    img = Image.new('RGB', (width, height))
     d = ImageDraw.Draw(img)
 
     heat_min = min(pixels)
@@ -14,5 +14,10 @@ def convert_to_thermal_image(width, height, pixels, scale=1, interpolate=False):
     for x in range(width):
         for y in range(height):
             d.point((x,y), fill=(red_pixels[x + y * width], 0, 255 - red_pixels[x + y * width]))
+
+    if interpolate:
+        img = img.resize((width * scale, height * scale), resample=Image.BICUBIC)
+    else:
+        img = img.resize((width * scale, height * scale))
 
     return img
