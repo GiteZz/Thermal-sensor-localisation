@@ -9,14 +9,15 @@
 
 const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX90640
 
-const char* ssid     = "VOP2.4";
-const char* password = "Marijnsuckt";
+const char* ssid = "Wi-Fi-netwerk van Marc"; //"VOP2.4";
+const char* password = "Front242"; //"Marijnsuckt";
 
 const char* host = "Thermal sensor 0x33";
 
-const char* rasp_ip = "<rasp-ip>/sensor/debug";
+const char* rasp_ip = "10.0.1.83/"; //"<rasp-ip>/sensor/debug";
 
 #define TA_SHIFT 8 //Default shift for MLX90640 in open air
+#define PAGE_SIZE 1536 //size of combination of subpages
 
 float mlx90640To[768];
 paramsMLX90640 mlx90640;
@@ -85,9 +86,21 @@ void loop() {
 
   root["device_id"] = MLX90640_address;
   root["sequence"] = sequence_id;
-  root["data"] = mlx90640To;
+  JsonArray& data = root.createNestedArray("data");
+  
+  for (uint16_t i = 0; i < 768; i++) {
+    data.add(mlx90640To[i]);
+  }
 
-  int httpResponseCode = http.POST(*root);
+  char* jsonRaw = (char*)calloc(sizeof(char), root.measureLength() + 1);
+  //Serial.println("ROOT MEASURELENGTH");
+  //Serial.println(root.measureLength());
+  
+  //root.prettyPrintTo(Serial);
+  
+  root.printTo(jsonRaw, root.measureLength() + 1);
+
+  int httpResponseCode = http.POST(jsonRaw);
   sequence_id++;
 
   if (httpResponseCode > 0) {
