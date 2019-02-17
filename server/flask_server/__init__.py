@@ -1,6 +1,8 @@
 from flask import Flask
 import json
 from flask_sqlalchemy import SQLAlchemy
+import os
+from os.path import dirname
 
 postgres_user = '??'
 postgres_pass = '??'
@@ -12,8 +14,12 @@ postgres_user = data['postgres']['username']
 postgres_pass = data['postgres']['password']
 postgres_db = data['postgres']['db_name']
 
+app_path = dirname(__file__)
+VOP_path = dirname(dirname(app_path))
+template_path = VOP_path + '/GUI/html_templates'
+static_path = VOP_path + '/GUI/static'
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=template_path, static_folder=static_path)
 # app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgres://{postgres_user}:{postgres_pass}@localhost:5432/{postgres_db}'
 db = SQLAlchemy(app)
@@ -21,3 +27,4 @@ db = SQLAlchemy(app)
 
 from flask_server import routes_backend
 from flask_server import routes_frontend
+from flask_server import routes_html
