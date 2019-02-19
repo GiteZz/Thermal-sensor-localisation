@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/debug.css') }}" >
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <meta charset="UTF-8">
+    <title>VOP debug screen</title>
+
+    <script>
+        $.get(
+            "thermal_sensor/ids",
+            function(data) {
+                id_list = data["id_list"];
+                console.log("Amount of sensors found: " + id_list.length);
+                for(i = 0; i< id_list.length; i++){
+                    let img_url = `/thermal_sensor/${id_list[i]}/last_image?scale_up=20&interpolate=1`;
+                    html_temp = `<li class="debug_img_item">
+                                 <div class="debug_img_wrapper">
+                                 <p>This is sensor ${i}:</p>
+                                 <img src="${img_url}" id="thermal_image_${id_list[i]}">
+                                </div>
+                                </li>`;
+                    $("#debug_imgs_list").append(html_temp)
+                }
+            }
+        );
+    </script>
+
+    <script type="text/javascript" charset="utf-8">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('connect', function() {
+            socket.emit('my event', {data: 'I\'m connected!'});
+        });
+        socket.on('new_image', function (data) {
+            console.log("updating " + data["device_id"]);
+            d = new Date();
+            let img_url = `/thermal_sensor/${data["device_id"]}/last_image?scale_up=20&interpolate=1&time=` + d.getTime();
+            $("#thermal_image_" + data["device_id"]).attr('src', img_url)
+        });
+</script>
+</head>
+<body>
+<p>This is the debug screen</p>
+<ul id="debug_imgs_list">
+
+</ul>
+
+</body>
+</html>
