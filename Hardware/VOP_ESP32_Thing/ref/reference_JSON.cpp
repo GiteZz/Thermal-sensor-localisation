@@ -3,7 +3,6 @@
 #include <Wifi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <ArduinoCbor.h>
 
 #include <MLX90640_API.h>
 #include <MLX90640_I2C_Driver.h>
