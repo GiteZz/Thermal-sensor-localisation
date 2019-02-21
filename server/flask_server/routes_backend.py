@@ -1,6 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
 from flask_server import app, db, socketio
 from flask_server.models import Measurement
+import cbor2
 import json
 
 
@@ -34,8 +35,9 @@ def receive_sensor_bits():
 @app.route('/test/cbor', methods=['POST'])
 def test_cbor():
     print("============== CBOR Test ================")
-    data = request.json
+    data = request.data
     print(data)
+    return 'Hello'
 
 @app.route('/data/last', methods=['GET'])
 def send_data():
