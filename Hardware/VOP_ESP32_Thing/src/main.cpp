@@ -3,18 +3,21 @@
 #include <Wifi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <ArduinoCbor.h>
 
 #include <MLX90640_API.h>
 #include <MLX90640_I2C_Driver.h>
 
 const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX90640
 
-const char* ssid = "Wi-Fi-netwerk van Marc"; //"VOP2.4";
-const char* password = "Front242"; //"Marijnsuckt";
+const char* ssid = "VOP2.4";
+const char* password = "Marijnsuckt";
 
 const char* host = "Thermal sensor 0x33";
 
-const char* rasp_ip = "10.0.1.83/"; //"<rasp-ip>/sensor/debug";
+const char* rasp_ip = "192.168.1.135"; //"<rasp-ip>/sensor/debug";
+const int rasp_port = 5000;
+const char* rasp_path = "/sensor/debug";
 
 #define TA_SHIFT 8 //Default shift for MLX90640 in open air
 #define PAGE_SIZE 1536 //size of combination of subpages
@@ -56,8 +59,9 @@ void setup() {
   //Once params are extracted, we can release eeMLX90640 array
 
   //MLX90640_SetRefreshRate(MLX90640_address, 0x02); //Set rate to 2Hz
-  MLX90640_SetRefreshRate(MLX90640_address, 0x03); //Set rate to 4Hz
-  //MLX90640_SetRefreshRate(MLX90640_address, 0x07); //Set rate to 64Hz
+  //MLX90640_SetRefreshRate(MLX90640_address, 0x03); //Set rate to 4Hz
+  MLX90640_SetRefreshRate(MLX90640_address, 0x02); //Set rate to 64Hz
+  
 }
 
 void loop() {
@@ -77,8 +81,7 @@ void loop() {
   //long stopTime = millis();
 
   HTTPClient http;
-
-  http.begin(rasp_ip);
+  http.begin(rasp_ip, rasp_port, rasp_path);
   http.addHeader("Content-Type", "application/json"); //TODO
 
   DynamicJsonBuffer jBuffer; //TODO make static
@@ -93,8 +96,8 @@ void loop() {
   }
 
   char* jsonRaw = (char*)calloc(sizeof(char), root.measureLength() + 1);
-  //Serial.println("ROOT MEASURELENGTH");
-  //Serial.println(root.measureLength());
+  Serial.println("ROOT MEASURELENGTH");
+  Serial.println(root.measureLength());
   
   //root.prettyPrintTo(Serial);
   
@@ -103,11 +106,12 @@ void loop() {
   int httpResponseCode = http.POST(jsonRaw);
   sequence_id++;
 
-  if (httpResponseCode > 0) {
+  if (httpResponseCode < 0) {
     Serial.print("Error in sending a POST request, httpResponseCode:");
     Serial.println(httpResponseCode);
-  }
+   }
 
+  free(jsonRaw);
   http.end();
   
 }
