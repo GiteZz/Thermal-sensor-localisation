@@ -24,7 +24,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.time_index = 0
         self.more_jump = 4
 
-
     def confirmUI(self, ui_widgets):
         print("confirming ui")
         self.widgets = ui_widgets
@@ -91,21 +90,18 @@ class MyUI(QtWidgets.QMainWindow):
 
         print(f'Found {len(self.list_episodes)} different episodes')
 
-
     def episode_clicked(self, index):
         self.episode_index = index
         self.widgets.timeSlider.setMinimum(0)
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
 
-
-
     def draw_plot(self):
         img_ar = np.transpose(np.array(self.list_episodes[self.episode_index][self.time_index].data).reshape((32,24)))
         result = fil.gaussian_filter(img_ar, 1)
 
         c = self.ax0.pcolor(img_ar)
-        # self.ax0.colorbar(c, ax=self.ax0)
+        self.ax0.colorbar(c, ax=self.ax0)
         # plt.gca().set_aspect('equal', adjustable='box')
         d = self.ax1.pcolor(result)
         # self.ax1.colorbar(c, ax=self.ax1)
