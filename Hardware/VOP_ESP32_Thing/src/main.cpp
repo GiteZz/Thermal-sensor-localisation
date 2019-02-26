@@ -15,12 +15,13 @@ const char* password = "Marijnsuckt";
 
 const char* host = "Thermal sensor 0x33";
 
-const char* rasp_ip = "192.168.1.135"; //"<rasp-ip>/sensor/debug";
+const char* rasp_ip = "192.168.1.133"; //"<rasp-ip>/sensor/debug";
 const int rasp_port = 5000;
-const char* rasp_path = "/sensor/debug";
+const char* rasp_path = "/test/cbor";
 
 #define TA_SHIFT 8 //Default shift for MLX90640 in open air
 #define PAGE_SIZE 1536 //size of combination of subpages
+#define TEMP_THRESHOLD 30 
 
 float mlx90640To[768];
 paramsMLX90640 mlx90640;
@@ -82,28 +83,45 @@ void loop() {
 
   HTTPClient http;
   http.begin(rasp_ip, rasp_port, rasp_path);
-  http.addHeader("Content-Type", "application/json"); //TODO
+  //http.addHeader("Content-Type", "application/json"); //TODO
 
-  DynamicJsonBuffer jBuffer; //TODO make static
-  JsonObject& root = jBuffer.createObject();
+  //DynamicJsonBuffer jBuffer; //TODO make static
+  //JsonObject& root = jBuffer.createObject();
+  CborBuffer cBuffer(1000);
+  CborObject root = CborObject(cBuffer);
 
-  root["device_id"] = MLX90640_address;
-  root["sequence"] = sequence_id;
-  JsonArray& data = root.createNestedArray("data");
+  root.set("device_id", MLX90640_address);
+  root.set("device_id", sequence_id);
+  //root["device_id"] = MLX90640_address;
+  //root["sequence"] = sequence_id;
+  //JsonArray& data = root.createNestedArray("data");
+  CborArray array = CborArray(cBuffer);
   
-  for (uint16_t i = 0; i < 768; i++) {
-    data.add(mlx90640To[i]);
+  for (int i = 0; i < 768; i++) {
+    //data.add(mlx90640To[i]);
+    uint8_t val;
+    if (mlx90640To[i] >= TEMP_THRESHOLD) {
+      val = 1;
+    }
+    else {
+      val = 0;
+    }
+    array.add(val);
   }
 
-  char* jsonRaw = (char*)calloc(sizeof(char), root.measureLength() + 1);
-  Serial.println("ROOT MEASURELENGTH");
-  Serial.println(root.measureLength());
+  root.set("array", array);
+
+  //char* jsonRaw = (char*)calloc(sizeof(char), root.measureLength() + 1);
+  //Serial.println("ROOT MEASURELENGTH");
+  //Serial.println(root.measureLength());
   
   //root.prettyPrintTo(Serial);
   
-  root.printTo(jsonRaw, root.measureLength() + 1);
+  //root.printTo(jsonRaw, root.measureLength() + 1);
 
-  int httpResponseCode = http.POST(jsonRaw);
+  //int httpResponseCode = http.POST(jsonRaw);
+  int httpResponseCode = http.POST(root.get("string").asString());
+  //int httpResponseCode = http.POST(root.get("integer").asInteger());
   sequence_id++;
 
   if (httpResponseCode < 0) {
@@ -111,7 +129,7 @@ void loop() {
     Serial.println(httpResponseCode);
    }
 
-  free(jsonRaw);
+  //free(jsonRaw);
   http.end();
   
 }
