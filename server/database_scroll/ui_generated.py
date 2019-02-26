@@ -2,11 +2,12 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.11.2
+# Created by: PyQt5 UI code generator 5.12
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -41,9 +42,30 @@ class Ui_MainWindow(object):
         self.timeSlider.setOrientation(QtCore.Qt.Horizontal)
         self.timeSlider.setObjectName("timeSlider")
         self.rightVLayout.addWidget(self.timeSlider)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.saveCSVFRAMEButton = QtWidgets.QPushButton(self.centralwidget)
+        self.saveCSVFRAMEButton.setObjectName("saveCSVFRAMEButton")
+        self.horizontalLayout_2.addWidget(self.saveCSVFRAMEButton)
+        self.saveCSVEPISODEButton = QtWidgets.QPushButton(self.centralwidget)
+        self.saveCSVEPISODEButton.setObjectName("saveCSVEPISODEButton")
+        self.horizontalLayout_2.addWidget(self.saveCSVEPISODEButton)
+        self.rightVLayout.addLayout(self.horizontalLayout_2)
         self.gridLayout.addLayout(self.rightVLayout, 0, 1, 1, 1)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setObjectName("label")
+        self.verticalLayout_2.addWidget(self.label)
+        self.startTimeEdit = QtWidgets.QDateTimeEdit(self.centralwidget)
+        self.startTimeEdit.setObjectName("startTimeEdit")
+        self.verticalLayout_2.addWidget(self.startTimeEdit)
+        self.label_2 = QtWidgets.QLabel(self.centralwidget)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout_2.addWidget(self.label_2)
+        self.stopTimeEdit_2 = QtWidgets.QDateTimeEdit(self.centralwidget)
+        self.stopTimeEdit_2.setObjectName("stopTimeEdit_2")
+        self.verticalLayout_2.addWidget(self.stopTimeEdit_2)
         self.timeList = QtWidgets.QListWidget(self.centralwidget)
         self.timeList.setMaximumSize(QtCore.QSize(120, 16777215))
         self.timeList.setObjectName("timeList")
@@ -77,7 +99,13 @@ class Ui_MainWindow(object):
         self.backwardOneButton.setText(_translate("MainWindow", "<"))
         self.forwardOneButton.setText(_translate("MainWindow", ">"))
         self.forwardMoreButton.setText(_translate("MainWindow", ">>>"))
+        self.saveCSVFRAMEButton.setText(_translate("MainWindow", "Save frame CSV"))
+        self.saveCSVEPISODEButton.setText(_translate("MainWindow", "Save episode CSV"))
+        self.label.setText(_translate("MainWindow", "Start time"))
+        self.label_2.setText(_translate("MainWindow", "Stop time"))
         self.refreshButton.setText(_translate("MainWindow", "Refresh"))
+
+
 
 
 if __name__ == "__main__":
@@ -88,4 +116,3 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-

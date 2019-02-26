@@ -14,7 +14,7 @@
                 id_list = data["id_list"];
                 console.log("Amount of sensors found: " + id_list.length);
                 for(i = 0; i< id_list.length; i++){
-                    let img_url = `/thermal_sensor/${id_list[i]}/last_image?scale_up=20&interpolate=1`;
+                    let img_url = `/thermal_sensor/${id_list[i]}/last_image?scale_up=20&interpolate=0`;
                     html_temp = `<li class="debug_img_item">
                                  <div class="debug_img_wrapper">
                                  <p>This is sensor ${i}:</p>

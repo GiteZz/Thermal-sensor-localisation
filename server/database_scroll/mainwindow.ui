@@ -74,9 +74,16 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QPushButton" name="saveCSVButton">
+           <widget class="QPushButton" name="saveCSVFRAMEButton">
             <property name="text">
-             <string>Save CSV</string>
+             <string>Save frame CSV</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="saveCSVEPISODEButton">
+            <property name="text">
+             <string>Save episode CSV</string>
             </property>
            </widget>
           </item>

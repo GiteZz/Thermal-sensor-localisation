@@ -5,6 +5,7 @@ import scipy.ndimage.filters as fil
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
+import csv
 
 from ui_generated import Ui_MainWindow
 from db_model import Measurement, Base
@@ -16,13 +17,16 @@ class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.widgets = None
-        self.engine = create_engine('postgres://postgres:Gilles@localhost:5432/VOP')
+        self.engine = create_engine('postgres://postgres:postgres@localhost:5432/postgres')
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.episode_index = 0
         self.time_index = 0
         self.more_jump = 4
+        self.download_path=''
+        self.sensor= 0
+        self.episode_selected=0
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
@@ -37,6 +41,9 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.backwardMoreButton.clicked.connect(self.more_backward)
 
         self.widgets.timeSlider.valueChanged.connect(self.move_timeslider)
+
+        self.widgets.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
+        self.widgets.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
@@ -66,8 +73,8 @@ class MyUI(QtWidgets.QMainWindow):
 
     def sensor_clicked(self, index):
         print('clicked!  => ' + str(index))
-        sensor = int(self.widgets.sensorList.item(index).text())
-        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor). \
+        self.sensor = int(self.widgets.sensorList.item(index).text())
+        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == self.sensor). \
             order_by(Measurement.timestamp.desc()).limit(1000).all()
 
         self.list_episodes = []
@@ -95,13 +102,14 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.timeSlider.setMinimum(0)
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
+        self.episode_seleced=1
 
     def draw_plot(self):
         img_ar = np.transpose(np.array(self.list_episodes[self.episode_index][self.time_index].data).reshape((32,24)))
         result = fil.gaussian_filter(img_ar, 1)
 
         c = self.ax0.pcolor(img_ar)
-        self.ax0.colorbar(c, ax=self.ax0)
+        #self.ax0.colorbar(c, ax=self.ax0)
         # plt.gca().set_aspect('equal', adjustable='box')
         d = self.ax1.pcolor(result)
         # self.ax1.colorbar(c, ax=self.ax1)
@@ -116,6 +124,38 @@ class MyUI(QtWidgets.QMainWindow):
         id_list = [meas.sensor_id for meas in sensor_ids]
         for id in id_list:
             self.widgets.sensorList.addItem(str(id))
+
+    def get_csv_current_episode(self):
+        if not self.episode_selected:
+            return
+        frame = self.list_episodes[self.episode_index][0]
+        frame_time = frame.timestamp
+        frame_time_arr = (str(frame_time)).replace('-', ',').replace('.', ',').replace(' ', ',').replace(':',',').split(',')
+        time = frame_time_arr[0] + frame_time_arr[1] + frame_time_arr[2] + '-' + frame_time_arr[3] + frame_time_arr[4] + frame_time_arr[5]
+        filename = self.download_path + 'sensor_data_episode' + '_' + time + '_' + str(self.sensor) + '.csv'
+        print('filename=' + filename)
+        with open(filename, 'w') as outfile:
+            writer = csv.writer(outfile, delimiter=',')
+            writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
+            for frame in self.list_episodes[self.episode_index]:
+                writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
+        print('csv saved')
+
+    def get_csv_current_frame(self):
+
+        if not self.episode_selected:
+            return
+        frame=self.list_episodes[self.episode_index][self.time_index]
+        frame_time = frame.timestamp
+        frame_time_arr=(str(frame_time)).replace('-',',').replace('.',',').replace(' ',',').replace(':',',').split(',')
+        time=frame_time_arr[0]+frame_time_arr[1]+frame_time_arr[2]+'-'+frame_time_arr[3]+frame_time_arr[4]+frame_time_arr[5]
+        filename= self.download_path+'sensor_data_frame'+'_'+time+'_'+str(self.sensor)+'.csv'
+        print('filename='+filename)
+        with open (filename,'w') as outfile:
+            writer=csv.writer(outfile, delimiter=',')
+            writer.writerow(['data','timestamp','sequence_ID','sensor_ID','data_type'])
+            writer.writerow([frame.data,frame.timestamp,frame.sequence_id,frame.sensor_id,frame.data_type])
+        print('csv saved')
 
 
 if __name__ == "__main__":
