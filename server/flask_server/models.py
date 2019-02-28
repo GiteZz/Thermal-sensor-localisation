@@ -9,6 +9,7 @@ class Measurement(db.Model):
     sequence_id = db.Column('sequence_ID', db.Integer)
     timestamp = db.Column('timestamp',db.DateTime, nullable=False,
                         default=datetime.utcnow,primary_key=True)
+    data_type = db.Column('data_type', db.SmallInteger)
 
     def __repr__(self):
         return f'<Measurement :: sensor_id={self.sensor_id}, sequence_id={self.sequence_id}>'

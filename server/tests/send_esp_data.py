@@ -10,7 +10,7 @@ device_amount = 1
 
 sequence_array = [0] * device_amount
 
-POST_url = 'http://192.168.1.112:5000/sensor/debug'
+POST_url = 'http://192.168.1.116:5000/test/cbor'
 
 for _ in range(test_amount):
     time.sleep(0.1)

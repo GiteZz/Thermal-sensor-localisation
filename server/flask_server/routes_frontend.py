@@ -1,4 +1,4 @@
-from flask import render_template, url_for, flash, redirect, request, jsonify
+from flask import render_template, url_for, flash, redirect, request, jsonify, Response
 from flask_server import app, db
 from flask_server.models import *
 
@@ -48,6 +48,6 @@ def get_sensor_last_image(id):
     last_result = Measurement.query.filter(Measurement.sensor_id == int(id)).\
         order_by(Measurement.timestamp.desc()).first()
 
-    img = convert_to_thermal_image(32, 24, last_result.data, scale=scaled_up, interpolate=interpolate)
+    img = convert_to_thermal_image(last_result.data, scale=scaled_up, interpolate=interpolate)
 
-    return serve_pil_image(img)
+    return Response(img)
