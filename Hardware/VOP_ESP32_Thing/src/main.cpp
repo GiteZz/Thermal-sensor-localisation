@@ -5,6 +5,11 @@
 #include <ArduinoJson.h>
 #include <ArduinoCbor.h>
 
+#include <stdint.h>
+#include <chrono>
+#include <thread>
+
+
 #include <MLX90640_API.h>
 #include <MLX90640_I2C_Driver.h>
 
@@ -15,17 +20,29 @@ const char* password = "Marijnsuckt";
 
 const char* host = "Thermal sensor 0x33";
 
-const char* rasp_ip = "192.168.1.135"; //"<rasp-ip>/sensor/debug";
+const char* rasp_ip = "192.168.1.117"; //"<rasp-ip>/sensor/debug";
 const int rasp_port = 5000;
 const char* rasp_path = "/sensor/debug";
 
 #define TA_SHIFT 8 //Default shift for MLX90640 in open air
 #define PAGE_SIZE 1536 //size of combination of subpages
+#define TEMP_THRESHOLD 30 
+#define MLX_I2C_ADDR 0x33
+#define FPS 4
+#define FRAME_TIME_MICROS (1000000/(4*FPS))
 
-float mlx90640To[768];
+#define OFFSET_MICROS 850
+
+static uint16_t eeMLX90640[832];
+float emissivity = 1;
+uint16_t frame[834];
+static float mlx90640To[768];
+float eTa;
 paramsMLX90640 mlx90640;
 
 uint16_t sequence_id = 0;
+
+auto frame_time = std::chrono::microseconds(FRAME_TIME_MICROS + OFFSET_MICROS);
 
 void setup() {
   Wire.begin();
@@ -46,38 +63,54 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   //Get device parameters - We only have to do this once
-  int status;
-  uint16_t eeMLX90640[832];
-  status = MLX90640_DumpEE(MLX90640_address, eeMLX90640);
-  if (status != 0)
-    Serial.println("Failed to load system parameters");
 
-  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
-  if (status != 0)
-    Serial.println("Parameter extraction failed");
-
-  //Once params are extracted, we can release eeMLX90640 array
-
-  //MLX90640_SetRefreshRate(MLX90640_address, 0x02); //Set rate to 2Hz
-  //MLX90640_SetRefreshRate(MLX90640_address, 0x03); //Set rate to 4Hz
-  MLX90640_SetRefreshRate(MLX90640_address, 0x02); //Set rate to 64Hz
+  MLX90640_SetDeviceMode(MLX_I2C_ADDR, 0);
+  MLX90640_SetSubPageRepeat(MLX_I2C_ADDR, 0);
+  switch(FPS){
+      case 1:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b001);
+          break;
+      case 2:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b010);
+          break;
+      case 4:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b011);
+          break;
+      case 8:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b100);
+          break;
+      case 16:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b101);
+          break;
+      case 32:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b110);
+          break;
+      case 64:
+          MLX90640_SetRefreshRate(MLX_I2C_ADDR, 0b111);
+          break;
+      default:
+          Serial.print("Unsupported framerate: %d");
+          Serial.println(FPS);
+  }
+  
+  MLX90640_SetChessMode(MLX_I2C_ADDR);
+  MLX90640_DumpEE(MLX_I2C_ADDR, eeMLX90640);
+  MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
   
 }
 
 void loop() {
   //long startTime = millis();
-  for (byte i = 0 ; i < 2 ; i++) {
-    uint16_t mlx90640Frame[834];
-    int status = MLX90640_GetFrameData(MLX90640_address, mlx90640Frame);
+  
+  auto start = std::chrono::system_clock::now();
+  MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
+  MLX90640_InterpolateOutliers(frame, eeMLX90640);
 
-    float vdd = MLX90640_GetVdd(mlx90640Frame, &mlx90640);
-    float Ta = MLX90640_GetTa(mlx90640Frame, &mlx90640);
+  eTa = MLX90640_GetTa(frame, &mlx90640);
+  MLX90640_CalculateTo(frame, &mlx90640, emissivity, eTa, mlx90640To);
 
-    float tr = Ta - TA_SHIFT; //Reflected temperature based on the sensor ambient temperature
-    float emissivity = 0.95;
-
-    MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
-  }
+  //auto end = std::chrono::system_clock::now();
+  //auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
   //long stopTime = millis();
 
   HTTPClient http;
@@ -86,30 +119,52 @@ void loop() {
 
   DynamicJsonBuffer jBuffer; //TODO make static
   JsonObject& root = jBuffer.createObject();
+  //CborBuffer cBuffer(1000);
+  //CborObject root = CborObject(cBuffer);
 
+  //root.set("device_id", MLX90640_address);
+  //root.set("device_id", sequence_id);
   root["device_id"] = MLX90640_address;
   root["sequence"] = sequence_id;
   JsonArray& data = root.createNestedArray("data");
+  //CborArray array = CborArray(cBuffer);
   
-  for (uint16_t i = 0; i < 768; i++) {
-    data.add(mlx90640To[i]);
+  for (int i = 0; i < 768; i++) {
+     data.add(mlx90640To[i]);
+    //uint8_t val;
+    //if (mlx90640To[i] >= TEMP_THRESHOLD) {
+    //  val = 1;
+    //}
+    //else {
+    //  val = 0;
+    //}
+    //array.add(val);
   }
 
+  //root.set("array", array);
+
   char* jsonRaw = (char*)calloc(sizeof(char), root.measureLength() + 1);
-  Serial.println("ROOT MEASURELENGTH");
-  Serial.println(root.measureLength());
+  //Serial.println("ROOT MEASURELENGTH");
+  //Serial.println(root.measureLength());
   
   //root.prettyPrintTo(Serial);
   
   root.printTo(jsonRaw, root.measureLength() + 1);
 
   int httpResponseCode = http.POST(jsonRaw);
+  //int httpResponseCode = http.POST(root.get("string").asString());
+  //int httpResponseCode = http.POST(root.get("integer").asInteger());
   sequence_id++;
 
-  if (httpResponseCode < 0) {
-    Serial.print("Error in sending a POST request, httpResponseCode:");
+  if (httpResponseCode) {
+    Serial.print("POST request, httpResponseCode:");
     Serial.println(httpResponseCode);
    }
+
+  auto end = std::chrono::system_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+  std::this_thread::sleep_for(std::chrono::microseconds(frame_time - elapsed));
 
   free(jsonRaw);
   http.end();
