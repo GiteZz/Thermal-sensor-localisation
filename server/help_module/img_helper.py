@@ -8,17 +8,23 @@ import scipy.ndimage.filters as fil
 
 def convert_to_thermal_image(pixels, scale=1, interpolate=False, fixed_range=False, heat_min=10, heat_max=45):
     fig = Figure()
-    ax0 = fig.add_subplot(1, 2, 1)
-    ax1 = fig.add_subplot(1, 2, 2)
+    ax0 = fig.add_subplot(2, 2, 1)
+    ax1 = fig.add_subplot(2, 2, 2)
+    ax2 = fig.add_subplot(2, 2, 3)
 
     img_ar = np.array(pixels).reshape((24, 32))
     result = fil.gaussian_filter(img_ar, 1)
+    gem = np.mean(result)
+    img_cap = (result > gem)*1
+
 
     c = ax0.pcolor(img_ar)
     d = ax1.pcolor(result)
+    e = ax2.pcolor(img_cap)
 
     fig.colorbar(c, ax=ax0)
     fig.colorbar(d, ax=ax1)
+    fig.colorbar(e, ax=ax2)
 
     ax1.axis('equal')
     ax0.axis('equal')

@@ -147,7 +147,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.timeSlider.setMinimum(0)
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
-        self.episode_seleced=1
+        self.episode_selected=1
 
     def draw_plot(self):
         current_meas = self.list_episodes[self.episode_index][self.time_index]
@@ -194,7 +194,9 @@ class MyUI(QtWidgets.QMainWindow):
             self.widgets.sensorList.addItem(str(id))
 
     def get_csv_current_episode(self):
+        print("clicked")
         if not self.episode_selected:
+            print('No episode selected')
             return
         frame = self.list_episodes[self.episode_index][0]
         frame_time = frame.timestamp
@@ -210,7 +212,7 @@ class MyUI(QtWidgets.QMainWindow):
         print('csv saved')
 
     def get_csv_current_frame(self):
-
+        print("clicked")
         if not self.episode_selected:
             return
         frame=self.list_episodes[self.episode_index][self.time_index]
