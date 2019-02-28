@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
 import csv
+import json
 
 from ui_generated import Ui_MainWindow
 from db_model import Measurement, Base
@@ -17,7 +18,13 @@ class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.widgets = None
-        self.engine = create_engine('postgres://postgres:Gilles@localhost:5432/VOP')
+        with open('configuration.json', 'r') as f:
+            data = json.load(f)
+
+        postgres_user = data['postgres']['username']
+        postgres_pass = data['postgres']['password']
+        postgres_db = data['postgres']['db_name']
+        self.engine = create_engine(f'postgres://{postgres_user}:{postgres_pass}@localhost:5432/{postgres_db}')
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
