@@ -33,6 +33,93 @@
          </spacer>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="statHLayout">
+          <item>
+           <layout class="QVBoxLayout" name="episodeStatVLayout">
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Episode stats:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="frameAmountLabel">
+              <property name="text">
+               <string>Frames: -</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="startEpisodeLabel">
+              <property name="text">
+               <string>Start: -</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="endEpisodeLabel">
+              <property name="text">
+               <string>End: -</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="frameStatVLayout">
+            <item>
+             <widget class="QLabel" name="label_4">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Frame stats:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="minLabel">
+              <property name="text">
+               <string>min: -</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="maxLabel">
+              <property name="text">
+               <string>max: -</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="avLabel">
+              <property name="text">
+               <string>av: -</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="frameTimeLabel">
+              <property name="text">
+               <string>Fame time: -</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QPushButton" name="backwardMoreButton">
@@ -94,7 +181,7 @@
       <item row="0" column="0">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="startLabel">
           <property name="text">
            <string>Start time</string>
           </property>
@@ -104,14 +191,58 @@
          <widget class="QDateTimeEdit" name="startTimeEdit"/>
         </item>
         <item>
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="stopLabel">
           <property name="text">
            <string>Stop time</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QDateTimeEdit" name="stopTimeEdit_2"/>
+         <widget class="QDateTimeEdit" name="stopTimeEdit"/>
+        </item>
+        <item>
+         <widget class="QLabel" name="connectLabel">
+          <property name="toolTip">
+           <string extracomment="Zero to always connect"/>
+          </property>
+          <property name="text">
+           <string>Connect time (seconds)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="connectTimeSpinbox">
+          <property name="value">
+           <number>60</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="sliceLabel">
+          <property name="text">
+           <string>Slice time (seconds)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="sliceTimeSpinbox"/>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Frame amount</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="frameAmountSpinbox">
+          <property name="maximum">
+           <number>9999999</number>
+          </property>
+          <property name="value">
+           <number>1000</number>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QListWidget" name="timeList">
@@ -130,6 +261,9 @@
             <width>120</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>zero to alway connect</string>
           </property>
          </widget>
         </item>

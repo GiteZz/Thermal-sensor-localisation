@@ -17,7 +17,7 @@ class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.widgets = None
-        self.engine = create_engine('postgres://postgres:postgres@localhost:5432/postgres')
+        self.engine = create_engine('postgres://postgres:Gilles@localhost:5432/VOP')
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
@@ -40,6 +40,9 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.forwardMoreButton.clicked.connect(self.more_forward)
         self.widgets.backwardMoreButton.clicked.connect(self.more_backward)
 
+        self.widgets.connectTimeSpinbox.valueChanged.connect(self.update_connect_time)
+        self.widgets.sliceTimeSpinbox.valueChanged.connect(self.update_slice_time)
+
         self.widgets.timeSlider.valueChanged.connect(self.move_timeslider)
 
         self.widgets.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
@@ -48,8 +51,23 @@ class MyUI(QtWidgets.QMainWindow):
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.widgets.rightVLayout.insertWidget(0,self.canvas)
-        self.ax0 = self.figure.add_subplot(1,2,1)
-        self.ax1 = self.figure.add_subplot(1,2,2)
+        self.ax0 = self.figure.add_subplot(2,2,1)
+        self.ax1 = self.figure.add_subplot(2,2,2)
+        self.ax2 = self.figure.add_subplot(2,2,3)
+
+        self.bar1 = None
+        self.bar2 = None
+
+        self.connect_time = self.widgets.connectTimeSpinbox.value()
+        self.slice_time = self.widgets.sliceTimeSpinbox.value()
+
+    def update_connect_time(self, value):
+        print("update connect time to " + str(value))
+        self.connect_time = value
+
+    def update_slice_time(self, value):
+        print("update slice time to: " + str(value))
+        self.slice_time = value
 
     def one_forward(self):
         if self.time_index < len(self.list_episodes[self.episode_index]) - 1:
@@ -73,19 +91,33 @@ class MyUI(QtWidgets.QMainWindow):
 
     def sensor_clicked(self, index):
         print('clicked!  => ' + str(index))
-        self.sensor = int(self.widgets.sensorList.item(index).text())
-        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == self.sensor). \
+        if index < 0:
+            return
+
+        # start_time = self.widgets.startTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm:ss')
+        # stop_time = self.widgets.stopTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm:ss')
+        # filter(Measurement.timestamp <= stop_time).filter(Measurement.timestamp >= start_time). \
+
+        sensor = int(self.widgets.sensorList.item(index).text())
+        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor). \
             order_by(Measurement.timestamp.desc()).limit(1000).all()
 
         self.list_episodes = []
+        episode_starttime = sensor_values[0].timestamp
         current_starttime = sensor_values[0].timestamp
         current_episode = []
+
         for value in sensor_values:
-            diff = (current_starttime - value.timestamp).seconds
-            if diff < 60:
+            if len(current_episode) == 0:
+                episode_starttime = value.timestamp
+
+            diff_connect = (current_starttime - value.timestamp).seconds
+            diff_slice = (episode_starttime - value.timestamp).seconds
+            if (diff_connect < self.connect_time or self.connect_time == 0) and (diff_slice < self.slice_time or self.slice_time == 0):
                 current_episode.append(value)
             else:
-                self.list_episodes.append(current_episode[::-1])
+                if len(current_episode) > 0:
+                    self.list_episodes.append(current_episode[::-1])
                 current_episode = []
             current_starttime = value.timestamp
 
@@ -93,33 +125,62 @@ class MyUI(QtWidgets.QMainWindow):
             self.list_episodes.append(current_episode[::-1])
 
         for episode in self.list_episodes:
-            self.widgets.timeList.addItem(str(episode[0].timestamp).split('.')[0])
+            str_timestamp = str(episode[0].timestamp)
+            print(str_timestamp)
+            self.widgets.timeList.addItem(str_timestamp.split('.')[0])
 
         print(f'Found {len(self.list_episodes)} different episodes')
 
     def episode_clicked(self, index):
         self.episode_index = index
+        self.time_index = 0
+        self.widgets.frameAmountLabel.setText(f'frame: 1/{len(self.list_episodes[self.episode_index])}')
+        self.widgets.startEpisodeLabel.setText(f'Start: {self.meas_to_time(self.list_episodes[self.episode_index][0])}')
+        self.widgets.endEpisodeLabel.setText(f'Stop: {self.meas_to_time(self.list_episodes[self.episode_index][-1])}')
         self.widgets.timeSlider.setMinimum(0)
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
         self.episode_seleced=1
 
     def draw_plot(self):
-        img_ar = np.transpose(np.array(self.list_episodes[self.episode_index][self.time_index].data).reshape((32,24)))
+        current_meas = self.list_episodes[self.episode_index][self.time_index]
+        img_ar = np.array(current_meas.data).reshape((24,32))
         result = fil.gaussian_filter(img_ar, 1)
 
+        min_frame = np.min(result)
+        max_frame = np.max(result)
+        av_frame = np.average(result)
+
+        self.widgets.minLabel.setText(f'min: {min_frame}')
+        self.widgets.maxLabel.setText(f'max: {max_frame}')
+        self.widgets.avLabel.setText(f'av: {round(av_frame,1)}')
+        self.widgets.frameAmountLabel.setText(f'frame: {self.time_index + 1}/{len(self.list_episodes[self.episode_index])}')
+        self.widgets.frameTimeLabel.setText(f'Frame time: {self.meas_to_time(current_meas)}')
+
         c = self.ax0.pcolor(img_ar)
-        #self.ax0.colorbar(c, ax=self.ax0)
-        # plt.gca().set_aspect('equal', adjustable='box')
+        if self.bar1 is None:
+            self.bar1 = self.figure.colorbar(c, ax=self.ax0)
+        else:
+            self.bar1.update_bruteforce(c)
+
         d = self.ax1.pcolor(result)
-        # self.ax1.colorbar(c, ax=self.ax1)
-        # plt.gca().set_aspect('equal', adjustable='box')
+        if self.bar2 is None:
+            self.bar2 = self.figure.colorbar(d, ax=self.ax1)
+        else:
+            self.bar2.update_bruteforce(d)
+
+        self.ax2.clear()
+        self.ax2.hist(current_meas.data, bins=20)
+
         self.ax1.axis('equal')
         self.ax0.axis('equal')
 
         self.canvas.draw()
 
     def get_data_db(self):
+        self.widgets.sensorList.clear()
+        self.widgets.timeList.clear()
+
         sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
         id_list = [meas.sensor_id for meas in sensor_ids]
         for id in id_list:
@@ -156,6 +217,9 @@ class MyUI(QtWidgets.QMainWindow):
             writer.writerow(['data','timestamp','sequence_ID','sensor_ID','data_type'])
             writer.writerow([frame.data,frame.timestamp,frame.sequence_id,frame.sensor_id,frame.data_type])
         print('csv saved')
+
+    def meas_to_time(self, meas):
+        return str(meas.timestamp).split(".")[0]
 
 
 if __name__ == "__main__":

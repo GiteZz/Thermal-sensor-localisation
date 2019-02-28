@@ -8,7 +8,10 @@ import json
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
+    print(data)
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
+    print(f'Min: {min(data["data"])- 8}')
+    print(f'Max: {max(data["data"]) - 8}')
     db.session.add(new_db_data)
     db.session.commit()
     print(data)
