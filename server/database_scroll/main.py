@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import scipy.ndimage.filters as fil
+from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
@@ -9,7 +10,7 @@ import csv
 import json
 
 from ui_generated import Ui_MainWindow
-from db_model import Measurement, Base
+from db_model import Measurement, Base, CSV_Measurement
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -54,6 +55,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
         self.widgets.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
+        self.widgets.loadCSVButton.clicked.connect(self.load_csv_button)
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
@@ -95,6 +97,19 @@ class MyUI(QtWidgets.QMainWindow):
     def move_timeslider(self, value):
         self.time_index = value
         self.draw_plot()
+
+    def load_csv_button(self):
+        fname = QFileDialog.getOpenFileName(self, 'Open file',
+                                            'c:\\', "CSV files (*.csv)")
+        if fname[0] != "":
+            self.load_csv(fname[0])
+
+    def load_csv(self, filename):
+        with open(filename) as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            data = []
+            for row in reader:
+                data.append(CSV_Measurement(row))
 
     def sensor_clicked(self, index):
         print('clicked!  => ' + str(index))

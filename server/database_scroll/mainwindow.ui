@@ -159,7 +159,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="csvHLayout">
           <item>
            <widget class="QPushButton" name="saveCSVFRAMEButton">
             <property name="text">
@@ -171,6 +171,13 @@
            <widget class="QPushButton" name="saveCSVEPISODEButton">
             <property name="text">
              <string>Save episode CSV</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="loadCSVButton">
+            <property name="text">
+             <string>Load CSV</string>
             </property>
            </widget>
           </item>
@@ -266,6 +273,9 @@
            <string>zero to alway connect</string>
           </property>
          </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="csvList"/>
         </item>
         <item>
          <widget class="QPushButton" name="refreshButton">
