@@ -219,7 +219,7 @@ class MyUI(QtWidgets.QMainWindow):
         time = frame_time_arr[0] + frame_time_arr[1] + frame_time_arr[2] + '-' + frame_time_arr[3] + frame_time_arr[4] + frame_time_arr[5]
         filename = self.download_path + 'sensor_data_episode' + '_' + time + '_' + str(self.sensor) + '.csv'
         print('filename=' + filename)
-        with open(filename, 'w') as outfile:
+        with open(filename, 'w', newline='') as outfile:
             writer = csv.writer(outfile, delimiter=',')
             writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
             for frame in self.list_episodes[self.episode_index]:
@@ -236,7 +236,7 @@ class MyUI(QtWidgets.QMainWindow):
         time=frame_time_arr[0]+frame_time_arr[1]+frame_time_arr[2]+'-'+frame_time_arr[3]+frame_time_arr[4]+frame_time_arr[5]
         filename= self.download_path+'sensor_data_frame'+'_'+time+'_'+str(self.sensor)+'.csv'
         print('filename='+filename)
-        with open (filename,'w') as outfile:
+        with open (filename,'w', newline='') as outfile:
             writer=csv.writer(outfile, delimiter=',')
             writer.writerow(['data','timestamp','sequence_ID','sensor_ID','data_type'])
             writer.writerow([frame.data,frame.timestamp,frame.sequence_id,frame.sensor_id,frame.data_type])
