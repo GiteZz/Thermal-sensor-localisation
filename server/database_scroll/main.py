@@ -9,6 +9,7 @@ import numpy as np
 import csv
 import json
 from pandas import DataFrame
+import operator
 
 from ui_generated import Ui_MainWindow
 from db_model import Measurement, Base, CSV_Measurement
@@ -113,6 +114,15 @@ class MyUI(QtWidgets.QMainWindow):
             self.add_source('csv', file_name=fname[0])
 
     def add_source(self, type, sensor_id=None, file_name=None):
+        """
+        Creates a source but doesn't load in the data, if type == 'csv' file_name should be specified
+        If type == 'sensor' sensor_id should be used
+
+        :param type:
+        :param sensor_id:
+        :param file_name:
+        :return:
+        """
         self.sources.append({'type': type, 'sensor_id': sensor_id, 'filename': file_name, 'data': None})
 
         new_layout = QHBoxLayout()
@@ -129,13 +139,29 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.sourcesVLayout.addLayout(new_layout)
 
-    def clear_sources(self):
-        while len(self.source_layouts) != 0:
-            self.source_checkboxes.pop(0).deleteLater()
-            self.source_labels.pop(0).deleteLater()
-            self.source_layouts.pop(0).deleteLater()
+    def clear_sources(self, type):
+        """
+        Clears the UI elements and the list that contain references to sources
+
+        :param type: type of source to be removed
+        :return:
+        """
+        for index, source in reversed(list(enumerate(self.sources))):
+            if source['type'] == type:
+                self.source_checkboxes.pop(index).deleteLater()
+                self.source_labels.pop(index).deleteLater()
+                self.source_layouts.pop(index).deleteLater()
+                self.sources.pop(index)
+
 
     def load_source(self, source):
+        """
+        This function takes a source and then looks at its type to find the function to get that data
+
+        :param source: A dict containing all the information to load the data
+        :return: list of measurements
+        """
+
         if source['type'] == 'csv':
             return self.load_csv(source['filename'])
         elif source['type'] == 'sensor':
@@ -144,6 +170,13 @@ class MyUI(QtWidgets.QMainWindow):
             raise Exception('Source type was not recognized')
 
     def load_csv(self, filename):
+        """
+        This function takes in a filename and creates a list of CSV_Measurements
+
+        :param filename: csv filename
+        :return: the list
+        """
+
         data = []
         with open(filename) as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
@@ -155,6 +188,13 @@ class MyUI(QtWidgets.QMainWindow):
         return data
 
     def load_sensor(self, sensor_id):
+        """
+        Uses a database query to get measurements from the sensor with id == sensor_id
+        TODO Take into account the time limits
+
+        :param sensor_id:
+        :return:
+        """
         sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id). \
             order_by(Measurement.timestamp.desc()).limit(self.widgets.frameAmountSpinbox.value()).all()
 
@@ -162,7 +202,7 @@ class MyUI(QtWidgets.QMainWindow):
 
     def sensor_state_changed(self):
         """
-        This function takes a sensor index and then creates all the episodes of that sensor.
+        This function looks at the selected sources and then creates a episode list.
         A episode is defined as measurements that all satisfy the conditions.
 
         cond1: The next measurement should be within self.connect_time from the previous one. This is used
@@ -172,7 +212,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.slice_time. This is used to avoid excessive long episodes. If zero this is ignored.
 
         :param index: This gives the index of the current sensor index
-        :return:
+        :return: Fills up self.list_episodes
         """
 
         # This sometimes happens when clearing listwidgets
@@ -181,15 +221,20 @@ class MyUI(QtWidgets.QMainWindow):
 
         source = self.sources[index]
 
+        # Load data if not loaded
         if source['data'] is None:
             source['data'] = self.load_source(source)
             self.sources[index] = source
 
+        # Combine data from different sources and sort for easier plotting
         data = []
         for source, checkbox in zip(self.sources, self.source_checkboxes):
             if checkbox.isChecked():
                 data.extend(source['data'])
 
+        data = sorted(data, key=operator.attrgetter('timestamp'), reverse=True)
+
+        # Clear UI and setup variables
         self.list_episodes = []
         self.widgets.timeList.clear()
 
@@ -200,6 +245,7 @@ class MyUI(QtWidgets.QMainWindow):
         current_starttime = data[0].timestamp
         current_episode = []
 
+        # Slice the data up into episodes
         for value in data:
             if len(current_episode) == 0:
                 episode_starttime = value.timestamp
@@ -217,14 +263,20 @@ class MyUI(QtWidgets.QMainWindow):
         if len(current_episode) > 0:
             self.list_episodes.append(current_episode[::-1])
 
+        # Create string for UI list and populate that list
         for episode in self.list_episodes:
             str_timestamp = str(episode[0].timestamp)
             print(str_timestamp)
             self.widgets.timeList.addItem(str_timestamp.split('.')[0])
 
-        print(f'Found {len(self.list_episodes)} different episodes')
 
     def episode_clicked(self, index):
+        """
+        This function sets up the UI to handle an episode (mostly plotting stuff)
+
+        :param index: episode clicked on self.timeList
+        :return:
+        """
         if index < 0:
             self.clear_frame()
             return
@@ -240,6 +292,11 @@ class MyUI(QtWidgets.QMainWindow):
         self.episode_selected=1
 
     def clear_frame(self):
+        """
+        Clear plots and all the frame/episode stats
+
+        :return:
+        """
         for subplot in self.subplots:
             subplot.clear()
             self.canvas.draw()
@@ -290,6 +347,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.canvas.draw()
 
     def get_data_db(self):
+        self.clear_sources('sensor')
         sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
         id_list = [meas.sensor_id for meas in sensor_ids]
         for id in id_list:
