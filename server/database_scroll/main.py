@@ -2,12 +2,13 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import scipy.ndimage.filters as fil
-from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
+from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
 import csv
 import json
+from pandas import DataFrame
 
 from ui_generated import Ui_MainWindow
 from db_model import Measurement, Base, CSV_Measurement
@@ -32,15 +33,21 @@ class MyUI(QtWidgets.QMainWindow):
         self.episode_index = 0
         self.time_index = 0
         self.more_jump = 4
-        self.download_path=''
-        self.sensor= 0
-        self.episode_selected=0
+        self.download_path = ''
+        self.sensor = 0
+        self.episode_selected = 0
+
+        self.sources = []
+        self.source_layouts = []
+        self.source_labels = []
+        self.source_checkboxes = []
+
+        self.episodes = []
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
         self.widgets = ui_widgets
         self.widgets.refreshButton.clicked.connect(self.get_data_db)
-        self.widgets.sensorList.currentRowChanged.connect(self.sensor_clicked)
         self.widgets.timeList.currentRowChanged.connect(self.episode_clicked)
 
         self.widgets.forwardOneButton.clicked.connect(self.one_forward)
@@ -63,6 +70,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.ax0 = self.figure.add_subplot(2,2,1)
         self.ax1 = self.figure.add_subplot(2,2,2)
         self.ax2 = self.figure.add_subplot(2,2,3)
+        self.subplots = [self.ax0, self.ax1, self.ax2]
 
         self.bar1 = None
         self.bar2 = None
@@ -102,34 +110,97 @@ class MyUI(QtWidgets.QMainWindow):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
                                             'c:\\', "CSV files (*.csv)")
         if fname[0] != "":
-            self.load_csv(fname[0])
+            self.add_source('csv', file_name=fname[0])
+
+    def add_source(self, type, sensor_id=None, file_name=None):
+        self.sources.append({'type': type, 'sensor_id': sensor_id, 'filename': file_name, 'data': None})
+
+        new_layout = QHBoxLayout()
+        label = QLabel(f'{type}: {sensor_id if file_name is None else file_name}')
+        checkbox = QCheckBox()
+        new_layout.addWidget(label)
+        new_layout.addWidget(checkbox)
+
+        self.source_checkboxes.append(checkbox)
+        self.source_labels.append(label)
+        self.source_layouts.append(new_layout)
+
+        checkbox.stateChanged.connect(self.sensor_state_changed)
+
+        self.widgets.sourcesVLayout.addLayout(new_layout)
+
+    def clear_sources(self):
+        while len(self.source_layouts) != 0:
+            self.source_checkboxes.pop(0).deleteLater()
+            self.source_labels.pop(0).deleteLater()
+            self.source_layouts.pop(0).deleteLater()
+
+    def load_source(self, source):
+        if source['type'] == 'csv':
+            return self.load_csv(source['filename'])
+        elif source['type'] == 'sensor':
+            return self.load_sensor(source['sensor_id'])
+        else:
+            raise Exception('Source type was not recognized')
 
     def load_csv(self, filename):
+        data = []
         with open(filename) as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
-            data = []
-            for row in reader:
-                data.append(CSV_Measurement(row))
 
-    def sensor_clicked(self, index):
-        print('clicked!  => ' + str(index))
-        if index < 0:
-            return
+            for index, row in enumerate(reader):
+                if index != 0 and row != '':
+                    data.append(CSV_Measurement(row))
 
-        # start_time = self.widgets.startTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm:ss')
-        # stop_time = self.widgets.stopTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm:ss')
-        # filter(Measurement.timestamp <= stop_time).filter(Measurement.timestamp >= start_time). \
+        return data
 
-        sensor = int(self.widgets.sensorList.item(index).text())
-        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor). \
-            order_by(Measurement.timestamp.desc()).limit(1000).all()
+    def load_sensor(self, sensor_id):
+        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id). \
+            order_by(Measurement.timestamp.desc()).limit(self.widgets.frameAmountSpinbox.value()).all()
+
+        return sensor_values
+
+    def sensor_state_changed(self):
+        """
+        This function takes a sensor index and then creates all the episodes of that sensor.
+        A episode is defined as measurements that all satisfy the conditions.
+
+        cond1: The next measurement should be within self.connect_time from the previous one. This is used
+        to separate different bursts of measurements. If zero this is ignored.
+
+        cond2: The difference in time between first and last measurement should be smaller then
+        self.slice_time. This is used to avoid excessive long episodes. If zero this is ignored.
+
+        :param index: This gives the index of the current sensor index
+        :return:
+        """
+
+        # This sometimes happens when clearing listwidgets
+        sender = self.sender()
+        index = self.source_checkboxes.index(sender)
+
+        source = self.sources[index]
+
+        if source['data'] is None:
+            source['data'] = self.load_source(source)
+            self.sources[index] = source
+
+        data = []
+        for source, checkbox in zip(self.sources, self.source_checkboxes):
+            if checkbox.isChecked():
+                data.extend(source['data'])
 
         self.list_episodes = []
-        episode_starttime = sensor_values[0].timestamp
-        current_starttime = sensor_values[0].timestamp
+        self.widgets.timeList.clear()
+
+        if len(data) == 0:
+            return
+
+        episode_starttime = data[0].timestamp
+        current_starttime = data[0].timestamp
         current_episode = []
 
-        for value in sensor_values:
+        for value in data:
             if len(current_episode) == 0:
                 episode_starttime = value.timestamp
 
@@ -154,6 +225,10 @@ class MyUI(QtWidgets.QMainWindow):
         print(f'Found {len(self.list_episodes)} different episodes')
 
     def episode_clicked(self, index):
+        if index < 0:
+            self.clear_frame()
+            return
+
         self.episode_index = index
         self.time_index = 0
         self.widgets.frameAmountLabel.setText(f'frame: 1/{len(self.list_episodes[self.episode_index])}')
@@ -163,6 +238,21 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
         self.episode_selected=1
+
+    def clear_frame(self):
+        for subplot in self.subplots:
+            subplot.clear()
+            self.canvas.draw()
+
+        self.widgets.frameAmountLabel.setText(f'frame: -/-')
+        self.widgets.startEpisodeLabel.setText(f'Start: -')
+        self.widgets.endEpisodeLabel.setText(f'Stop: -')
+        self.widgets.minLabel.setText(f'min: -')
+        self.widgets.maxLabel.setText(f'max: -')
+        self.widgets.avLabel.setText(f'av: -')
+
+        self.widgets.frameTimeLabel.setText(f'Frame time: -')
+
 
     def draw_plot(self):
         current_meas = self.list_episodes[self.episode_index][self.time_index]
@@ -200,13 +290,10 @@ class MyUI(QtWidgets.QMainWindow):
         self.canvas.draw()
 
     def get_data_db(self):
-        self.widgets.sensorList.clear()
-        self.widgets.timeList.clear()
-
         sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
         id_list = [meas.sensor_id for meas in sensor_ids]
         for id in id_list:
-            self.widgets.sensorList.addItem(str(id))
+            self.add_source('sensor', id)
 
     def get_csv_current_episode(self):
         print("clicked")
@@ -218,8 +305,10 @@ class MyUI(QtWidgets.QMainWindow):
         frame_time_arr = (str(frame_time)).replace('-', ',').replace('.', ',').replace(' ', ',').replace(':',',').split(',')
         time = frame_time_arr[0] + frame_time_arr[1] + frame_time_arr[2] + '-' + frame_time_arr[3] + frame_time_arr[4] + frame_time_arr[5]
         filename = self.download_path + 'sensor_data_episode' + '_' + time + '_' + str(self.sensor) + '.csv'
+
         print('filename=' + filename)
-        with open(filename, 'w') as outfile:
+
+        with open(filename, 'w', newline='') as outfile:
             writer = csv.writer(outfile, delimiter=',')
             writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
             for frame in self.list_episodes[self.episode_index]:
@@ -236,7 +325,7 @@ class MyUI(QtWidgets.QMainWindow):
         time=frame_time_arr[0]+frame_time_arr[1]+frame_time_arr[2]+'-'+frame_time_arr[3]+frame_time_arr[4]+frame_time_arr[5]
         filename= self.download_path+'sensor_data_frame'+'_'+time+'_'+str(self.sensor)+'.csv'
         print('filename='+filename)
-        with open (filename,'w') as outfile:
+        with open (filename,'w', newline='') as outfile:
             writer=csv.writer(outfile, delimiter=',')
             writer.writerow(['data','timestamp','sequence_ID','sensor_ID','data_type'])
             writer.writerow([frame.data,frame.timestamp,frame.sequence_id,frame.sensor_id,frame.data_type])
