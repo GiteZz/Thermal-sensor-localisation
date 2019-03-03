@@ -1,5 +1,5 @@
 import numpy as np
-from help_module.csv_reader import read_data
+from help_module.csv_helper import read_data
 from help_module.img_helper import convert_to_thermal_image
 from help_module.flask_helper import serve_pil_image
 import matplotlib.pyplot as plt

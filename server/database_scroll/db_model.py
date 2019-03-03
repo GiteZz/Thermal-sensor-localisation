@@ -2,6 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ARRAY, DateTime, SmallInteger
 from datetime import datetime
 import numpy as np
+from utils import convert_to_datetime
 
 Base = declarative_base()
 
@@ -20,9 +21,9 @@ class Measurement(Base):
 class CSV_Measurement:
     def __init__(self, row):
         self.data = np.array(eval(row[0]))
-        self.timestamp = row[1]
-        self.sequence_id = eval(row[2])
-        self.sensor_id = eval(row[3])
+        self.timestamp = convert_to_datetime(row[1])
+        self.sequence_id = int(row[2])
+        self.sensor_id = 'csv_' + row[3]
 
     def set_values(self, sensor_id, data, sequence_id, timestamp, data_type):
         self.sensor_id = sensor_id
