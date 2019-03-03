@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import scipy.ndimage.filters as fil
 import matplotlib.pyplot as plt
+
 data = pd.read_csv('sensor_data_21-02.csv')
 temp_data = [int(v) for v in data['data'][0][1:][:-1].split(',')]
-im = np.transpose(np.array(temp_data).reshape((32,24)))
+im = np.transpose(np.array(temp_data).reshape((24,32)))
 result = fil.gaussian_filter(im, 2)
 plt.axis('scaled')
 fig, (ax0, ax1) = plt.subplots(1, 2)
