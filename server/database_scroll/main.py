@@ -12,7 +12,9 @@ from pandas import DataFrame
 import operator
 
 from ui_generated import Ui_MainWindow
-from db_model import Measurement, Base, CSV_Measurement
+from help_module.data_model_helper import Measurement, Base, CSV_Measurement
+from help_module.time_helper import meas_to_time
+from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -169,23 +171,7 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             raise Exception('Source type was not recognized')
 
-    def load_csv(self, filename):
-        """
-        This function takes in a filename and creates a list of CSV_Measurements
 
-        :param filename: csv filename
-        :return: the list
-        """
-
-        data = []
-        with open(filename) as csvfile:
-            reader = csv.reader(csvfile, delimiter=',')
-
-            for index, row in enumerate(reader):
-                if index != 0 and row != '':
-                    data.append(CSV_Measurement(row))
-
-        return data
 
     def load_sensor(self, sensor_id):
         """
@@ -284,8 +270,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.episode_index = index
         self.time_index = 0
         self.widgets.frameAmountLabel.setText(f'frame: 1/{len(self.list_episodes[self.episode_index])}')
-        self.widgets.startEpisodeLabel.setText(f'Start: {self.meas_to_time(self.list_episodes[self.episode_index][0])}')
-        self.widgets.endEpisodeLabel.setText(f'Stop: {self.meas_to_time(self.list_episodes[self.episode_index][-1])}')
+        self.widgets.startEpisodeLabel.setText(f'Start: {meas_to_time(self.list_episodes[self.episode_index][0])}')
+        self.widgets.endEpisodeLabel.setText(f'Stop: {meas_to_time(self.list_episodes[self.episode_index][-1])}')
         self.widgets.timeSlider.setMinimum(0)
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
@@ -324,7 +310,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.maxLabel.setText(f'max: {max_frame}')
         self.widgets.avLabel.setText(f'av: {round(av_frame,1)}')
         self.widgets.frameAmountLabel.setText(f'frame: {self.time_index + 1}/{len(self.list_episodes[self.episode_index])}')
-        self.widgets.frameTimeLabel.setText(f'Frame time: {self.meas_to_time(current_meas)}')
+        self.widgets.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas)}')
 
         c = self.ax0.pcolor(img_ar)
         if self.bar1 is None:
@@ -358,39 +344,14 @@ class MyUI(QtWidgets.QMainWindow):
         if not self.episode_selected:
             print('No episode selected')
             return
-        frame = self.list_episodes[self.episode_index][0]
-        frame_time = frame.timestamp
-        frame_time_arr = (str(frame_time)).replace('-', ',').replace('.', ',').replace(' ', ',').replace(':',',').split(',')
-        time = frame_time_arr[0] + frame_time_arr[1] + frame_time_arr[2] + '-' + frame_time_arr[3] + frame_time_arr[4] + frame_time_arr[5]
-        filename = self.download_path + 'sensor_data_episode' + '_' + time + '_' + str(self.sensor) + '.csv'
-
-        print('filename=' + filename)
-
-        with open(filename, 'w', newline='') as outfile:
-            writer = csv.writer(outfile, delimiter=',')
-            writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
-            for frame in self.list_episodes[self.episode_index]:
-                writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
-        print('csv saved')
+        write_csv_list_frames(self.episodes[self.episode_index], self.download_path)
 
     def get_csv_current_frame(self):
         print("clicked")
         if not self.episode_selected:
             return
-        frame=self.list_episodes[self.episode_index][self.time_index]
-        frame_time = frame.timestamp
-        frame_time_arr=(str(frame_time)).replace('-',',').replace('.',',').replace(' ',',').replace(':',',').split(',')
-        time=frame_time_arr[0]+frame_time_arr[1]+frame_time_arr[2]+'-'+frame_time_arr[3]+frame_time_arr[4]+frame_time_arr[5]
-        filename= self.download_path+'sensor_data_frame'+'_'+time+'_'+str(self.sensor)+'.csv'
-        print('filename='+filename)
-        with open (filename,'w', newline='') as outfile:
-            writer=csv.writer(outfile, delimiter=',')
-            writer.writerow(['data','timestamp','sequence_ID','sensor_ID','data_type'])
-            writer.writerow([frame.data,frame.timestamp,frame.sequence_id,frame.sensor_id,frame.data_type])
-        print('csv saved')
+        write_csv_frame(self.episodes[self.episode_index][self.time_index], self.download_path)
 
-    def meas_to_time(self, meas):
-        return str(meas.timestamp).split(".")[0]
 
 
 if __name__ == "__main__":

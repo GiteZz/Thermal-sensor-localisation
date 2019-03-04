@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ARRAY, DateTime, SmallInteger
 from datetime import datetime
 import numpy as np
-from utils import convert_to_datetime
+from help_module.time_helper import convert_to_datetime
 
 Base = declarative_base()
 
