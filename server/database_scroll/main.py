@@ -344,13 +344,13 @@ class MyUI(QtWidgets.QMainWindow):
         if not self.episode_selected:
             print('No episode selected')
             return
-        write_csv_list_frames(self.episodes[self.episode_index], self.download_path)
+        write_csv_list_frames(self.list_episodes[self.episode_index], self.download_path)
 
     def get_csv_current_frame(self):
         print("clicked")
         if not self.episode_selected:
             return
-        write_csv_frame(self.episodes[self.episode_index][self.time_index], self.download_path)
+        write_csv_frame(self.list_episodes[self.episode_index][self.time_index], self.download_path)
 
 
 
