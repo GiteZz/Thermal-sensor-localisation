@@ -17,7 +17,7 @@ def read_data(filename,start=0,end=None):
         return data
 
 
-def load_csv(filename):
+def load_csv(filename, to_numpy=True):
     """
     This function takes in a filename and creates a list of CSV_Measurements
     :param filename: csv filename
@@ -28,7 +28,7 @@ def load_csv(filename):
         reader = csv.reader(csvfile, delimiter=',')
         for index, row in enumerate(reader):
             if index != 0 and row != '':
-                data.append(CSV_Measurement(row))
+                data.append(CSV_Measurement(row, to_numpy))
     return data
 
 

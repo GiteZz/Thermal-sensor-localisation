@@ -21,6 +21,13 @@ def receive_sensor_debug():
 
     return "Hello World!"
 
+@app.route('/sensor/simulate', methods=['POST'])
+def receive_simulate():
+    data = request.json
+    print(data)
+
+    return "Succes"
+
 @app.route('/sensor/bits', methods=['POST'])
 def receive_sensor_bits():
     data = request.json

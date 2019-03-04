@@ -10,3 +10,12 @@ def convert_to_datetime(input):
 
 def meas_to_time(meas):
     return str(meas.timestamp).split(".")[0]
+
+if __name__ == "__main__":
+    s1 = '2019-02-28 15:00:39.749340+01:00'
+    s2 = '2019-02-28 15:00:39.749680+01:00'
+
+    t1 = convert_to_datetime(s1)
+    t2 = convert_to_datetime(s2)
+
+    print((t2 - t1).microseconds)
