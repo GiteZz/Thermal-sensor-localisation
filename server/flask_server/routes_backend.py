@@ -3,21 +3,28 @@ from flask_server import app, db, socketio
 from flask_server.models import Measurement
 import cbor2
 import json
+import math
+from help_module.img_helper import create_timed_image
 
+img_refresh = 10
+img_index = 0
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
+
+    data['data'] = [0 if math.isnan(a) else a for a in data['data']]
     print(data)
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
-    print(f'Min: {min(data["data"])- 8}')
-    print(f'Max: {max(data["data"]) - 8}')
     db.session.add(new_db_data)
     db.session.commit()
-    print(data)
     socketio.emit('new_image', {'device_id': data['device_id']})
-
     print('NEW post request')
+    global img_index
+    img_index = (img_index + 1) % img_refresh
+
+    if img_index == 0:
+        create_timed_image()
 
     return "Hello World!"
 
@@ -25,13 +32,16 @@ def receive_sensor_debug():
 def receive_simulate():
     data = request.json
     print(data)
-
+    socketio.emit('new_image', {'device_id': data['device_id']})
     return "Succes"
 
 @app.route('/sensor/bits', methods=['POST'])
 def receive_sensor_bits():
     data = request.json
-    new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=1)
+    print(data)
+    data['data'] = [0 if math.isnan(a) else a for a in data['data']]
+    print(data)
+
     db.session.add(new_db_data)
     db.session.commit()
     print(data)
@@ -46,7 +56,10 @@ def receive_sensor_bits():
 def test_cbor():
     print("============== CBOR Test ================")
     data = request.data
+    hello = cbor2.loads(data)
+    print(hello)
     print(data)
+    print(" CBOR STOP ")
     return 'Hello'
 
 @app.route('/data/last', methods=['GET'])

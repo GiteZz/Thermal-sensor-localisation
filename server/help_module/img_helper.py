@@ -5,6 +5,9 @@ import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import scipy.ndimage.filters as fil
+from cv2 import *
+from datetime import datetime
+import time
 
 def convert_to_thermal_image(pixels, scale=1, interpolate=False, fixed_range=False, heat_min=10, heat_max=45):
     fig = Figure()
@@ -49,3 +52,16 @@ def bits_to_thermal_image(width, height, pixels, scale=1, interpolate=False, fix
         img = img.resize((width * scale, height * scale))
 
     return img
+
+def create_timed_image():
+    time_str = datetime.now().strftime('%Y%m%d%H%M%S%f%z')
+
+    # initialize the camera
+    cam = VideoCapture(1)  # 0 -> index of camera
+    s, img = cam.read()
+    time.sleep(0.1)
+    imwrite('images/' + time_str + ".jpg", img)
+
+
+if __name__ == "__main__":
+    create_timed_image()

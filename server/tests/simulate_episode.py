@@ -46,7 +46,7 @@ if __name__ == "__main__":
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
     POST_url = "http://localhost:5000/sensor/simulate"
 
-    speed_up = 0.25
+    speed_up = 5
 
     csv_data = load_csv(csv_folder + csv_file, to_numpy=False)
 

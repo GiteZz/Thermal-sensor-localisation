@@ -3,13 +3,13 @@ from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import scipy.ndimage.filters as fil
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
+from PyQt5.QtCore import QDateTime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
-import csv
 import json
-from pandas import DataFrame
 import operator
+import time
 
 from ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
@@ -50,7 +50,7 @@ class MyUI(QtWidgets.QMainWindow):
     def confirmUI(self, ui_widgets):
         print("confirming ui")
         self.widgets = ui_widgets
-        self.widgets.refreshButton.clicked.connect(self.get_data_db)
+        self.widgets.refreshButton.clicked.connect(self.refresh_sensor_ids)
         self.widgets.timeList.currentRowChanged.connect(self.episode_clicked)
 
         self.widgets.forwardOneButton.clicked.connect(self.one_forward)
@@ -66,6 +66,15 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
         self.widgets.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
         self.widgets.loadCSVButton.clicked.connect(self.load_csv_button)
+
+        now = QDateTime()
+        now.setSecsSinceEpoch(time.time())
+
+        yesterday = QDateTime()
+        yesterday.setSecsSinceEpoch(time.time() - 24*60*60)
+
+        self.widgets.startTimeEdit.setDateTime(yesterday)
+        self.widgets.stopTimeEdit.setDateTime(now)
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
@@ -181,8 +190,20 @@ class MyUI(QtWidgets.QMainWindow):
         :param sensor_id:
         :return:
         """
-        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id). \
-            order_by(Measurement.timestamp.desc()).limit(self.widgets.frameAmountSpinbox.value()).all()
+        start_time = self.widgets.startTimeEdit.dateTime().toPyDateTime()
+        stop_time = self.widgets.stopTimeEdit.dateTime().toPyDateTime()
+
+        basic_query = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id)
+
+        if not self.widgets.ignoreStartCheckbox.isChecked():
+            basic_query = basic_query.filter(Measurement.timestamp > start_time)
+
+        if not self.widgets.ignoreStopCheckbox.isChecked():
+            basic_query = basic_query.filter(Measurement.timestamp < stop_time)
+
+
+        sensor_values = basic_query.order_by(Measurement.timestamp.desc()). \
+            limit(self.widgets.frameAmountSpinbox.value()).all()
 
         return sensor_values
 
@@ -332,8 +353,9 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.canvas.draw()
 
-    def get_data_db(self):
+    def refresh_sensor_ids(self):
         self.clear_sources('sensor')
+
         sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
         id_list = [meas.sensor_id for meas in sensor_ids]
         for id in id_list:
