@@ -73,5 +73,5 @@ axarr[2,0].set_title(' 28deg splitted data')
 axarr[2,1].pcolor(mag)
 axarr[2,1].set_title('sobel on masked, blurred data')
 
-
 plt.show()
+
