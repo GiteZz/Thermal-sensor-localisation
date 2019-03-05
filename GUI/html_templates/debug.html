@@ -10,7 +10,7 @@
     <script>
         $(document).ready(function(){
 
-            var sensor_total = [1,2,4,6];
+            var sensor_total = [1,2,4,6,9];
             var template_stuff = [[1,1],[2,1],[2,2],[3,2]];
             var cur_sensors = [];
             var img_handles = {};
@@ -39,6 +39,7 @@
             });
 
             socket.on('new_image', function (data) {
+                console.log(img_handles);
                 dev_id = data["device_id"];
                 img_el = null;
 
@@ -49,13 +50,26 @@
                     console.log('Div not found');
                     new_el = $('<div class="debug_img"><img src=""></div>');
                     $('#debug_imgs').append(new_el);
-                    img_el = $('#debug_imgs').children('div').eq(0).children('img').eq(0);
-                    img_handles[dev_id] = img_el
+                    img_el = $('#debug_imgs').children('div').last().children('img').eq(0);
+                    img_handles[dev_id] = img_el;
+
+                    amount_keys = Object.keys(img_handles).length;
+
+                    for(let i = 0; i < template_stuff.length; i++){
+                        console.log(i);
+                        if(sensor_total[i] <= amount_keys && amount_keys < sensor_total[i + 1]){
+                            console.log("Found des amount sensor index: " + i);
+                            column_string = "repeat(" + template_stuff[i][0] + ", 1fr)";
+                            row_string = "repeat(" + template_stuff[i][1] + ", 1fr)";
+
+                            $('#debug_imgs').css({'grid-template-columns': column_string, 'grid-template-rows': row_string});
+                        }
+                    }
                 }
                 console.log("updating " + data["device_id"]);
                 console.log(img_el);
                 d = new Date();
-                let img_url = `/thermal_sensor/${data["device_id"]}/last_image?scale_up=20&interpolate=1&time=` + d.getTime();
+                let img_url = `/thermal_sensor/${data["device_id"]}/last_image?scale_up=20&simulate=1&interpolate=1&time=` + d.getTime();
                 img_el.attr('src', img_url)
             });
 
@@ -67,8 +81,6 @@
 <body>
 <div class="main_wrapper">
     <div id="debug_imgs">
-        <div class="test"></div>
-        <div class="test2"></div>
     </div>
     <div class="information_bar">
 

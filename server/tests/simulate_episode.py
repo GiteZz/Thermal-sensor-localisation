@@ -1,15 +1,23 @@
 import threading
 import requests
+import random
 
 from help_module.csv_helper import load_csv
 
-def create_timing_list(data):
+def create_timing_list(data, random_id=False, amount_id=1):
     timing_list = []
 
     add_dict = {}
 
+    index_list = list(range(amount_id))
+    index_id = 0
+
     add_dict['data'] = list(data[0].data)
-    add_dict['device_id'] = str(data[0].sensor_id)
+    if random_id:
+        index_id = (index_id + 1) % amount_id
+        add_dict['device_id'] = f'sim_{index_list[index_id]}'
+    else:
+        add_dict['device_id'] = str(data[0].sensor_id)
     add_dict['sequence'] = str(data[0].sequence_id)
     time_diff = 0
 
@@ -17,10 +25,13 @@ def create_timing_list(data):
 
     for index in range(1, len(data)):
         add_dict = {}
-
-        add_dict['data'] = data[0].data
-        add_dict['device_id'] = data[0].sensor_id
-        add_dict['sequence'] = data[0].sequence_id
+        if random_id:
+            index_id = (index_id + 1) % amount_id
+            add_dict['device_id'] = f'sim_{index_list[index_id]}'
+        else:
+            add_dict['device_id'] = str(data[index].sensor_id)
+        add_dict['data'] = data[index].data
+        add_dict['sequence'] = data[index].sequence_id
         time_diff = (data[index].timestamp - data[index - 1].timestamp).microseconds / 1000000
 
         timing_list.append((time_diff, add_dict))
@@ -46,11 +57,11 @@ if __name__ == "__main__":
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
     POST_url = "http://localhost:5000/sensor/simulate"
 
-    speed_up = 5
+    speed_up = 1/6
 
     csv_data = load_csv(csv_folder + csv_file, to_numpy=False)
 
-    timing_list = create_timing_list(csv_data)
+    timing_list = create_timing_list(csv_data, random_id=True, amount_id=6)
 
     timer = threading.Timer(0, send_request, [timing_list, POST_url, speed_up])
     timer.start()

@@ -1,6 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
 from flask_server import app, db, socketio
-from flask_server.models import Measurement
+from flask_server.models import Measurement, Measurement_test
 import cbor2
 import json
 import math
@@ -11,15 +11,18 @@ img_index = 0
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
+    print('NEW post request')
     data = request.json
 
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
     print(data)
+
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
     db.session.add(new_db_data)
     db.session.commit()
+
     socketio.emit('new_image', {'device_id': data['device_id']})
-    print('NEW post request')
+
     global img_index
     img_index = (img_index + 1) % img_refresh
 
@@ -30,13 +33,17 @@ def receive_sensor_debug():
 
 @app.route('/sensor/simulate', methods=['POST'])
 def receive_simulate():
+    print("Simulated request")
     data = request.json
-    print(data)
+    new_db_data = Measurement_test(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
+    db.session.add(new_db_data)
+    db.session.commit()
     socketio.emit('new_image', {'device_id': data['device_id']})
     return "Succes"
 
 @app.route('/sensor/bits', methods=['POST'])
 def receive_sensor_bits():
+    socketio.emit('new_image', {'device_id': data['device_id']})
     data = request.json
     print(data)
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
@@ -45,7 +52,7 @@ def receive_sensor_bits():
     db.session.add(new_db_data)
     db.session.commit()
     print(data)
-    socketio.emit('new_image', {'device_id': data['device_id']})
+
 
     print('NEW post request')
 
