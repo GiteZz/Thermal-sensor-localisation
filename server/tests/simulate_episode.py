@@ -57,11 +57,13 @@ if __name__ == "__main__":
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
     POST_url = "http://localhost:5000/sensor/simulate"
 
-    speed_up = 1/6
+    amount_sensors = 1
+
+    speed_up = 1/amount_sensors
 
     csv_data = load_csv(csv_folder + csv_file, to_numpy=False)
 
-    timing_list = create_timing_list(csv_data, random_id=True, amount_id=6)
+    timing_list = create_timing_list(csv_data, random_id=True, amount_id=amount_sensors)
 
     timer = threading.Timer(0, send_request, [timing_list, POST_url, speed_up])
     timer.start()

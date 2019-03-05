@@ -6,6 +6,10 @@ from flask_server.models import *
 def get_debug_screen():
     return render_template('debug.html')
 
+@app.route("/view/stream_test")
+def get_test_stream_screen():
+    return render_template('test_stream.html')
+
 @app.route("/socketio_test")
 def get_socketio_test():
     return render_template('test_socketio.html')

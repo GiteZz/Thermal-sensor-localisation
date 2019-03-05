@@ -64,3 +64,16 @@ def get_sensor_last_image(id):
     img = convert_to_thermal_image(last_result.data, scale=scaled_up, interpolate=interpolate)
 
     return Response(img)
+
+def stream_gen(id):
+    while True:
+        last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
+        img = convert_to_thermal_image(last_result.data)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/png\r\n\r\n' + img + b'\r\n')
+
+
+@app.route("/thermal_sensor/<id>/stream", methods=['GET'])
+def get_sensor_stream(id):
+    print('requested stream')
+    return Response(stream_gen(id), mimetype='multipart/x-mixed-replace; boundary=frame')
