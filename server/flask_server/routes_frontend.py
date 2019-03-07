@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect, request, jsonify, R
 from flask_server import app, db
 from flask_server.models import Measurement_test, Measurement
 
-from help_module.img_helper import convert_to_thermal_image
+from help_module.img_helper import convert_to_thermal_image, fast_thermal_image
 from help_module.flask_helper import serve_pil_image
 
 @app.route("/")
@@ -68,7 +68,7 @@ def get_sensor_last_image(id):
 def stream_gen(id):
     while True:
         last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
-        img = convert_to_thermal_image(last_result.data)
+        img = fast_thermal_image(last_result.data)
         yield (b'--frame\r\n'
                b'Content-Type: image/png\r\n\r\n' + img + b'\r\n')
 
