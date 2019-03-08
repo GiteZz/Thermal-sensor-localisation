@@ -3,18 +3,31 @@ import numpy as np
 from help_module.data_model_helper import CSV_Measurement
 
 def process_csv_row(row):
+    '''
+    this is a helper function used in read_data
+    :param row:  a list of strings which are obtained from reading a csv line
+    :return:  a np.array of int or int[]
+    '''
     return [np.array(eval(row[0])),row[1], eval(row[2]),eval(row[3])]
 
 def read_data(filename,start=0,end=None):
+    """
+    this function reads sesor data from a csv file
+    TODO data-type is not yet read
+    :param filename:
+    :param start:
+    :param end:
+    :return: returns an array of np.arrays with sensor_data : [data, timestamp,seq_ID,sensor_ID]
+    """
+    if end is None:
+        end = 10000000  # random high value
+    data = []
     with open(filename,'r') as csvfile:
         reader=csv.reader(csvfile,delimiter=',')
-        data=[]
-        if end is None:
-            end=10000000 #random high value
         for index,row in enumerate(reader):
             if start<index and index <end:
                 data.append(process_csv_row(row))
-        return data
+    return data
 
 
 def load_csv(filename, to_numpy=True):
@@ -33,6 +46,12 @@ def load_csv(filename, to_numpy=True):
 
 
 def write_csv_list_frames(frames, path):
+    '''
+    this is a helper function, it saves the selected frames to a file
+    :param frames: a list of Measurement objects (ORM class)
+    :param path: path to folder
+    :return:
+    '''
     frame = frames[0]
     frame_time = frame.timestamp
     frame_time_arr = (str(frame_time)).replace('-', ',').replace('.', ',').replace(' ', ',').replace(':',',').split(',')
@@ -50,6 +69,12 @@ def write_csv_list_frames(frames, path):
 
 
 def write_csv_frame(frame, path):
+    '''
+    this is a helper function, it saves the selected frame to a file
+    :param frames: a  Measurement objects (ORM class)
+    :param path: path to folder
+    :return:
+    '''
     frame_time = frame.timestamp
     frame_time_arr = (str(frame_time)).replace('-', ',').replace('.', ',').replace(' ', ',').replace(':', ',').split(
         ',')
