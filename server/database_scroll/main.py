@@ -319,6 +319,11 @@ class MyUI(QtWidgets.QMainWindow):
 
 
     def draw_plot(self):
+        """
+
+        :return:
+        """
+
         current_meas = self.list_episodes[self.episode_index][self.time_index]
         img_ar = np.array(current_meas.data).reshape((24,32))
         result = fil.gaussian_filter(img_ar, 1)

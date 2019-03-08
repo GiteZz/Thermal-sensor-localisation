@@ -57,7 +57,7 @@ if __name__ == "__main__":
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
     POST_url = "http://localhost:5000/sensor/simulate"
 
-    amount_sensors = 1
+    amount_sensors = 6
 
     speed_up = 1/amount_sensors
 
