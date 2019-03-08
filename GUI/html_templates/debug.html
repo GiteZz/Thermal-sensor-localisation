@@ -8,43 +8,84 @@
     <title>VOP debug screen</title>
 
     <script>
-        $.get(
-            "thermal_sensor/ids",
-            function(data) {
-                id_list = data["id_list"];
-                console.log("Amount of sensors found: " + id_list.length);
-                for(i = 0; i< id_list.length; i++){
-                    let img_url = `/thermal_sensor/${id_list[i]}/last_image?scale_up=20&interpolate=0`;
-                    html_temp = `<li class="debug_img_item">
+        $(document).ready(function(){
+
+            var sensor_total = [1,2,4,6,9];
+            var template_stuff = [[1,1],[2,1],[2,2],[3,2]];
+            var cur_sensors = [];
+            var img_handles = {};
+            var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            $.get(
+                "thermal_sensor/ids",
+                function(data) {
+                    id_list = data["id_list"];
+                    console.log("Amount of sensors found: " + id_list.length);
+                    for(i = 0; i< id_list.length; i++){
+                        let img_url = `/thermal_sensor/${id_list[i]}/last_image?scale_up=20&interpolate=0`;
+                        html_temp = `<li class="debug_img_item">
                                  <div class="debug_img_wrapper">
                                  <p>This is sensor ${i}:</p>
                                  <img src="${img_url}" id="thermal_image_${id_list[i]}">
                                 </div>
                                 </li>`;
-                    $("#debug_imgs_list").append(html_temp)
+                        $("#debug_imgs_list").append(html_temp)
+                    }
                 }
-            }
-        );
-    </script>
+            );
 
-    <script type="text/javascript" charset="utf-8">
-        var socket = io.connect('http://' + document.domain + ':' + location.port);
-        socket.on('connect', function() {
-            socket.emit('my event', {data: 'I\'m connected!'});
+            socket.on('connect', function() {
+                socket.emit('my event', {data: 'I\'m connected!'});
+            });
+
+            socket.on('new_image', function (data) {
+                console.log(img_handles);
+                dev_id = data["device_id"];
+                img_el = null;
+
+                if(dev_id in img_handles){
+                    console.log('Div found');
+                    img_el = img_handles[dev_id];
+                }else{
+                    console.log('Div not found');
+                    new_el = $('<div class="debug_img"><img src=""></div>');
+                    $('#debug_imgs').append(new_el);
+                    img_el = $('#debug_imgs').children('div').last().children('img').eq(0);
+                    img_handles[dev_id] = img_el;
+
+                    amount_keys = Object.keys(img_handles).length;
+
+                    for(let i = 0; i < template_stuff.length; i++){
+                        console.log(i);
+                        if(sensor_total[i] <= amount_keys && amount_keys < sensor_total[i + 1]){
+                            console.log("Found des amount sensor index: " + i);
+                            column_string = "repeat(" + template_stuff[i][0] + ", 1fr)";
+                            row_string = "repeat(" + template_stuff[i][1] + ", 1fr)";
+
+                            $('#debug_imgs').css({'grid-template-columns': column_string, 'grid-template-rows': row_string});
+                        }
+                    }
+                }
+                console.log("updating " + data["device_id"]);
+                console.log(img_el);
+                d = new Date();
+                let img_url = `/thermal_sensor/${data["device_id"]}/last_image?scale_up=20&simulate=1&interpolate=1&time=` + d.getTime();
+                img_el.attr('src', img_url)
+            });
+
+
         });
-        socket.on('new_image', function (data) {
-            console.log("updating " + data["device_id"]);
-            d = new Date();
-            let img_url = `/thermal_sensor/${data["device_id"]}/last_image?scale_up=20&interpolate=1&time=` + d.getTime();
-            $("#thermal_image_" + data["device_id"]).attr('src', img_url)
-        });
-</script>
+
+    </script>
 </head>
 <body>
-<p>This is the debug screen</p>
-<ul id="debug_imgs_list">
+<div class="main_wrapper">
+    <div id="debug_imgs">
+    </div>
+    <div class="information_bar">
 
-</ul>
+    </div>
+</div>
 
 </body>
 </html>

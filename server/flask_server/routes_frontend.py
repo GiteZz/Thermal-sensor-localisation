@@ -1,8 +1,8 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify, Response
 from flask_server import app, db
-from flask_server.models import *
+from flask_server.models import Measurement_test, Measurement
 
-from help_module.img_helper import convert_to_thermal_image
+from help_module.img_helper import convert_to_thermal_image, fast_thermal_image
 from help_module.flask_helper import serve_pil_image
 
 @app.route("/")
@@ -17,8 +17,15 @@ def get_last_thermal_image():
     interpolate = request.args.get('interpolate')
     interpolate = True if interpolate == "1" else False
 
+    simulated = request.args.get('simulate')
+    simulated = True if simulated == "1" else False
+
     print(scaled_up, interpolate)
-    last_result = Measurement.query.order_by(Measurement.timestamp.desc()).first()
+    if simulated:
+        last_result = Measurement_test.query.order_by(Measurement_test.timestamp.desc()).first()
+    else:
+        last_result = Measurement.query.order_by(Measurement.timestamp.desc()).first()
+
     img = convert_to_thermal_image(32, 24, last_result.data, scale=scaled_up, interpolate=interpolate)
 
     print(f'Retrieved image from: {last_result.timestamp}')
@@ -39,15 +46,34 @@ def get_ids():
 
 @app.route("/thermal_sensor/<id>/last_image", methods=['GET'])
 def get_sensor_last_image(id):
+    print(f'requesting last image with id={id}')
     scaled_up = request.args.get('scale_up')
     scaled_up = 1 if scaled_up is None else int(scaled_up)
 
     interpolate = request.args.get('interpolate')
     interpolate = True if interpolate == "1" else False
-    print(id)
-    last_result = Measurement.query.filter(Measurement.sensor_id == int(id)).\
-        order_by(Measurement.timestamp.desc()).first()
+
+    simulated = request.args.get('simulate')
+    simulated = True if simulated == "1" else False
+
+    if simulated:
+        last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
+    else:
+        last_result = Measurement.query.filter(Measurement.sensor_id == int(id)).order_by(Measurement.timestamp.desc()).first()
 
     img = convert_to_thermal_image(last_result.data, scale=scaled_up, interpolate=interpolate)
 
     return Response(img)
+
+def stream_gen(id):
+    while True:
+        last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
+        img = fast_thermal_image(last_result.data)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/png\r\n\r\n' + img + b'\r\n')
+
+
+@app.route("/thermal_sensor/<id>/stream", methods=['GET'])
+def get_sensor_stream(id):
+    print('requested stream')
+    return Response(stream_gen(id), mimetype='multipart/x-mixed-replace; boundary=frame')

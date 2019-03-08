@@ -2,13 +2,24 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import scipy.ndimage.filters as fil
+from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
+from PyQt5.QtCore import QDateTime, QSize
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
-import csv
+import json
+import operator
+import time
+from PIL.ImageQt import ImageQt
+import math
+
+from help_module.img_processing_helper import Img_processor
 
 from ui_generated import Ui_MainWindow
-from db_model import Measurement, Base
+from help_module.data_model_helper import Measurement, Base, CSV_Measurement
+from help_module.time_helper import meas_to_time
+from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
+from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -17,22 +28,44 @@ class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.widgets = None
-        self.engine = create_engine('postgres://postgres:Gilles@localhost:5432/VOP')
+        with open('configuration.json', 'r') as f:
+            data = json.load(f)
+
+        postgres_user = data['postgres']['username']
+        postgres_pass = data['postgres']['password']
+        postgres_db = data['postgres']['db_name']
+        self.engine = create_engine(f'postgres://{postgres_user}:{postgres_pass}@localhost:5432/{postgres_db}')
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.episode_index = 0
         self.time_index = 0
-        self.more_jump = 4
-        self.download_path=''
-        self.sensor= 0
-        self.episode_selected=0
+        self.more_jump = 10
+        self.download_path = ''
+        self.sensor = 0
+        self.episode_selected = 0
+
+        self.sources = []
+        self.source_layouts = []
+        self.source_labels = []
+        self.source_checkboxes = []
+
+        self.episodes = []
+
+        # processing
+        self.img_processor=Img_processor()
+
+        self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf']
+        self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot]
+        self.vis_cur_meth = []
+        self.vis_layouts = []
+        self.vis_labels = []
+        self.vis_checkboxes = []
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
         self.widgets = ui_widgets
-        self.widgets.refreshButton.clicked.connect(self.get_data_db)
-        self.widgets.sensorList.currentRowChanged.connect(self.sensor_clicked)
+        self.widgets.refreshButton.clicked.connect(self.refresh_sensor_ids)
         self.widgets.timeList.currentRowChanged.connect(self.episode_clicked)
 
         self.widgets.forwardOneButton.clicked.connect(self.one_forward)
@@ -47,19 +80,43 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
         self.widgets.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
+        self.widgets.loadCSVButton.clicked.connect(self.load_csv_button)
 
-        self.figure = Figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.widgets.rightVLayout.insertWidget(0,self.canvas)
-        self.ax0 = self.figure.add_subplot(2,2,1)
-        self.ax1 = self.figure.add_subplot(2,2,2)
-        self.ax2 = self.figure.add_subplot(2,2,3)
+        now = QDateTime()
+        now.setSecsSinceEpoch(time.time())
 
-        self.bar1 = None
-        self.bar2 = None
+        yesterday = QDateTime()
+        yesterday.setSecsSinceEpoch(time.time() - 24*60*60)
+
+        self.widgets.startTimeEdit.setDateTime(yesterday)
+        self.widgets.stopTimeEdit.setDateTime(now)
 
         self.connect_time = self.widgets.connectTimeSpinbox.value()
         self.slice_time = self.widgets.sliceTimeSpinbox.value()
+
+        self.plot_scene = QGraphicsScene()
+        self.widgets.plotGraphicsView.setScene(self.plot_scene)
+
+        for method_name in self.vis_methods_name:
+            n_label = QLabel(method_name)
+            n_checkbox = QCheckBox()
+            n_layout = QHBoxLayout()
+
+            n_layout.addWidget(n_label)
+            n_layout.addWidget(n_checkbox)
+            n_checkbox.stateChanged.connect(self.update_vis_methods)
+
+            self.widgets.visualizeVLayout.addLayout(n_layout)
+
+            self.vis_checkboxes.append(n_checkbox)
+            self.vis_labels.append(n_label)
+            self.vis_layouts.append(n_layout)
+
+    def update_vis_methods(self):
+        self.vis_cur_meth = []
+        for index, widg in enumerate(self.vis_checkboxes):
+            if widg.isChecked():
+                self.vis_cur_meth.append(self.vis_methods[index])
 
     def update_connect_time(self, value):
         print("update connect time to " + str(value))
@@ -89,25 +146,139 @@ class MyUI(QtWidgets.QMainWindow):
         self.time_index = value
         self.draw_plot()
 
-    def sensor_clicked(self, index):
-        print('clicked!  => ' + str(index))
-        if index < 0:
+    def load_csv_button(self):
+        fname = QFileDialog.getOpenFileName(self, 'Open file',
+                                            'c:\\', "CSV files (*.csv)")
+        if fname[0] != "":
+            self.add_source('csv', file_name=fname[0])
+
+    def add_source(self, type, sensor_id=None, file_name=None):
+        """
+        Creates a source but doesn't load in the data, if type == 'csv' file_name should be specified
+        If type == 'sensor' sensor_id should be used
+
+        :param type:
+        :param sensor_id:
+        :param file_name:
+        :return:
+        """
+        self.sources.append({'type': type, 'sensor_id': sensor_id, 'filename': file_name, 'data': None})
+
+        new_layout = QHBoxLayout()
+        label = QLabel(f'{type}: {sensor_id if file_name is None else file_name}')
+        checkbox = QCheckBox()
+        new_layout.addWidget(label)
+        new_layout.addWidget(checkbox)
+
+        self.source_checkboxes.append(checkbox)
+        self.source_labels.append(label)
+        self.source_layouts.append(new_layout)
+
+        checkbox.stateChanged.connect(self.sensor_state_changed)
+
+        self.widgets.sourcesVLayout.addLayout(new_layout)
+
+    def clear_sources(self, type):
+        """
+        Clears the UI elements and the list that contain references to sources
+
+        :param type: type of source to be removed
+        :return:
+        """
+        for index, source in reversed(list(enumerate(self.sources))):
+            if source['type'] == type:
+                self.source_checkboxes.pop(index).deleteLater()
+                self.source_labels.pop(index).deleteLater()
+                self.source_layouts.pop(index).deleteLater()
+                self.sources.pop(index)
+
+    def load_source(self, source):
+        """
+        This function takes a source and then looks at its type to find the function to get that data
+
+        :param source: A dict containing all the information to load the data
+        :return: list of measurements
+        """
+
+        if source['type'] == 'csv':
+            return load_csv(source['filename'])
+        elif source['type'] == 'sensor':
+            return self.load_sensor(source['sensor_id'])
+        else:
+            raise Exception('Source type was not recognized')
+
+    def load_sensor(self, sensor_id):
+        """
+        Uses a database query to get measurements from the sensor with id == sensor_id
+        TODO Take into account the time limits
+
+        :param sensor_id:
+        :return:
+        """
+        start_time = self.widgets.startTimeEdit.dateTime().toPyDateTime()
+        stop_time = self.widgets.stopTimeEdit.dateTime().toPyDateTime()
+
+        basic_query = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id)
+
+        if not self.widgets.ignoreStartCheckbox.isChecked():
+            basic_query = basic_query.filter(Measurement.timestamp > start_time)
+
+        if not self.widgets.ignoreStopCheckbox.isChecked():
+            basic_query = basic_query.filter(Measurement.timestamp < stop_time)
+
+
+        sensor_values = basic_query.order_by(Measurement.timestamp.desc()). \
+            limit(self.widgets.frameAmountSpinbox.value()).all()
+
+        return sensor_values
+
+    def sensor_state_changed(self):
+        """
+        This function looks at the selected sources and then creates a episode list.
+        A episode is defined as measurements that all satisfy the conditions.
+
+        cond1: The next measurement should be within self.connect_time from the previous one. This is used
+        to separate different bursts of measurements. If zero this is ignored.
+
+        cond2: The difference in time between first and last measurement should be smaller then
+        self.slice_time. This is used to avoid excessive long episodes. If zero this is ignored.
+
+        :param index: This gives the index of the current sensor index
+        :return: Fills up self.list_episodes
+        """
+
+        # This sometimes happens when clearing listwidgets
+        sender = self.sender()
+        index = self.source_checkboxes.index(sender)
+
+        source = self.sources[index]
+
+        # Load data if not loaded
+        if source['data'] is None:
+            source['data'] = self.load_source(source)
+            self.sources[index] = source
+
+        # Combine data from different sources and sort for easier plotting
+        data = []
+        for source, checkbox in zip(self.sources, self.source_checkboxes):
+            if checkbox.isChecked():
+                data.extend(source['data'])
+
+        data = sorted(data, key=operator.attrgetter('timestamp'), reverse=True)
+
+        # Clear UI and setup variables
+        self.list_episodes = []
+        self.widgets.timeList.clear()
+
+        if len(data) == 0:
             return
 
-        # start_time = self.widgets.startTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm:ss')
-        # stop_time = self.widgets.stopTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm:ss')
-        # filter(Measurement.timestamp <= stop_time).filter(Measurement.timestamp >= start_time). \
-
-        sensor = int(self.widgets.sensorList.item(index).text())
-        sensor_values = self.session.query(Measurement).filter(Measurement.sensor_id == sensor). \
-            order_by(Measurement.timestamp.desc()).limit(1000).all()
-
-        self.list_episodes = []
-        episode_starttime = sensor_values[0].timestamp
-        current_starttime = sensor_values[0].timestamp
+        episode_starttime = data[0].timestamp
+        current_starttime = data[0].timestamp
         current_episode = []
 
-        for value in sensor_values:
+        # Slice the data up into episodes
+        for value in data:
             if len(current_episode) == 0:
                 episode_starttime = value.timestamp
 
@@ -124,102 +295,106 @@ class MyUI(QtWidgets.QMainWindow):
         if len(current_episode) > 0:
             self.list_episodes.append(current_episode[::-1])
 
+        # Create string for UI list and populate that list
         for episode in self.list_episodes:
             str_timestamp = str(episode[0].timestamp)
             print(str_timestamp)
             self.widgets.timeList.addItem(str_timestamp.split('.')[0])
 
-        print(f'Found {len(self.list_episodes)} different episodes')
-
     def episode_clicked(self, index):
+        """
+        This function sets up the UI to handle an episode (mostly plotting stuff)
+
+        :param index: episode clicked on self.timeList
+        :return:
+        """
+        if index < 0:
+            self.clear_frame()
+            return
+
         self.episode_index = index
         self.time_index = 0
         self.widgets.frameAmountLabel.setText(f'frame: 1/{len(self.list_episodes[self.episode_index])}')
-        self.widgets.startEpisodeLabel.setText(f'Start: {self.meas_to_time(self.list_episodes[self.episode_index][0])}')
-        self.widgets.endEpisodeLabel.setText(f'Stop: {self.meas_to_time(self.list_episodes[self.episode_index][-1])}')
+        self.widgets.startEpisodeLabel.setText(f'Start: {meas_to_time(self.list_episodes[self.episode_index][0])}')
+        self.widgets.endEpisodeLabel.setText(f'Stop: {meas_to_time(self.list_episodes[self.episode_index][-1])}')
         self.widgets.timeSlider.setMinimum(0)
         self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
         self.draw_plot()
-        self.episode_seleced=1
+        self.episode_selected=1
+
+    def clear_frame(self):
+        """
+        Clear plots and all the frame/episode stats
+
+        :return:
+        """
+        for subplot in self.subplots:
+            subplot.clear()
+            self.canvas.draw()
+
+        self.widgets.frameAmountLabel.setText(f'frame: -/-')
+        self.widgets.startEpisodeLabel.setText(f'Start: -')
+        self.widgets.endEpisodeLabel.setText(f'Stop: -')
+        self.widgets.minLabel.setText(f'min: -')
+        self.widgets.maxLabel.setText(f'max: -')
+        self.widgets.avLabel.setText(f'av: -')
+
+        self.widgets.frameTimeLabel.setText(f'Frame time: -')
 
     def draw_plot(self):
-        current_meas = self.list_episodes[self.episode_index][self.time_index]
-        img_ar = np.array(current_meas.data).reshape((24,32))
-        result = fil.gaussian_filter(img_ar, 1)
+        self.plot_scene.clear()
 
-        min_frame = np.min(result)
-        max_frame = np.max(result)
-        av_frame = np.average(result)
+        current_meas = self.list_episodes[self.episode_index][self.time_index].data
 
-        self.widgets.minLabel.setText(f'min: {min_frame}')
-        self.widgets.maxLabel.setText(f'max: {max_frame}')
-        self.widgets.avLabel.setText(f'av: {round(av_frame,1)}')
-        self.widgets.frameAmountLabel.setText(f'frame: {self.time_index + 1}/{len(self.list_episodes[self.episode_index])}')
-        self.widgets.frameTimeLabel.setText(f'Frame time: {self.meas_to_time(current_meas)}')
+        self.qt_imgs = [ImageQt(method(current_meas)) for method in self.vis_cur_meth]
+        self.qt_pix = [QPixmap.fromImage(img) for img in self.qt_imgs]
 
-        c = self.ax0.pcolor(img_ar)
-        if self.bar1 is None:
-            self.bar1 = self.figure.colorbar(c, ax=self.ax0)
-        else:
-            self.bar1.update_bruteforce(c)
+        plot_amount = len(self.qt_pix)
+        plot_sizes = [1, 2, 4, 6, 9]
+        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2]]
+        grid = grid_sizes[0]
 
-        d = self.ax1.pcolor(result)
-        if self.bar2 is None:
-            self.bar2 = self.figure.colorbar(d, ax=self.ax1)
-        else:
-            self.bar2.update_bruteforce(d)
+        for index in range(len(grid_sizes)):
+            if plot_sizes[index] <= plot_amount < plot_sizes[index + 1]:
+                grid = grid_sizes[index]
+                break
 
-        self.ax2.clear()
-        self.ax2.hist(current_meas.data, bins=20)
+        scene_size = self.widgets.plotGraphicsView.size()
+        grid_width = math.floor(scene_size.width() / grid[0])
+        grid_height = math.floor(scene_size.height() / grid[1])
 
-        self.ax1.axis('equal')
-        self.ax0.axis('equal')
+        grid_size = QSize(grid_width, grid_height)
 
-        self.canvas.draw()
+        self.pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in self.qt_pix]
 
-    def get_data_db(self):
-        self.widgets.sensorList.clear()
-        self.widgets.timeList.clear()
+        for index, pix in enumerate(self.pix_res):
+            offset_x = (grid_width - pix.size().width()) / 2 + grid_width * (index % grid[0])
+            offset_y = (grid_height - pix.size().height()) / 2 + grid_height * (index // grid[0])
+
+            item = self.plot_scene.addPixmap(pix)
+            item.setOffset(offset_x, offset_y)
+
+    def refresh_sensor_ids(self):
+        self.clear_sources('sensor')
 
         sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
         id_list = [meas.sensor_id for meas in sensor_ids]
         for id in id_list:
-            self.widgets.sensorList.addItem(str(id))
+            self.add_source('sensor', id)
 
     def get_csv_current_episode(self):
+        print("clicked")
         if not self.episode_selected:
+            print('No episode selected')
             return
-        frame = self.list_episodes[self.episode_index][0]
-        frame_time = frame.timestamp
-        frame_time_arr = (str(frame_time)).replace('-', ',').replace('.', ',').replace(' ', ',').replace(':',',').split(',')
-        time = frame_time_arr[0] + frame_time_arr[1] + frame_time_arr[2] + '-' + frame_time_arr[3] + frame_time_arr[4] + frame_time_arr[5]
-        filename = self.download_path + 'sensor_data_episode' + '_' + time + '_' + str(self.sensor) + '.csv'
-        print('filename=' + filename)
-        with open(filename, 'w') as outfile:
-            writer = csv.writer(outfile, delimiter=',')
-            writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
-            for frame in self.list_episodes[self.episode_index]:
-                writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
-        print('csv saved')
+        write_csv_list_frames(self.list_episodes[self.episode_index], self.download_path)
 
     def get_csv_current_frame(self):
-
+        print("clicked")
         if not self.episode_selected:
             return
-        frame=self.list_episodes[self.episode_index][self.time_index]
-        frame_time = frame.timestamp
-        frame_time_arr=(str(frame_time)).replace('-',',').replace('.',',').replace(' ',',').replace(':',',').split(',')
-        time=frame_time_arr[0]+frame_time_arr[1]+frame_time_arr[2]+'-'+frame_time_arr[3]+frame_time_arr[4]+frame_time_arr[5]
-        filename= self.download_path+'sensor_data_frame'+'_'+time+'_'+str(self.sensor)+'.csv'
-        print('filename='+filename)
-        with open (filename,'w') as outfile:
-            writer=csv.writer(outfile, delimiter=',')
-            writer.writerow(['data','timestamp','sequence_ID','sensor_ID','data_type'])
-            writer.writerow([frame.data,frame.timestamp,frame.sequence_id,frame.sensor_id,frame.data_type])
-        print('csv saved')
+        write_csv_frame(self.list_episodes[self.episode_index][self.time_index], self.download_path)
 
-    def meas_to_time(self, meas):
-        return str(meas.timestamp).split(".")[0]
 
 
 if __name__ == "__main__":
