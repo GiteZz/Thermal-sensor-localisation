@@ -3,13 +3,15 @@ from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import scipy.ndimage.filters as fil
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
-from PyQt5.QtCore import QDateTime
+from PyQt5.QtCore import QDateTime, QSize
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
 import json
 import operator
 import time
+from PIL.ImageQt import ImageQt
+import math
 
 from help_module.img_processing_helper import Img_processor
 
@@ -17,6 +19,7 @@ from ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
+from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -49,8 +52,15 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.episodes = []
 
-        #processing
-        self.img_processor=Img_processor();
+        # processing
+        self.img_processor=Img_processor()
+
+        self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf']
+        self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot]
+        self.vis_cur_meth = []
+        self.vis_layouts = []
+        self.vis_labels = []
+        self.vis_checkboxes = []
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
@@ -81,20 +91,32 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.startTimeEdit.setDateTime(yesterday)
         self.widgets.stopTimeEdit.setDateTime(now)
 
-        self.figure = Figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.widgets.rightVLayout.insertWidget(0,self.canvas)
-        self.ax0 = self.figure.add_subplot(2,2,1)
-        self.ax1 = self.figure.add_subplot(2,2,2)
-        self.ax2 = self.figure.add_subplot(2,2,3)
-        self.ax3 = self.figure.add_subplot(2,2,4)
-        self.subplots = [self.ax0, self.ax1, self.ax2,self.ax3]
-
-        self.bar1 = None
-        self.bar2 = None
-
         self.connect_time = self.widgets.connectTimeSpinbox.value()
         self.slice_time = self.widgets.sliceTimeSpinbox.value()
+
+        self.plot_scene = QGraphicsScene()
+        self.widgets.plotGraphicsView.setScene(self.plot_scene)
+
+        for method_name in self.vis_methods_name:
+            n_label = QLabel(method_name)
+            n_checkbox = QCheckBox()
+            n_layout = QHBoxLayout()
+
+            n_layout.addWidget(n_label)
+            n_layout.addWidget(n_checkbox)
+            n_checkbox.stateChanged.connect(self.update_vis_methods)
+
+            self.widgets.visualizeVLayout.addLayout(n_layout)
+
+            self.vis_checkboxes.append(n_checkbox)
+            self.vis_labels.append(n_label)
+            self.vis_layouts.append(n_layout)
+
+    def update_vis_methods(self):
+        self.vis_cur_meth = []
+        for index, widg in enumerate(self.vis_checkboxes):
+            if widg.isChecked():
+                self.vis_cur_meth.append(self.vis_methods[index])
 
     def update_connect_time(self, value):
         print("update connect time to " + str(value))
@@ -170,7 +192,6 @@ class MyUI(QtWidgets.QMainWindow):
                 self.source_layouts.pop(index).deleteLater()
                 self.sources.pop(index)
 
-
     def load_source(self, source):
         """
         This function takes a source and then looks at its type to find the function to get that data
@@ -180,13 +201,11 @@ class MyUI(QtWidgets.QMainWindow):
         """
 
         if source['type'] == 'csv':
-            return self.load_csv(source['filename'])
+            return load_csv(source['filename'])
         elif source['type'] == 'sensor':
             return self.load_sensor(source['sensor_id'])
         else:
             raise Exception('Source type was not recognized')
-
-
 
     def load_sensor(self, sensor_id):
         """
@@ -282,7 +301,6 @@ class MyUI(QtWidgets.QMainWindow):
             print(str_timestamp)
             self.widgets.timeList.addItem(str_timestamp.split('.')[0])
 
-
     def episode_clicked(self, index):
         """
         This function sets up the UI to handle an episode (mostly plotting stuff)
@@ -323,50 +341,38 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.frameTimeLabel.setText(f'Frame time: -')
 
-
     def draw_plot(self):
-        """
+        self.plot_scene.clear()
 
-        :return:
-        """
+        current_meas = self.list_episodes[self.episode_index][self.time_index].data
 
-        current_meas = self.list_episodes[self.episode_index][self.time_index]
-        img_ar = np.array(current_meas.data).reshape((24,32))
-        result = fil.gaussian_filter(img_ar, 1)
+        self.qt_imgs = [ImageQt(method(current_meas)) for method in self.vis_cur_meth]
+        self.qt_pix = [QPixmap.fromImage(img) for img in self.qt_imgs]
 
-        min_frame = np.min(result)
-        max_frame = np.max(result)
-        av_frame = np.average(result)
+        plot_amount = len(self.qt_pix)
+        plot_sizes = [1, 2, 4, 6, 9]
+        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2]]
+        grid = grid_sizes[0]
 
-        self.widgets.minLabel.setText(f'min: {min_frame}')
-        self.widgets.maxLabel.setText(f'max: {max_frame}')
-        self.widgets.avLabel.setText(f'av: {round(av_frame,1)}')
-        self.widgets.frameAmountLabel.setText(f'frame: {self.time_index + 1}/{len(self.list_episodes[self.episode_index])}')
-        self.widgets.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas)}')
+        for index in range(len(grid_sizes)):
+            if plot_sizes[index] <= plot_amount < plot_sizes[index + 1]:
+                grid = grid_sizes[index]
+                break
 
-        c = self.ax0.pcolor(img_ar)
-        if self.bar1 is None:
-            self.bar1 = self.figure.colorbar(c, ax=self.ax0)
-        else:
-            self.bar1.update_bruteforce(c)
+        scene_size = self.widgets.plotGraphicsView.size()
+        grid_width = math.floor(scene_size.width() / grid[0])
+        grid_height = math.floor(scene_size.height() / grid[1])
 
-        d = self.ax1.pcolor(result)
-        if self.bar2 is None:
-            self.bar2 = self.figure.colorbar(d, ax=self.ax1)
-        else:
-            self.bar2.update_bruteforce(d)
+        grid_size = QSize(grid_width, grid_height)
 
-        self.ax2.clear()
-        self.ax2.hist(current_meas.data, bins=20)
-#TODO for some reason this plot is inverted, which is not the case in the testfile
-        self.ax3.clear()
-        fig=self.img_processor.process(img_ar)
-        self.ax3.imshow(fig)
+        self.pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in self.qt_pix]
 
-        self.ax1.axis('equal')
-        self.ax0.axis('equal')
+        for index, pix in enumerate(self.pix_res):
+            offset_x = (grid_width - pix.size().width()) / 2 + grid_width * (index % grid[0])
+            offset_y = (grid_height - pix.size().height()) / 2 + grid_height * (index // grid[0])
 
-        self.canvas.draw()
+            item = self.plot_scene.addPixmap(pix)
+            item.setOffset(offset_x, offset_y)
 
     def refresh_sensor_ids(self):
         self.clear_sources('sensor')

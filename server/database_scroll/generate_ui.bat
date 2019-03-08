@@ -1,1 +1,1 @@
-py -3 PyQt5.uic.pyuic -x mainwindow.ui -o ui_generated.py
+python3 -m PyQt5.uic.pyuic -x mainwindow.ui -o ui_generated.py

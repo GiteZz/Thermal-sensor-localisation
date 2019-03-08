@@ -11,37 +11,79 @@ import time
 from help_module.csv_helper import load_csv
 import math
 
-def convert_to_thermal_image(pixels, scale=1, interpolate=False, fixed_range=False, heat_min=10, heat_max=45):
+def raw_color_plot(pixels, to_pil=True):
     fig = Figure()
-    ax0 = fig.add_subplot(2, 2, 1)
-    ax1 = fig.add_subplot(2, 2, 2)
-    ax2 = fig.add_subplot(2, 2, 3)
-
+    ax0 = fig.add_subplot(1,1,1)
     img_ar = np.array(pixels).reshape((24, 32))
-    result = fil.gaussian_filter(img_ar, 1)
-    gem = np.mean(result)
-    img_cap = (result > gem)*1
-
 
     c = ax0.pcolor(img_ar)
-    d = ax1.pcolor(result)
-    e = ax2.pcolor(img_cap)
-
     fig.colorbar(c, ax=ax0)
-    fig.colorbar(d, ax=ax1)
-    fig.colorbar(e, ax=ax2)
 
-    ax1.axis('equal')
     ax0.axis('equal')
 
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
+    if to_pil:
+        return plt_fig_to_PIL(fig)
+    else:
+        return fig
 
-    return output.getvalue()
+
+def blur_color_plot(pixels, to_pil=True):
+    fig = Figure()
+    ax0 = fig.add_subplot(1, 1, 1)
+    img_ar = np.array(pixels).reshape((24, 32))
+    result = fil.gaussian_filter(img_ar, 1)
+
+    c = ax0.pcolor(result)
+    fig.colorbar(c, ax=ax0)
+
+    ax0.axis('equal')
+
+    if to_pil:
+        return plt_fig_to_PIL(fig)
+    else:
+        return fig
+
+def hist_plot(pixels, blur=True, to_pil=True):
+    fig = Figure()
+    ax0 = fig.add_subplot(1, 1, 1)
+    img_ar = np.array(pixels).reshape((24, 32))
+    if blur:
+        img_ar = fil.gaussian_filter(img_ar, 1)
+
+    data = img_ar.reshape((1, -1)).ravel()
+
+    ax0.hist(data, bins=20)
+
+    if to_pil:
+        return plt_fig_to_PIL(fig)
+    else:
+        return fig
+
+
+def plt_fig_to_PIL(fig):
+    buf = plt_fig_to_png_bytes(fig)
+    img = Image.open(buf)
+    return img
+
+
+# getvalue for streaming
+def plt_fig_to_png_bytes(fig):
+    buf = io.BytesIO()
+    FigureCanvas(fig).print_png(buf)
+    buf.seek(0)
+    return buf
+
 
 def fast_thermal_image(pixels, scale=10, smooth=True):
+    """
+    Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
+    There are only 9 different colorbrackets
+    :param pixels:
+    :param scale:
+    :param smooth:
+    :return:
+    """
     img_ar = np.array(pixels).reshape((24,32))
-
 
     if smooth:
         img_ar = fil.gaussian_filter(img_ar, 1)
@@ -91,12 +133,7 @@ def fast_thermal_image(pixels, scale=10, smooth=True):
     d.rectangle([(x_sq_start, amount_delta * color_square_height), (x_sq_stop, (amount_delta + 1) * color_square_height)], fill=colors[-1])
     d.text((x_sq_stop + 10, amount_delta * color_square_height), color_text, fill=(255, 255, 255))
 
-    img_io = io.BytesIO()
-    img.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-    return img_io.getvalue()
-
-
+    return img
 
 
 def bits_to_thermal_image(width, height, pixels, scale=1, interpolate=False, fixed_range=True, heat_min=10, heat_max=45):
@@ -133,8 +170,17 @@ def test_speed(data, function):
     print(total)
 
 
+def PIL_to_bytes(img):
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    return img_io.getvalue()
+
 if __name__ == "__main__":
     result = load_csv("frame1.csv")
+    frame = result[0].data
+    raw_color_plot(frame).show()
+
     # fast_thermal_image(result[0].data)
-    test_speed(result[0:100], fast_thermal_image)
+    # test_speed(result[0:100], fast_thermal_image)
     # test_speed(result[0:100], convert_to_thermal_image)
