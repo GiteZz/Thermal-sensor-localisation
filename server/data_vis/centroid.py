@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.ndimage.filters as filter
 import numpy as np
 from help_module.csv_helper import read_data
-import matplotlib
+import matplotlib.image as image
 
 
 
@@ -11,18 +11,15 @@ import matplotlib
 num=300
 
 data=read_data('files/sensor_data_episode_20190221-143435_0.csv',0,502) #manually selected empty frames of this episode
-im1=data[num][0].reshape((24,32))
+im1=data[num][0].reshape((24,32)).astype(np.uint8)
 im1_b=filter.gaussian_filter(im1,1).astype(np.uint8)
-im_bin= np.where(im1_b>28,1,0).astype(np.uint8)
-#work around issue of converting python array to opencv img
-matplotlib.image.imsave('files/name.png', im1_b)
-'''
-ret,thresh = cv2.threshold(im1_b,28,255,0)
-cv2.imshow("Image", im1_b)
-cv2.waitKey(0)'''
 
+#work around issue of converting python array to opencv img
+image.imsave('files/name.png', im1_b)
 img=cv2.imread('files/name.png')
+print(np.ndim(img))
 img=cv2.resize(img,None,fx=10,fy=10)
+
 gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
 plt.hist(gray.ravel(),256,[0,256])
@@ -54,8 +51,7 @@ for c in contours:
 # display the image
 cv2.imshow("Image", img)
 cv2.waitKey(0)
-#TODO
-#eliminate the necessity to go over a png file
+
 #TODO
 #determine gaussian blur params
 #TODO
@@ -63,7 +59,3 @@ cv2.waitKey(0)
 #TODO
 #change the dynamic otsu threshold to keep hottest pixels
 #=> hist shows that usually there are 2 background colors which are dominant -> make them one!
-#TODO
-#plot histogram
-#TODO
-#integrate in db_viewer

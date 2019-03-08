@@ -6,6 +6,9 @@ where "sensor_ID"=51
 order by timestamp, "sequence_ID"
 '''
 
+'''
+this file is used to plot histograms of an episode
+'''
 
 import csv
 import numpy as np

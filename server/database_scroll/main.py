@@ -11,6 +11,8 @@ import json
 import operator
 import time
 
+from help_module.img_processing_helper import Img_processor
+
 from ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time
@@ -35,7 +37,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.session = self.Session()
         self.episode_index = 0
         self.time_index = 0
-        self.more_jump = 4
+        self.more_jump = 10
         self.download_path = ''
         self.sensor = 0
         self.episode_selected = 0
@@ -46,6 +48,9 @@ class MyUI(QtWidgets.QMainWindow):
         self.source_checkboxes = []
 
         self.episodes = []
+
+        #processing
+        self.img_processor=Img_processor();
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
@@ -82,7 +87,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.ax0 = self.figure.add_subplot(2,2,1)
         self.ax1 = self.figure.add_subplot(2,2,2)
         self.ax2 = self.figure.add_subplot(2,2,3)
-        self.subplots = [self.ax0, self.ax1, self.ax2]
+        self.ax3 = self.figure.add_subplot(2,2,4)
+        self.subplots = [self.ax0, self.ax1, self.ax2,self.ax3]
 
         self.bar1 = None
         self.bar2 = None
@@ -352,6 +358,10 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.ax2.clear()
         self.ax2.hist(current_meas.data, bins=20)
+#TODO for some reason this plot is inverted, which is not the case in the testfile
+        self.ax3.clear()
+        fig=self.img_processor.process(img_ar)
+        self.ax3.imshow(fig)
 
         self.ax1.axis('equal')
         self.ax0.axis('equal')
