@@ -30,18 +30,29 @@ def read_data(filename,start=0,end=None):
     return data
 
 
-def load_csv(filename, to_numpy=True):
+def load_csv(filename, to_numpy=True, split=False):
     """
     This function takes in a filename and creates a list of CSV_Measurements
     :param filename: csv filename
     :return: the list
     """
-    data = []
+    if split:
+        data = {}
+    else:
+        data = []
+
     with open(filename) as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         for index, row in enumerate(reader):
             if index != 0 and row != '':
-                data.append(CSV_Measurement(row, to_numpy))
+                n_csv = CSV_Measurement(row, to_numpy)
+                if split:
+                    if n_csv.sensor_id in data:
+                        data[n_csv.sensor_id].append(n_csv)
+                    else:
+                        data[n_csv.sensor_id] = [n_csv]
+                else:
+                    data.append(n_csv)
     return data
 
 
@@ -87,3 +98,4 @@ def write_csv_frame(frame, path):
         writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
         writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
     print('csv saved')
+

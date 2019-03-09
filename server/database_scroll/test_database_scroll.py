@@ -10,7 +10,7 @@ ui = Ui_MainWindow()
 
 ui.setupUi(MainWindow)
 MainWindow.confirmUI(ui)
-MainWindow.add_source('csv', file_name='csv/frame1.csv')
+MainWindow.add_csv('csv/frame1.csv')
 MainWindow.show()
 sys.exit(app.exec_())
 

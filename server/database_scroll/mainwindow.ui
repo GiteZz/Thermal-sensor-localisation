@@ -23,19 +23,6 @@
          <widget class="QGraphicsView" name="plotGraphicsView"/>
         </item>
         <item>
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="statHLayout">
           <item>
            <layout class="QVBoxLayout" name="episodeStatVLayout">
@@ -127,28 +114,28 @@
           <item>
            <widget class="QPushButton" name="backwardMoreButton">
             <property name="text">
-             <string>&lt;&lt;&lt;</string>
+             <string>&lt;&lt;&lt; (1s)</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="backwardOneButton">
             <property name="text">
-             <string>&lt;</string>
+             <string>&lt; (0.25s)</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="forwardOneButton">
             <property name="text">
-             <string>&gt;</string>
+             <string>(0.25s) &gt; </string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="forwardMoreButton">
             <property name="text">
-             <string>&gt;&gt;&gt;</string>
+             <string>(1s) &gt;&gt;&gt;</string>
             </property>
            </widget>
           </item>

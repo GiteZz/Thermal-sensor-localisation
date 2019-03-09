@@ -45,10 +45,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.sensor = 0
         self.episode_selected = 0
 
-        self.sources = []
-        self.source_layouts = []
-        self.source_labels = []
-        self.source_checkboxes = []
+        self.source_checkboxes = {}
 
         self.episodes = []
 
@@ -150,9 +147,14 @@ class MyUI(QtWidgets.QMainWindow):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
                                             'c:\\', "CSV files (*.csv)")
         if fname[0] != "":
-            self.add_source('csv', file_name=fname[0])
+            self.add_csv(fname[0])
 
-    def add_source(self, type, sensor_id=None, file_name=None):
+    def add_csv(self, filename):
+        n_csv_sources = load_csv(filename, split=True)
+        for key in n_csv_sources:
+            self.add_source('csv_id', file_name=filename, data=n_csv_sources[key], sensor_id=key)
+
+    def add_source(self, type, sensor_id=None, file_name=None, data=None):
         """
         Creates a source but doesn't load in the data, if type == 'csv' file_name should be specified
         If type == 'sensor' sensor_id should be used
@@ -162,17 +164,14 @@ class MyUI(QtWidgets.QMainWindow):
         :param file_name:
         :return:
         """
-        self.sources.append({'type': type, 'sensor_id': sensor_id, 'filename': file_name, 'data': None})
-
         new_layout = QHBoxLayout()
-        label = QLabel(f'{type}: {sensor_id if file_name is None else file_name}')
+        label = QLabel(f'{type}: {sensor_id if sensor_id is not None else file_name}')
         checkbox = QCheckBox()
         new_layout.addWidget(label)
         new_layout.addWidget(checkbox)
 
-        self.source_checkboxes.append(checkbox)
-        self.source_labels.append(label)
-        self.source_layouts.append(new_layout)
+        source_set = {'layout': new_layout, 'label': label, 'data': data, 'type': type, 'sensor_id': sensor_id, 'filename': file_name}
+        self.source_checkboxes[checkbox] = source_set
 
         checkbox.stateChanged.connect(self.sensor_state_changed)
 
@@ -185,12 +184,12 @@ class MyUI(QtWidgets.QMainWindow):
         :param type: type of source to be removed
         :return:
         """
-        for index, source in reversed(list(enumerate(self.sources))):
-            if source['type'] == type:
-                self.source_checkboxes.pop(index).deleteLater()
-                self.source_labels.pop(index).deleteLater()
-                self.source_layouts.pop(index).deleteLater()
-                self.sources.pop(index)
+        for key, value in self.source_checkboxes.items():
+            if value['type'] == type:
+                res = dict.pop(key)
+                res['label'].deleteLater()
+                res['layout'].deleteLater()
+                key.deleteLater()
 
     def load_source(self, source):
         """
@@ -249,18 +248,17 @@ class MyUI(QtWidgets.QMainWindow):
 
         # This sometimes happens when clearing listwidgets
         sender = self.sender()
-        index = self.source_checkboxes.index(sender)
 
-        source = self.sources[index]
+        source = self.source_checkboxes[sender]
 
         # Load data if not loaded
         if source['data'] is None:
             source['data'] = self.load_source(source)
-            self.sources[index] = source
+            self.source_checkboxes[sender] = source
 
         # Combine data from different sources and sort for easier plotting
         data = []
-        for source, checkbox in zip(self.sources, self.source_checkboxes):
+        for checkbox, source in self.source_checkboxes.items():
             if checkbox.isChecked():
                 data.extend(source['data'])
 
@@ -351,13 +349,14 @@ class MyUI(QtWidgets.QMainWindow):
 
         plot_amount = len(self.qt_pix)
         plot_sizes = [1, 2, 4, 6, 9]
-        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2]]
+        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3,3]]
         grid = grid_sizes[0]
 
         for index in range(len(grid_sizes)):
-            if plot_sizes[index] <= plot_amount < plot_sizes[index + 1]:
+            if plot_amount <= plot_sizes[index]:
                 grid = grid_sizes[index]
                 break
+        print(f'Current grid is: {grid}')
 
         scene_size = self.widgets.plotGraphicsView.size()
         grid_width = math.floor(scene_size.width() / grid[0])
