@@ -13,13 +13,12 @@ import time
 from PIL.ImageQt import ImageQt
 import math
 
-from help_module.img_processing_helper import Img_processor
 
 from ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
-from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot
+from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -52,11 +51,8 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.episodes = []
 
-        # processing
-        self.img_processor=Img_processor()
-
-        self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf']
-        self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot]
+        self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf','mtpltlib RGB processed']
+        self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot, processed_color_plot]
         self.vis_cur_meth = []
         self.vis_layouts = []
         self.vis_labels = []

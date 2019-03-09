@@ -8,7 +8,9 @@ import scipy.ndimage.filters as fil
 from cv2 import *
 from datetime import datetime
 import time
-from help_module.csv_helper import load_csv
+from help_module.csv_helper import read_data
+from help_module.img_processing_helper import Img_processor
+
 import math
 
 def raw_color_plot(pixels, to_pil=True):
@@ -58,6 +60,25 @@ def hist_plot(pixels, blur=True, to_pil=True):
         return plt_fig_to_PIL(fig)
     else:
         return fig
+
+def processed_color_plot(pixels,to_pil=True,thresh_method=None):
+    '''
+    this function processes a raw image
+    :param pixels: raw sensor data
+    :param to_pil:
+    :param thresh_method: which method to use for processing (in Img_processor class)
+    :return: a figure on which all objects have a centroid and a contour
+    '''
+    processor=Img_processor();
+    data=processor.process(pixels,thresh_method)
+    fig = Figure()
+    ax0 = fig.add_subplot(1, 1, 1)
+    ax0.imshow(data,origin="lower")
+    if to_pil:
+        return plt_fig_to_PIL(fig)
+    else:
+        return fig
+
 
 
 def plt_fig_to_PIL(fig):
@@ -177,9 +198,11 @@ def PIL_to_bytes(img):
     return img_io.getvalue()
 
 if __name__ == "__main__":
-    result = load_csv("frame1.csv")
-    frame = result[0].data
+    result = read_data("sensor_data_episode_20190221-143435_0.csv")
+    frame = result[30][0]
     raw_color_plot(frame).show()
+
+    processed_color_plot(frame).show()
 
     # fast_thermal_image(result[0].data)
     # test_speed(result[0:100], fast_thermal_image)

@@ -16,8 +16,10 @@ class Img_processor:
         self.img=None #BGR
         self.gray=None #range(255)
         self.thresh=None #[0|255]
-        self.thresh_method="otsu"
+        self.thresh_method="hist_cap"
         self.erode=10
+
+        self.thresh_methods=["otsu","hist_cap"]
 
     def __get_img(self):
        self.data= np.reshape(self.data,self.dim).astype(np.uint8)
@@ -31,14 +33,21 @@ class Img_processor:
 
     def __process_into_binary(self):
         self.gray=cv2.cvtColor(self.img,cv2.COLOR_BGR2GRAY)
-
         if self.thresh_method is "otsu":
             self.gray=255-self.gray
             ret, self.thresh = cv2.threshold(self.gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             self.thresh=255-self.thresh
+            self.thresh = cv2.erode(self.thresh, None, iterations=self.erode)
+            print('ret=' + str(ret))
+
+        elif self.thresh_method is "hist_cap":
+            hist = np.histogram(self.gray, 50);
+            thresh_val = hist[1][-5]
+            ret, self.thresh = cv2.threshold(self.gray, thresh_val, 255, cv2.THRESH_BINARY)
+            print('ret=' + str(ret))
         else:
             raise NotImplementedError
-        self.thresh=cv2.erode(self.thresh,None,iterations=self.erode)
+
         return self.thresh
 
     def __add_contours_and_centroid(self):
@@ -59,12 +68,15 @@ class Img_processor:
             #print(cY)
             cv2.circle(self.img, (cX, cY), 5, (255, 255, 0), -1)
 
-    def process(self,data):
+    def process(self,data,thresh_method=None):
         '''
         this is the public function which implements the whole process
         :param data: a np array of size 24*32 (dimensions don't matter), containing RAW sensor_data
         :return: a np.array with dim 24*32*3 in RGB color space, containing all centroids and contours
         '''
+        if thresh_method:
+            assert(self.thresh_method in self.thresh_methods)
+            self.thresh_method=thresh_method
         assert (np.size(data)==int(self.dim[0]*self.dim[1]))
         self.data=data
         self.__get_img()
