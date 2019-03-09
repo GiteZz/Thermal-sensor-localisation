@@ -38,8 +38,12 @@ class MyUI(QtWidgets.QMainWindow):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.episode_index = 0
-        self.time_index = 0
-        self.more_jump = 10
+        self.frame_index = 0
+        self.frame_jump = 10
+        self.time = 0
+        self.max_time = 0
+        self.small_time_jump = 0.25
+        self.big_time_jump = 1
         self.download_path = ''
         self.sensor = 0
         self.episode_selected = 0
@@ -47,6 +51,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.source_checkboxes = {}
 
         self.episodes = []
+        self.episode_sensors = []
 
         self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf','mtpltlib RGB processed']
         self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot, processed_color_plot]
@@ -54,6 +59,10 @@ class MyUI(QtWidgets.QMainWindow):
         self.vis_layouts = []
         self.vis_labels = []
         self.vis_checkboxes = []
+
+        self.update_from_button = False
+
+        self.mode = 'frame'
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
@@ -90,6 +99,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.plot_scene = QGraphicsScene()
         self.widgets.plotGraphicsView.setScene(self.plot_scene)
 
+        self.widgets.timeCheckBox.stateChanged.connect(self.to_time_mode)
+
         for method_name in self.vis_methods_name:
             n_label = QLabel(method_name)
             n_checkbox = QCheckBox()
@@ -120,24 +131,72 @@ class MyUI(QtWidgets.QMainWindow):
         self.slice_time = value
 
     def one_forward(self):
-        if self.time_index < len(self.list_episodes[self.episode_index]) - 1:
-            self.widgets.timeSlider.setValue(self.time_index + 1)
+        if self.mode == 'frame':
+            if self.frame_index < len(self.episodes[self.episode_index]) - 1:
+                self.frame_index += 1
+        else:
+            if self.time + self.small_time_jump <= self.max_time:
+                self.time += self.small_time_jump
 
     def one_backward(self):
-        if self.time_index >= 1:
-            self.widgets.timeSlider.setValue(self.time_index - 1)
+        if self.mode == 'frame':
+            if self.frame_index >= 1:
+                self.frame_index -= 1
+        else:
+            if self.time - self.small_time_jump >= 0:
+                self.time -= self.small_time_jump
 
     def more_forward(self):
-        if self.time_index < len(self.list_episodes[self.episode_index]) - 1 - self.more_jump:
-            self.widgets.timeSlider.setValue(self.time_index + self.more_jump)
+        if self.mode == 'frame':
+            if self.frame_index < len(self.episodes[self.episode_index]) - 1 - self.frame_jump:
+                self.frame_index += self.frame_jump
+        else:
+            if self.time + self.big_time_jump <= self.max_time:
+                self.time += self.big_time_jump
 
     def more_backward(self):
-        if self.time_index >= self.more_jump:
-            self.widgets.timeSlider.setValue(self.time_index + self.more_jump)
+        if self.mode == 'frame':
+            if self.frame_index >= self.frame_jump:
+                self.frame_index -= self.frame_jump
+        else:
+            if self.time - self.big_time_jump > 0:
+                self.time -= self.big_time_jump
+
+    def adjust_after_shift(self):
+        if self.mode == 'frame':
+            slider_index = self.frame_index
+        else:
+            slider_index = int(self.time)
+
+        self.update_from_button = True
+        self.widgets.timeSlider.setValue(slider_index)
+        self.draw_plot()
+
 
     def move_timeslider(self, value):
-        self.time_index = value
+        if self.update_from_button:
+            self.update_from_button = False
+            return
+
+        if self.mode == 'frame':
+            self.frame_index = value
+        else:
+            self.time = value
         self.draw_plot()
+
+    def to_time_mode(self):
+        if self.widgets.timeCheckBox.isChecked():
+            self.mode = 'time'
+            self.widgets.backwardMoreButton.setText(f'-{self.big_time_jump}s')
+            self.widgets.backwardOneButton.setText(f'-{self.small_time_jump}s')
+            self.widgets.forwardOneButton.setText(f'+{self.small_time_jump}s')
+            self.widgets.forwardMoreButton.setText(f'+{self.big_time_jump}s')
+        else:
+            self.mode = 'frame'
+            self.widgets.backwardMoreButton.setText('<<<')
+            self.widgets.backwardOneButton.setText('<')
+            self.widgets.forwardOneButton.setText('>')
+            self.widgets.forwardMoreButton.setText('>>>')
 
     def load_csv_button(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
@@ -239,7 +298,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.slice_time. This is used to avoid excessive long episodes. If zero this is ignored.
 
         :param index: This gives the index of the current sensor index
-        :return: Fills up self.list_episodes
+        :return: Fills up self.episodes
         """
 
         # This sometimes happens when clearing listwidgets
@@ -261,7 +320,8 @@ class MyUI(QtWidgets.QMainWindow):
         data = sorted(data, key=operator.attrgetter('timestamp'), reverse=True)
 
         # Clear UI and setup variables
-        self.list_episodes = []
+        self.episodes = []
+        self.episode_sensors = []
         self.widgets.timeList.clear()
 
         if len(data) == 0:
@@ -270,6 +330,7 @@ class MyUI(QtWidgets.QMainWindow):
         episode_starttime = data[0].timestamp
         current_starttime = data[0].timestamp
         current_episode = []
+        current_set = {data[0].sensor_id}
 
         # Slice the data up into episodes
         for value in data:
@@ -280,17 +341,21 @@ class MyUI(QtWidgets.QMainWindow):
             diff_slice = (episode_starttime - value.timestamp).seconds
             if (diff_connect < self.connect_time or self.connect_time == 0) and (diff_slice < self.slice_time or self.slice_time == 0):
                 current_episode.append(value)
+                current_set.add(value.sensor_id)
             else:
                 if len(current_episode) > 0:
-                    self.list_episodes.append(current_episode[::-1])
+                    self.episodes.append(current_episode[::-1])
+                    self.episode_sensors.append(current_set)
                 current_episode = []
+                current_set = set()
             current_starttime = value.timestamp
 
         if len(current_episode) > 0:
-            self.list_episodes.append(current_episode[::-1])
+            self.episodes.append(current_episode[::-1])
+            self.episode_sensors.append(current_set)
 
         # Create string for UI list and populate that list
-        for episode in self.list_episodes:
+        for episode in self.episodes:
             str_timestamp = str(episode[0].timestamp)
             print(str_timestamp)
             self.widgets.timeList.addItem(str_timestamp.split('.')[0])
@@ -307,14 +372,22 @@ class MyUI(QtWidgets.QMainWindow):
             return
 
         self.episode_index = index
-        self.time_index = 0
-        self.widgets.frameAmountLabel.setText(f'frame: 1/{len(self.list_episodes[self.episode_index])}')
-        self.widgets.startEpisodeLabel.setText(f'Start: {meas_to_time(self.list_episodes[self.episode_index][0])}')
-        self.widgets.endEpisodeLabel.setText(f'Stop: {meas_to_time(self.list_episodes[self.episode_index][-1])}')
+        episode = self.episodes[index]
+        self.frame_index = 0
+        self.max_time = (episode[-1].timestamp - episode[0].timestamp).seconds
+
+        self.widgets.frameAmountLabel.setText(f'frame: 1/{len(episode)}')
+        self.widgets.startEpisodeLabel.setText(f'Start: {meas_to_time(episode[0])}')
+        self.widgets.endEpisodeLabel.setText(f'Stop: {meas_to_time(episode[-1])}')
+        self.widgets.sensorEpisodeLabel.setText(f'Sensors: {self.episode_sensors[index]}')
+        self.widgets.lengthEpisodeLabel.setText(f'Length: 0/{self.max_time}s')
         self.widgets.timeSlider.setMinimum(0)
-        self.widgets.timeSlider.setMaximum(len(self.list_episodes[self.episode_index]) - 1)
+        if self.mode == 'frame':
+            self.widgets.timeSlider.setMaximum(len(self.episodes[self.episode_index]) - 1)
+        else:
+            self.widgets.timeSlider.setMaximum(int(self.max_time) - 1)
         self.draw_plot()
-        self.episode_selected=1
+        self.episode_selected = 1
 
     def clear_frame(self):
         """
@@ -322,9 +395,8 @@ class MyUI(QtWidgets.QMainWindow):
 
         :return:
         """
-        for subplot in self.subplots:
-            subplot.clear()
-            self.canvas.draw()
+        self.plot_scene.clear()
+        self.draw_plot()
 
         self.widgets.frameAmountLabel.setText(f'frame: -/-')
         self.widgets.startEpisodeLabel.setText(f'Start: -')
@@ -336,16 +408,21 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.frameTimeLabel.setText(f'Frame time: -')
 
     def draw_plot(self):
-        self.plot_scene.clear()
+        if self.mode == 'frame':
+            self.draw_frame()
+        else:
+            self.draw_time()
 
-        current_meas = self.list_episodes[self.episode_index][self.time_index].data
+    def draw_frame(self):
+        self.plot_scene.clear()
+        current_meas = self.episodes[self.episode_index][self.frame_index].data
 
         self.qt_imgs = [ImageQt(method(current_meas)) for method in self.vis_cur_meth]
         self.qt_pix = [QPixmap.fromImage(img) for img in self.qt_imgs]
 
         plot_amount = len(self.qt_pix)
         plot_sizes = [1, 2, 4, 6, 9]
-        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3,3]]
+        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3]]
         grid = grid_sizes[0]
 
         for index in range(len(grid_sizes)):
@@ -369,6 +446,11 @@ class MyUI(QtWidgets.QMainWindow):
             item = self.plot_scene.addPixmap(pix)
             item.setOffset(offset_x, offset_y)
 
+    def draw_time(self):
+        self.plot_scene.clear()
+
+
+
     def refresh_sensor_ids(self):
         self.clear_sources('sensor')
 
@@ -382,13 +464,13 @@ class MyUI(QtWidgets.QMainWindow):
         if not self.episode_selected:
             print('No episode selected')
             return
-        write_csv_list_frames(self.list_episodes[self.episode_index], self.download_path)
+        write_csv_list_frames(self.episodes[self.episode_index], self.download_path)
 
     def get_csv_current_frame(self):
         print("clicked")
         if not self.episode_selected:
             return
-        write_csv_frame(self.list_episodes[self.episode_index][self.time_index], self.download_path)
+        write_csv_frame(self.episodes[self.episode_index][self.frame_index], self.download_path)
 
 
 

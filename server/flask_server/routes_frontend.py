@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect, request, jsonify, R
 from flask_server import app, db
 from flask_server.models import Measurement_test, Measurement
 
-from help_module.img_helper import convert_to_thermal_image, fast_thermal_image
+from help_module.img_helper import fast_thermal_image
 from help_module.flask_helper import serve_pil_image
 
 @app.route("/")
@@ -26,7 +26,7 @@ def get_last_thermal_image():
     else:
         last_result = Measurement.query.order_by(Measurement.timestamp.desc()).first()
 
-    img = convert_to_thermal_image(32, 24, last_result.data, scale=scaled_up, interpolate=interpolate)
+    img = fast_thermal_image(32, 24, last_result.data)
 
     print(f'Retrieved image from: {last_result.timestamp}')
 
@@ -61,7 +61,7 @@ def get_sensor_last_image(id):
     else:
         last_result = Measurement.query.filter(Measurement.sensor_id == int(id)).order_by(Measurement.timestamp.desc()).first()
 
-    img = convert_to_thermal_image(last_result.data, scale=scaled_up, interpolate=interpolate)
+    img = fast_thermal_image(last_result.data, scale=scaled_up, interpolate=interpolate)
 
     return Response(img)
 
