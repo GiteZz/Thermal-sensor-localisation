@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QIcon, QPixmap, QImage
+from PyQt5.QtGui import QIcon, QPixmap, QImage, QTransform
 import scipy.ndimage.filters as fil
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from PyQt5.QtCore import QDateTime, QSize
@@ -20,6 +20,8 @@ from help_module.data_model_helper import Measurement, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time, clean_diff
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
 from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
+
+from qt_extra_classes import ZoomQGraphicsView
 
 
 class MyUI(QtWidgets.QMainWindow):
@@ -96,8 +98,11 @@ class MyUI(QtWidgets.QMainWindow):
         self.connect_time = self.ui.connectTimeSpinbox.value()
         self.slice_time = self.ui.sliceTimeSpinbox.value()
 
+        self.plotGraphicsView = ZoomQGraphicsView()
+
+        self.ui.rightVLayout.insertWidget(0, self.plotGraphicsView)
         self.plot_scene = QGraphicsScene()
-        self.ui.plotGraphicsView.setScene(self.plot_scene)
+        self.plotGraphicsView.setScene(self.plot_scene)
 
         self.ui.timeCheckBox.stateChanged.connect(self.to_time_mode)
 
@@ -121,6 +126,8 @@ class MyUI(QtWidgets.QMainWindow):
         for index, widg in enumerate(self.vis_checkboxes):
             if widg.isChecked():
                 self.vis_cur_meth.append(self.vis_methods[index])
+        self.draw_plot()
+
 
     def update_connect_time(self, value):
         print("update connect time to " + str(value))
@@ -413,11 +420,10 @@ class MyUI(QtWidgets.QMainWindow):
 
     def draw_plot(self):
         self.plot_scene.clear()
-        scene_size = self.ui.plotGraphicsView.size()
+        scene_size = self.plotGraphicsView.size()
 
         self.qt_imgs = []
         self.qt_pix = []
-        self.pix_res = []
 
         margin = math.floor(0.05 * scene_size.width())
         if margin > 20:
@@ -431,26 +437,29 @@ class MyUI(QtWidgets.QMainWindow):
         if self.mode == 'frame':
             current_meas = self.episodes[self.episode_index][self.frame_index]
             frame = (frame_x_start, frame_y_start, frame_width, frame_height)
-            qt_imgs, qt_pix, pix_res = self.draw_frame(current_meas, frame)
+            qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
             self.qt_imgs.extend(qt_imgs)
             self.qt_pix.extend(qt_pix)
-            self.pix_res.extend(pix_res)
         else:
             meas = self.get_close_measurements()
+            keys = list(meas.keys())
+            keys.sort()
+
             grid = get_grid_form(len(meas))
 
             grid_width = math.floor(frame_width / grid[0])
             grid_height = math.floor(frame_height / grid[1])
 
-            for index, value in enumerate(meas.values()):
+            for index, key in enumerate(keys):
+                value = meas[key]
+
                 offset_x = grid_width * (index % grid[0]) + frame_x_start
                 offset_y = grid_height * (index // grid[0]) + frame_y_start
 
                 frame = (offset_x, offset_y, grid_width, grid_height)
-                qt_imgs, qt_pix, pix_res = self.draw_frame(value, frame)
+                qt_imgs, qt_pix = self.draw_frame(value, frame)
                 self.qt_imgs.extend(qt_imgs)
                 self.qt_pix.extend(qt_pix)
-                self.pix_res.extend(pix_res)
 
     def draw_frame(self, meas, frame):
         """
@@ -473,26 +482,36 @@ class MyUI(QtWidgets.QMainWindow):
         grid_width = math.floor(frame_width / grid[0])
         grid_height = math.floor(frame_height / grid[1])
 
-        grid_size = QSize(grid_width, grid_height)
+        # pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in qt_pix]
 
-        pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in qt_pix]
-
-        for index, pix in enumerate(pix_res):
+        for index, pix in enumerate(qt_pix):
             frame_offset_x = grid_width * (index % grid[0]) + frame[0]
             frame_offset_y = grid_height * (index // grid[0]) + frame[1] + text_margin
 
-            img_offset_x = (grid_width - pix.size().width()) / 2
-            img_offset_y = (grid_height - pix.size().height()) / 2
+            img_size = pix.size()
+            img_width = img_size.width()
+            img_height = img_size.height()
+            scale_x = grid_width / img_width
+            scale_y = grid_height / img_height
+
+            scale = scale_x if scale_x < scale_y else scale_y
 
             scene_img = self.plot_scene.addPixmap(pix)
-            scene_img.setOffset(img_offset_x + frame_offset_x, img_offset_y + frame_offset_y)
+            scene_img.setScale(scale)
+
+            img_offset_x = (grid_width - img_width * scale) / (2 * scale)
+            img_offset_y = (grid_height - img_height * scale) / (2 * scale)
+
+            scene_img.setPos(img_offset_x + frame_offset_x, img_offset_y + frame_offset_y)
+
+
 
         scene_text = self.plot_scene.addText(str(meas.sensor_id))
         scene_text.setPos(frame[0] + 2, frame[1] + 2)
 
-        scene_rect = self.plot_scene.addRect(frame[0], frame[1], frame_width, frame_height)
+        self.plot_scene.addRect(frame[0], frame[1], frame_width, frame_height)
 
-        return qt_imgs, qt_pix, pix_res
+        return qt_imgs, qt_pix
 
     def draw_time(self):
         self.plot_scene.clear()

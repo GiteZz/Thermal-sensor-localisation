@@ -20,9 +20,6 @@
       <item row="0" column="1">
        <layout class="QVBoxLayout" name="rightVLayout">
         <item>
-         <widget class="QGraphicsView" name="plotGraphicsView"/>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="statHLayout">
           <item>
            <layout class="QVBoxLayout" name="episodeStatVLayout">
