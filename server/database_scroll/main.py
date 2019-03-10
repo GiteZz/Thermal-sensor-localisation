@@ -12,16 +12,15 @@ import operator
 import time
 from PIL.ImageQt import ImageQt
 import math
+from datetime import timedelta
 
 
 from ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
-from help_module.time_helper import meas_to_time
+from help_module.time_helper import meas_to_time, clean_diff
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
-from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot
+from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
@@ -41,6 +40,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.frame_index = 0
         self.frame_jump = 10
         self.time = 0
+        self.time_to_index = 0
         self.max_time = 0
         self.small_time_jump = 0.25
         self.big_time_jump = 1
@@ -137,6 +137,7 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             if self.time + self.small_time_jump <= self.max_time:
                 self.time += self.small_time_jump
+        self.adjust_after_shift()
 
     def one_backward(self):
         if self.mode == 'frame':
@@ -145,6 +146,7 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             if self.time - self.small_time_jump >= 0:
                 self.time -= self.small_time_jump
+        self.adjust_after_shift()
 
     def more_forward(self):
         if self.mode == 'frame':
@@ -153,6 +155,7 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             if self.time + self.big_time_jump <= self.max_time:
                 self.time += self.big_time_jump
+        self.adjust_after_shift()
 
     def more_backward(self):
         if self.mode == 'frame':
@@ -161,6 +164,7 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             if self.time - self.big_time_jump > 0:
                 self.time -= self.big_time_jump
+        self.adjust_after_shift()
 
     def adjust_after_shift(self):
         if self.mode == 'frame':
@@ -374,7 +378,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.episode_index = index
         episode = self.episodes[index]
         self.frame_index = 0
-        self.max_time = (episode[-1].timestamp - episode[0].timestamp).seconds
+        diff = (episode[-1].timestamp - episode[0].timestamp)
+        self.max_time = diff.seconds
 
         self.widgets.frameAmountLabel.setText(f'frame: 1/{len(episode)}')
         self.widgets.startEpisodeLabel.setText(f'Start: {meas_to_time(episode[0])}')
@@ -396,7 +401,6 @@ class MyUI(QtWidgets.QMainWindow):
         :return:
         """
         self.plot_scene.clear()
-        self.draw_plot()
 
         self.widgets.frameAmountLabel.setText(f'frame: -/-')
         self.widgets.startEpisodeLabel.setText(f'Start: -')
@@ -408,47 +412,122 @@ class MyUI(QtWidgets.QMainWindow):
         self.widgets.frameTimeLabel.setText(f'Frame time: -')
 
     def draw_plot(self):
-        if self.mode == 'frame':
-            self.draw_frame()
-        else:
-            self.draw_time()
-
-    def draw_frame(self):
         self.plot_scene.clear()
-        current_meas = self.episodes[self.episode_index][self.frame_index].data
+        scene_size = self.widgets.plotGraphicsView.size()
 
-        self.qt_imgs = [ImageQt(method(current_meas)) for method in self.vis_cur_meth]
-        self.qt_pix = [QPixmap.fromImage(img) for img in self.qt_imgs]
+        self.qt_imgs = []
+        self.qt_pix = []
+        self.pix_res = []
 
-        plot_amount = len(self.qt_pix)
-        plot_sizes = [1, 2, 4, 6, 9]
-        grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3]]
-        grid = grid_sizes[0]
+        if self.mode == 'frame':
+            current_meas = self.episodes[self.episode_index][self.frame_index]
+            frame = (0, 0, scene_size.width(), scene_size.height())
+            qt_imgs, qt_pix, pix_res = self.draw_frame(current_meas, frame)
+            self.qt_imgs.extend(qt_imgs)
+            self.qt_pix.extend(qt_pix)
+            self.pix_res.extend(pix_res)
+        else:
+            meas = self.get_close_measurements()
+            grid = get_grid_form(len(meas))
 
-        for index in range(len(grid_sizes)):
-            if plot_amount <= plot_sizes[index]:
-                grid = grid_sizes[index]
-                break
+            grid_width = scene_size.width() / grid[0]
+            grid_height = scene_size.height() / grid[1]
+
+            for index, value in enumerate(meas.values()):
+                offset_x = grid_width * (index % grid[0])
+                offset_y = grid_height * (index // grid[0])
+
+                frame = (offset_x, offset_y, offset_x + grid_width, offset_y + grid_width)
+                qt_imgs, qt_pix, pix_res = self.draw_frame(value, frame)
+                self.qt_imgs.extend(qt_imgs)
+                self.qt_pix.extend(qt_pix)
+                self.pix_res.extend(pix_res)
+
+    def draw_frame(self, meas, frame):
+        """
+        frame consist of (x0,y0,x1,y1)
+        :param meas:
+        :param frame:
+        :return:
+        """
+        qt_imgs = [ImageQt(method(meas.data)) for method in self.vis_cur_meth]
+        qt_pix = [QPixmap.fromImage(img) for img in qt_imgs]
+
+        plot_amount = len(qt_pix)
+        grid = get_grid_form(plot_amount)
         print(f'Current grid is: {grid}')
 
-        scene_size = self.widgets.plotGraphicsView.size()
-        grid_width = math.floor(scene_size.width() / grid[0])
-        grid_height = math.floor(scene_size.height() / grid[1])
+        frame_width = frame[2] - frame[0]
+        frame_height = frame[3] - frame[1]
+        grid_width = math.floor(frame_width / grid[0])
+        grid_height = math.floor(frame_height / grid[1])
 
         grid_size = QSize(grid_width, grid_height)
 
-        self.pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in self.qt_pix]
+        pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in qt_pix]
 
-        for index, pix in enumerate(self.pix_res):
-            offset_x = (grid_width - pix.size().width()) / 2 + grid_width * (index % grid[0])
-            offset_y = (grid_height - pix.size().height()) / 2 + grid_height * (index // grid[0])
+        for index, pix in enumerate(pix_res):
+            offset_x = (grid_width - pix.size().width()) / 2 + grid_width * (index % grid[0]) + frame[0]
+            offset_y = (grid_height - pix.size().height()) / 2 + grid_height * (index // grid[0]) + frame[1]
 
             item = self.plot_scene.addPixmap(pix)
             item.setOffset(offset_x, offset_y)
 
+        return qt_imgs, qt_pix, pix_res
+
     def draw_time(self):
         self.plot_scene.clear()
 
+    def get_close_measurements(self):
+        # TODO optimize
+        cut_off_time = 10
+
+        cur_episode = self.episodes[self.episode_index]
+        cur_time = cur_episode[0].timestamp + timedelta(seconds=self.time)
+        min_diff = float('inf')
+        min_index = -1
+
+
+        # Find closest meas
+        for index, value in enumerate(cur_episode):
+            diff = clean_diff(cur_time, value.timestamp)
+            if abs(diff) < min_diff:
+                min_diff = abs(diff)
+                min_index = index
+            else:
+                break
+
+        diff_set = {}
+        meas_set = {}
+
+        next_index = min_index
+        while next_index < len(cur_episode):
+            value = cur_episode[next_index]
+            diff = clean_diff(value.timestamp, cur_time)
+            if value.sensor_id not in diff_set:
+                diff_set[value.sensor_id] = diff
+                meas_set[value.sensor_id] = value
+
+            if diff > cut_off_time:
+                break
+
+            next_index += 1
+
+        prev_index = min_index
+        while prev_index > 0:
+            value = cur_episode[next_index]
+            diff = clean_diff(cur_time, value.timestamp)
+
+            if value.sensor_id in diff_set and diff_set[value.sensor_id] > diff:
+                diff_set[value.sensor_id] = diff
+                meas_set[value.sensor_id] = value
+
+            if diff > cut_off_time:
+                break
+
+            prev_index -= 1
+
+        return meas_set
 
 
     def refresh_sensor_ids(self):

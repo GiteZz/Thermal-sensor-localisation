@@ -197,6 +197,18 @@ def PIL_to_bytes(img):
     img_io.seek(0)
     return img_io.getvalue()
 
+def get_grid_form(amount):
+    plot_sizes = [1, 2, 4, 6, 9]
+    grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3]]
+    grid = grid_sizes[0]
+
+    for index in range(len(grid_sizes)):
+        if amount <= plot_sizes[index]:
+            grid = grid_sizes[index]
+            break
+
+    return grid
+
 if __name__ == "__main__":
     result = read_data("sensor_data_episode_20190221-143435_0.csv")
     frame = result[30][0]
