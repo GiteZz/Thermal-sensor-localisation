@@ -25,7 +25,7 @@ from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, p
 class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.widgets = None
+        self.ui = None
         with open('configuration.json', 'r') as f:
             data = json.load(f)
 
@@ -66,23 +66,23 @@ class MyUI(QtWidgets.QMainWindow):
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
-        self.widgets = ui_widgets
-        self.widgets.refreshButton.clicked.connect(self.refresh_sensor_ids)
-        self.widgets.timeList.currentRowChanged.connect(self.episode_clicked)
+        self.ui = ui_widgets
+        self.ui.refreshButton.clicked.connect(self.refresh_sensor_ids)
+        self.ui.timeList.currentRowChanged.connect(self.episode_clicked)
 
-        self.widgets.forwardOneButton.clicked.connect(self.one_forward)
-        self.widgets.backwardOneButton.clicked.connect(self.one_backward)
-        self.widgets.forwardMoreButton.clicked.connect(self.more_forward)
-        self.widgets.backwardMoreButton.clicked.connect(self.more_backward)
+        self.ui.forwardOneButton.clicked.connect(self.one_forward)
+        self.ui.backwardOneButton.clicked.connect(self.one_backward)
+        self.ui.forwardMoreButton.clicked.connect(self.more_forward)
+        self.ui.backwardMoreButton.clicked.connect(self.more_backward)
 
-        self.widgets.connectTimeSpinbox.valueChanged.connect(self.update_connect_time)
-        self.widgets.sliceTimeSpinbox.valueChanged.connect(self.update_slice_time)
+        self.ui.connectTimeSpinbox.valueChanged.connect(self.update_connect_time)
+        self.ui.sliceTimeSpinbox.valueChanged.connect(self.update_slice_time)
 
-        self.widgets.timeSlider.valueChanged.connect(self.move_timeslider)
+        self.ui.timeSlider.valueChanged.connect(self.move_timeslider)
 
-        self.widgets.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
-        self.widgets.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
-        self.widgets.loadCSVButton.clicked.connect(self.load_csv_button)
+        self.ui.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
+        self.ui.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
+        self.ui.loadCSVButton.clicked.connect(self.load_csv_button)
 
         now = QDateTime()
         now.setSecsSinceEpoch(time.time())
@@ -90,16 +90,16 @@ class MyUI(QtWidgets.QMainWindow):
         yesterday = QDateTime()
         yesterday.setSecsSinceEpoch(time.time() - 24*60*60)
 
-        self.widgets.startTimeEdit.setDateTime(yesterday)
-        self.widgets.stopTimeEdit.setDateTime(now)
+        self.ui.startTimeEdit.setDateTime(yesterday)
+        self.ui.stopTimeEdit.setDateTime(now)
 
-        self.connect_time = self.widgets.connectTimeSpinbox.value()
-        self.slice_time = self.widgets.sliceTimeSpinbox.value()
+        self.connect_time = self.ui.connectTimeSpinbox.value()
+        self.slice_time = self.ui.sliceTimeSpinbox.value()
 
         self.plot_scene = QGraphicsScene()
-        self.widgets.plotGraphicsView.setScene(self.plot_scene)
+        self.ui.plotGraphicsView.setScene(self.plot_scene)
 
-        self.widgets.timeCheckBox.stateChanged.connect(self.to_time_mode)
+        self.ui.timeCheckBox.stateChanged.connect(self.to_time_mode)
 
         for method_name in self.vis_methods_name:
             n_label = QLabel(method_name)
@@ -110,7 +110,7 @@ class MyUI(QtWidgets.QMainWindow):
             n_layout.addWidget(n_checkbox)
             n_checkbox.stateChanged.connect(self.update_vis_methods)
 
-            self.widgets.visualizeVLayout.addLayout(n_layout)
+            self.ui.visualizeVLayout.addLayout(n_layout)
 
             self.vis_checkboxes.append(n_checkbox)
             self.vis_labels.append(n_label)
@@ -173,7 +173,7 @@ class MyUI(QtWidgets.QMainWindow):
             slider_index = int(self.time)
 
         self.update_from_button = True
-        self.widgets.timeSlider.setValue(slider_index)
+        self.ui.timeSlider.setValue(slider_index)
         self.draw_plot()
 
 
@@ -189,18 +189,18 @@ class MyUI(QtWidgets.QMainWindow):
         self.draw_plot()
 
     def to_time_mode(self):
-        if self.widgets.timeCheckBox.isChecked():
+        if self.ui.timeCheckBox.isChecked():
             self.mode = 'time'
-            self.widgets.backwardMoreButton.setText(f'-{self.big_time_jump}s')
-            self.widgets.backwardOneButton.setText(f'-{self.small_time_jump}s')
-            self.widgets.forwardOneButton.setText(f'+{self.small_time_jump}s')
-            self.widgets.forwardMoreButton.setText(f'+{self.big_time_jump}s')
+            self.ui.backwardMoreButton.setText(f'-{self.big_time_jump}s')
+            self.ui.backwardOneButton.setText(f'-{self.small_time_jump}s')
+            self.ui.forwardOneButton.setText(f'+{self.small_time_jump}s')
+            self.ui.forwardMoreButton.setText(f'+{self.big_time_jump}s')
         else:
             self.mode = 'frame'
-            self.widgets.backwardMoreButton.setText('<<<')
-            self.widgets.backwardOneButton.setText('<')
-            self.widgets.forwardOneButton.setText('>')
-            self.widgets.forwardMoreButton.setText('>>>')
+            self.ui.backwardMoreButton.setText('<<<')
+            self.ui.backwardOneButton.setText('<')
+            self.ui.forwardOneButton.setText('>')
+            self.ui.forwardMoreButton.setText('>>>')
 
     def load_csv_button(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
@@ -234,7 +234,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         checkbox.stateChanged.connect(self.sensor_state_changed)
 
-        self.widgets.sourcesVLayout.addLayout(new_layout)
+        self.ui.sourcesVLayout.addLayout(new_layout)
 
     def clear_sources(self, type):
         """
@@ -273,20 +273,20 @@ class MyUI(QtWidgets.QMainWindow):
         :param sensor_id:
         :return:
         """
-        start_time = self.widgets.startTimeEdit.dateTime().toPyDateTime()
-        stop_time = self.widgets.stopTimeEdit.dateTime().toPyDateTime()
+        start_time = self.ui.startTimeEdit.dateTime().toPyDateTime()
+        stop_time = self.ui.stopTimeEdit.dateTime().toPyDateTime()
 
         basic_query = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id)
 
-        if not self.widgets.ignoreStartCheckbox.isChecked():
+        if not self.ui.ignoreStartCheckbox.isChecked():
             basic_query = basic_query.filter(Measurement.timestamp > start_time)
 
-        if not self.widgets.ignoreStopCheckbox.isChecked():
+        if not self.ui.ignoreStopCheckbox.isChecked():
             basic_query = basic_query.filter(Measurement.timestamp < stop_time)
 
 
         sensor_values = basic_query.order_by(Measurement.timestamp.desc()). \
-            limit(self.widgets.frameAmountSpinbox.value()).all()
+            limit(self.ui.frameAmountSpinbox.value()).all()
 
         return sensor_values
 
@@ -326,7 +326,7 @@ class MyUI(QtWidgets.QMainWindow):
         # Clear UI and setup variables
         self.episodes = []
         self.episode_sensors = []
-        self.widgets.timeList.clear()
+        self.ui.timeList.clear()
 
         if len(data) == 0:
             return
@@ -362,7 +362,7 @@ class MyUI(QtWidgets.QMainWindow):
         for episode in self.episodes:
             str_timestamp = str(episode[0].timestamp)
             print(str_timestamp)
-            self.widgets.timeList.addItem(str_timestamp.split('.')[0])
+            self.ui.timeList.addItem(str_timestamp.split('.')[0])
 
     def episode_clicked(self, index):
         """
@@ -381,16 +381,16 @@ class MyUI(QtWidgets.QMainWindow):
         diff = (episode[-1].timestamp - episode[0].timestamp)
         self.max_time = diff.seconds
 
-        self.widgets.frameAmountLabel.setText(f'frame: 1/{len(episode)}')
-        self.widgets.startEpisodeLabel.setText(f'Start: {meas_to_time(episode[0])}')
-        self.widgets.endEpisodeLabel.setText(f'Stop: {meas_to_time(episode[-1])}')
-        self.widgets.sensorEpisodeLabel.setText(f'Sensors: {self.episode_sensors[index]}')
-        self.widgets.lengthEpisodeLabel.setText(f'Length: 0/{self.max_time}s')
-        self.widgets.timeSlider.setMinimum(0)
+        self.ui.frameAmountLabel.setText(f'frame: 1/{len(episode)}')
+        self.ui.startEpisodeLabel.setText(f'Start: {meas_to_time(episode[0])}')
+        self.ui.endEpisodeLabel.setText(f'Stop: {meas_to_time(episode[-1])}')
+        self.ui.sensorEpisodeLabel.setText(f'Sensors: {self.episode_sensors[index]}')
+        self.ui.lengthEpisodeLabel.setText(f'Length: 0/{self.max_time}s')
+        self.ui.timeSlider.setMinimum(0)
         if self.mode == 'frame':
-            self.widgets.timeSlider.setMaximum(len(self.episodes[self.episode_index]) - 1)
+            self.ui.timeSlider.setMaximum(len(self.episodes[self.episode_index]) - 1)
         else:
-            self.widgets.timeSlider.setMaximum(int(self.max_time) - 1)
+            self.ui.timeSlider.setMaximum(int(self.max_time) - 1)
         self.draw_plot()
         self.episode_selected = 1
 
@@ -402,26 +402,35 @@ class MyUI(QtWidgets.QMainWindow):
         """
         self.plot_scene.clear()
 
-        self.widgets.frameAmountLabel.setText(f'frame: -/-')
-        self.widgets.startEpisodeLabel.setText(f'Start: -')
-        self.widgets.endEpisodeLabel.setText(f'Stop: -')
-        self.widgets.minLabel.setText(f'min: -')
-        self.widgets.maxLabel.setText(f'max: -')
-        self.widgets.avLabel.setText(f'av: -')
+        self.ui.frameAmountLabel.setText(f'frame: -/-')
+        self.ui.startEpisodeLabel.setText(f'Start: -')
+        self.ui.endEpisodeLabel.setText(f'Stop: -')
+        self.ui.minLabel.setText(f'min: -')
+        self.ui.maxLabel.setText(f'max: -')
+        self.ui.avLabel.setText(f'av: -')
 
-        self.widgets.frameTimeLabel.setText(f'Frame time: -')
+        self.ui.frameTimeLabel.setText(f'Frame time: -')
 
     def draw_plot(self):
         self.plot_scene.clear()
-        scene_size = self.widgets.plotGraphicsView.size()
+        scene_size = self.ui.plotGraphicsView.size()
 
         self.qt_imgs = []
         self.qt_pix = []
         self.pix_res = []
 
+        margin = math.floor(0.05 * scene_size.width())
+        if margin > 20:
+            margin = 20
+
+        frame_width = scene_size.width() - 2 * margin
+        frame_height = scene_size.height() - 2 * margin
+        frame_x_start = margin
+        frame_y_start = margin
+
         if self.mode == 'frame':
             current_meas = self.episodes[self.episode_index][self.frame_index]
-            frame = (0, 0, scene_size.width(), scene_size.height())
+            frame = (frame_x_start, frame_y_start, frame_width, frame_height)
             qt_imgs, qt_pix, pix_res = self.draw_frame(current_meas, frame)
             self.qt_imgs.extend(qt_imgs)
             self.qt_pix.extend(qt_pix)
@@ -430,14 +439,14 @@ class MyUI(QtWidgets.QMainWindow):
             meas = self.get_close_measurements()
             grid = get_grid_form(len(meas))
 
-            grid_width = scene_size.width() / grid[0]
-            grid_height = scene_size.height() / grid[1]
+            grid_width = math.floor(frame_width / grid[0])
+            grid_height = math.floor(frame_height / grid[1])
 
             for index, value in enumerate(meas.values()):
-                offset_x = grid_width * (index % grid[0])
-                offset_y = grid_height * (index // grid[0])
+                offset_x = grid_width * (index % grid[0]) + frame_x_start
+                offset_y = grid_height * (index // grid[0]) + frame_y_start
 
-                frame = (offset_x, offset_y, offset_x + grid_width, offset_y + grid_width)
+                frame = (offset_x, offset_y, grid_width, grid_height)
                 qt_imgs, qt_pix, pix_res = self.draw_frame(value, frame)
                 self.qt_imgs.extend(qt_imgs)
                 self.qt_pix.extend(qt_pix)
@@ -445,11 +454,13 @@ class MyUI(QtWidgets.QMainWindow):
 
     def draw_frame(self, meas, frame):
         """
-        frame consist of (x0,y0,x1,y1)
+        frame consist of (x0,y0,width, height)
         :param meas:
         :param frame:
         :return:
         """
+        text_margin = 10
+
         qt_imgs = [ImageQt(method(meas.data)) for method in self.vis_cur_meth]
         qt_pix = [QPixmap.fromImage(img) for img in qt_imgs]
 
@@ -457,8 +468,8 @@ class MyUI(QtWidgets.QMainWindow):
         grid = get_grid_form(plot_amount)
         print(f'Current grid is: {grid}')
 
-        frame_width = frame[2] - frame[0]
-        frame_height = frame[3] - frame[1]
+        frame_width = frame[2]
+        frame_height = frame[3] - text_margin
         grid_width = math.floor(frame_width / grid[0])
         grid_height = math.floor(frame_height / grid[1])
 
@@ -467,11 +478,19 @@ class MyUI(QtWidgets.QMainWindow):
         pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in qt_pix]
 
         for index, pix in enumerate(pix_res):
-            offset_x = (grid_width - pix.size().width()) / 2 + grid_width * (index % grid[0]) + frame[0]
-            offset_y = (grid_height - pix.size().height()) / 2 + grid_height * (index // grid[0]) + frame[1]
+            frame_offset_x = grid_width * (index % grid[0]) + frame[0]
+            frame_offset_y = grid_height * (index // grid[0]) + frame[1] + text_margin
 
-            item = self.plot_scene.addPixmap(pix)
-            item.setOffset(offset_x, offset_y)
+            img_offset_x = (grid_width - pix.size().width()) / 2
+            img_offset_y = (grid_height - pix.size().height()) / 2
+
+            scene_img = self.plot_scene.addPixmap(pix)
+            scene_img.setOffset(img_offset_x + frame_offset_x, img_offset_y + frame_offset_y)
+
+        scene_text = self.plot_scene.addText(str(meas.sensor_id))
+        scene_text.setPos(frame[0] + 2, frame[1] + 2)
+
+        scene_rect = self.plot_scene.addRect(frame[0], frame[1], frame_width, frame_height)
 
         return qt_imgs, qt_pix, pix_res
 
