@@ -61,7 +61,7 @@ def hist_plot(pixels, blur=True, to_pil=True):
     else:
         return fig
 
-def processed_color_plot(pixels,to_pil=True,thresh_method=None):
+def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=True):
     '''
     this function processes a raw image
     :param pixels: raw sensor data
@@ -71,13 +71,17 @@ def processed_color_plot(pixels,to_pil=True,thresh_method=None):
     '''
     processor=Img_processor();
     data=processor.process(pixels,thresh_method)
-    fig = Figure()
-    ax0 = fig.add_subplot(1, 1, 1)
-    ax0.imshow(data,origin="lower")
-    if to_pil:
-        return plt_fig_to_PIL(fig)
+    if mtplotlib:
+        fig = Figure()
+        ax0 = fig.add_subplot(1, 1, 1)
+        ax0.imshow(data,origin="lower")
+        if to_pil:
+            return plt_fig_to_PIL(fig)
+        else:
+            return fig
     else:
-        return fig
+        return fast_thermal_image(data,1) #already rescaled in the processing functions
+
 
 
 
