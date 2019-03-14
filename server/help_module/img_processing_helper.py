@@ -42,7 +42,7 @@ class Img_processor:
 
         elif self.thresh_method is "hist_cap":
             hist = np.histogram(self.gray, 50);
-            thresh_val = hist[1][-5]
+            thresh_val = hist[1][-5] # -5 is random chosen #TODO make dynamic?
             ret, self.thresh = cv2.threshold(self.gray, thresh_val, 255, cv2.THRESH_BINARY)
             print('ret=' + str(ret))
         else:
@@ -68,19 +68,24 @@ class Img_processor:
             #print(cY)
             cv2.circle(self.img, (cX, cY), 5, (255, 255, 0), -1)
 
-    def process(self,data,thresh_method=None):
+    def process(self,data,thresh_method=None,draw=True):
         '''
         this is the public function which implements the whole process
         :param data: a np array of size 24*32 (dimensions don't matter), containing RAW sensor_data
-        :return: a np.array with dim 24*32*3 in RGB color space, containing all centroids and contours
+        :param thresh_method:  allows to reselect a thresh method for the class
+        :param draw: only false if you want the thresh image (used for tracking)
+        :return:  a np.array with dim 24*32*3 in RGB color space, containing all centroids and contours
         '''
+
         if thresh_method:
             assert(self.thresh_method in self.thresh_methods)
             self.thresh_method=thresh_method
         assert (np.size(data)==int(self.dim[0]*self.dim[1]))
         self.data=data
         self.__get_img()
-        self.__process_into_binary()
+        thresh=self.__process_into_binary()
+        if not draw:
+            return thresh
         self.__add_contours_and_centroid()
         #cv2.imshow('res',self.img)
         return cv2.cvtColor(self.img.copy(),cv2.COLOR_BGR2RGB)
