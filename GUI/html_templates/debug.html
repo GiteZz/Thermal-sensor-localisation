@@ -39,14 +39,11 @@
             });
 
             socket.on('new_image', function (data) {
-                console.log(img_handles);
+                console.log("new image");
                 dev_id = data["device_id"];
                 img_el = null;
 
-                if(dev_id in img_handles){
-                    console.log('Div found');
-                    img_el = img_handles[dev_id];
-                }else{
+                if(!(dev_id in img_handles)){
                     console.log('Div not found');
                     new_el = $('<div class="debug_img"><img src=""></div>');
                     $('#debug_imgs').append(new_el);
@@ -65,12 +62,9 @@
                             $('#debug_imgs').css({'grid-template-columns': column_string, 'grid-template-rows': row_string});
                         }
                     }
+                    let img_url = `/thermal_sensor/${data["device_id"]}/stream`;
+                    img_el.attr('src', img_url)
                 }
-                console.log("updating " + data["device_id"]);
-                console.log(img_el);
-                d = new Date();
-                let img_url = `/thermal_sensor/${data["device_id"]}/last_image?scale_up=20&simulate=1&interpolate=1&time=` + d.getTime();
-                img_el.attr('src', img_url)
             });
 
 

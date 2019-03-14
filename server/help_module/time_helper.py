@@ -14,6 +14,14 @@ def meas_to_time(meas):
 
 # time1 - time2
 def clean_diff(time1, time2):
+    diff = abs_diff(time1, time2)
+
+    if time2 > time1:
+        return -1 * diff
+    else:
+        return diff
+
+def abs_diff(time1, time2):
     if time1 > time2:
         diff = time1 - time2
     else:
@@ -21,10 +29,7 @@ def clean_diff(time1, time2):
 
     sec_diff = diff.days * 24 * 60 * 60 + diff.seconds + diff.microseconds * 0.000001
 
-    if time2 > time1:
-        return -1 * sec_diff
-    else:
-        return sec_diff
+    return sec_diff
 
 
 if __name__ == "__main__":

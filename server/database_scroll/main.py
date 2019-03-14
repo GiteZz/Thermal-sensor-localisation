@@ -106,6 +106,14 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.ui.timeCheckBox.stateChanged.connect(self.to_time_mode)
 
+        self.ui.frameAmountSpinbox.valueChanged.connect(self.update_episodes_ui_update)
+        self.ui.sliceTimeSpinbox.valueChanged.connect(self.update_episodes_ui_update)
+        self.ui.connectTimeSpinbox.valueChanged.connect(self.update_episodes_ui_update)
+        self.ui.stopTimeEdit.dateTimeChanged.connect(self.update_episodes_ui_update)
+        self.ui.startTimeEdit.dateTimeChanged.connect(self.update_episodes_ui_update)
+        self.ui.ignoreStartCheckbox.stateChanged.connect(self.update_episodes_ui_update)
+        self.ui.ignoreStopCheckbox.stateChanged.connect(self.update_episodes_ui_update)
+
         for method_name in self.vis_methods_name:
             n_label = QLabel(method_name)
             n_checkbox = QCheckBox()
@@ -182,6 +190,10 @@ class MyUI(QtWidgets.QMainWindow):
         self.update_from_button = True
         self.ui.timeSlider.setValue(slider_index)
         self.draw_plot()
+
+    def update_episodes_ui_update(self):
+        self.reload_sources('sensor')
+        self.update_episodes()
 
 
     def move_timeslider(self, value):
@@ -297,6 +309,11 @@ class MyUI(QtWidgets.QMainWindow):
 
         return sensor_values
 
+    def reload_sources(self, type):
+        for checkbox, source in self.source_checkboxes.items():
+            if checkbox.isChecked() and source['type'] == type:
+                source['data'] = self.load_source(source)
+
     def sensor_state_changed(self):
         """
         This function looks at the selected sources and then creates a episode list.
@@ -321,6 +338,10 @@ class MyUI(QtWidgets.QMainWindow):
         if source['data'] is None:
             source['data'] = self.load_source(source)
             self.source_checkboxes[sender] = source
+
+        self.update_episodes()
+
+    def update_episodes(self):
 
         # Combine data from different sources and sort for easier plotting
         data = []
@@ -440,6 +461,9 @@ class MyUI(QtWidgets.QMainWindow):
             qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
             self.qt_imgs.extend(qt_imgs)
             self.qt_pix.extend(qt_pix)
+
+            self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas)}')
+            self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
         else:
             meas = self.get_close_measurements()
             keys = list(meas.keys())
@@ -522,6 +546,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         cur_episode = self.episodes[self.episode_index]
         cur_time = cur_episode[0].timestamp + timedelta(seconds=self.time)
+        self.ui.frameTimeLabel.setText(str(cur_time))
         min_diff = float('inf')
         min_index = -1
 
@@ -553,7 +578,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         prev_index = min_index
         while prev_index > 0:
-            value = cur_episode[next_index]
+            value = cur_episode[prev_index]
             diff = clean_diff(cur_time, value.timestamp)
 
             if value.sensor_id in diff_set and diff_set[value.sensor_id] > diff:

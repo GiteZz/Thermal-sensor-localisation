@@ -116,6 +116,13 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QLabel" name="sensorLabel">
+              <property name="text">
+               <string>Sensor: </string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -262,7 +269,7 @@
            <number>9999999</number>
           </property>
           <property name="value">
-           <number>1000</number>
+           <number>10000</number>
           </property>
          </widget>
         </item>

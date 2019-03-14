@@ -2,8 +2,9 @@ from flask import render_template, url_for, flash, redirect, request, jsonify, R
 from flask_server import app, db
 from flask_server.models import Measurement_test, Measurement
 
-from help_module.img_helper import fast_thermal_image
+from help_module.img_helper import fast_thermal_image, PIL_to_bytes
 from help_module.flask_helper import serve_pil_image
+import time
 
 @app.route("/")
 def home():
@@ -65,15 +66,23 @@ def get_sensor_last_image(id):
 
     return Response(img)
 
-def stream_gen(id):
+def stream_gen(id, simulated):
+    print(f'requested stream for {id}')
     while True:
-        last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
-        img = fast_thermal_image(last_result.data)
+        time.sleep(.1)
+        if simulated:
+            last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
+        else:
+            last_result = Measurement.query.filter(Measurement.sensor_id == id).order_by(Measurement.timestamp.desc()).first()
+        img = PIL_to_bytes(fast_thermal_image(last_result.data))
         yield (b'--frame\r\n'
                b'Content-Type: image/png\r\n\r\n' + img + b'\r\n')
+
 
 
 @app.route("/thermal_sensor/<id>/stream", methods=['GET'])
 def get_sensor_stream(id):
     print('requested stream')
-    return Response(stream_gen(id), mimetype='multipart/x-mixed-replace; boundary=frame')
+    simulated = request.args.get('simulate')
+    simulated = True if simulated == "1" else False
+    return Response(stream_gen(id, simulated), mimetype='multipart/x-mixed-replace; boundary=frame')

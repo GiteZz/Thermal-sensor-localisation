@@ -5,12 +5,12 @@ import time
 width = 32
 height = 24
 
-test_amount = 400
+test_amount = 4
 device_amount = 1
 
 sequence_array = [0] * device_amount
 
-sensor_ids = [401, 402, 403, 404]
+sensor_ids = [5]
 index = 0
 
 POST_url = 'http://localhost:5000/sensor/debug'

@@ -95,7 +95,7 @@ def plt_fig_to_png_bytes(fig):
     return buf
 
 
-def fast_thermal_image(pixels, scale=10, smooth=True):
+def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
     """
     Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
     There are only 9 different colorbrackets
@@ -123,8 +123,10 @@ def fast_thermal_image(pixels, scale=10, smooth=True):
         deltas.append(min_img + (i+1) * delta)
 
     deltas.append(float("inf"))
-
-    rgb_img = np.zeros((24, 32+15, 3), dtype=np.uint8)
+    if side:
+        rgb_img = np.zeros((24, 32+15, 3), dtype=np.uint8)
+    else:
+        rgb_img = np.zeros((24, 32, 3), dtype=np.uint8)
     for x in range(24):
         for y in range(32):
             for index, color_range in enumerate(deltas):
@@ -136,6 +138,10 @@ def fast_thermal_image(pixels, scale=10, smooth=True):
     rgb_img = rgb_img.repeat(scale, axis=1)
 
     img = Image.fromarray(rgb_img, 'RGB')
+
+    if not side:
+        return img
+
     d = ImageDraw.Draw(img)
 
     x_sq_start = 32 * scale + 10

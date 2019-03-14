@@ -6,4 +6,4 @@ if __name__ == '__main__':
     if run_local:
         socketio.run(app, debug=True, host='localhost')
     else:
-        socketio.run(app, debug=True, host='localhost')
+        socketio.run(app, debug=True, host='192.168.1.31')

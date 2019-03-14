@@ -13,6 +13,7 @@ img_index = 0
 def receive_sensor_debug():
     print('NEW post request')
     data = request.json
+    print(data)
 
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
     print(data)
@@ -33,7 +34,7 @@ def receive_sensor_debug():
 
 @app.route('/sensor/simulate', methods=['POST'])
 def receive_simulate():
-    print("Simulated request")
+    # print("Simulated request")
     data = request.json
     new_db_data = Measurement_test(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
     db.session.add(new_db_data)
@@ -43,8 +44,8 @@ def receive_simulate():
 
 @app.route('/sensor/bits', methods=['POST'])
 def receive_sensor_bits():
-    socketio.emit('new_image', {'device_id': data['device_id']})
     data = request.json
+    socketio.emit('new_image', {'device_id': data['device_id']})
     print(data)
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
     print(data)
@@ -62,10 +63,19 @@ def receive_sensor_bits():
 @app.route('/test/cbor', methods=['POST'])
 def test_cbor():
     print("============== CBOR Test ================")
-    data = request.data
-    hello = cbor2.loads(data)
-    print(hello)
+    data = request.get_data()
     print(data)
+    sensor_data = [int(a) for a in data]
+    sensor_id = sensor_data[0]
+    seq_id = sensor_data[1]
+    thermal_data = sensor_data[2:]
+
+    new_db_data = Measurement(sensor_id=sensor_id, data=thermal_data, sequence_id=seq_id, data_type=0)
+    db.session.add(new_db_data)
+    db.session.commit()
+
+    socketio.emit('new_image', {'device_id': sensor_id})
+
     print(" CBOR STOP ")
     return 'Hello'
 
