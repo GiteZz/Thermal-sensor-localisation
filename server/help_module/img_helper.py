@@ -9,7 +9,7 @@ from cv2 import *
 from datetime import datetime
 import time
 from help_module.csv_helper import read_data
-from help_module.img_processing_helper import Img_processor
+from help_module.img_processing_helper import ImageProcessor
 
 import math
 
@@ -69,8 +69,11 @@ def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=True):
     :param thresh_method: which method to use for processing (in Img_processor class)
     :return: a figure on which all objects have a centroid and a contour
     '''
-    processor=Img_processor();
-    data=processor.process(pixels,thresh_method)
+    processor=ImageProcessor()
+    if thresh_method:
+        processor.set_treshold_method(thresh_method)
+    processor.process(pixels)
+    data=processor.plot_frame()
     if mtplotlib:
         fig = Figure()
         ax0 = fig.add_subplot(1, 1, 1)

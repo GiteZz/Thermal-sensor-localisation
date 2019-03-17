@@ -9,7 +9,7 @@ import matplotlib.image as image
 import scipy.ndimage.filters as filter
 
 
-class Img_processor:
+class ImageProcessor:
     def __init__(self):
         self.data=None
         self.dim=(24,32)
@@ -20,6 +20,9 @@ class Img_processor:
         self.erode=10
 
         self.thresh_methods=["otsu","hist_cap"]
+
+        self.centroids=[] #2D array
+        self.contours=[]
 
     def __get_img(self):
        self.data= np.reshape(self.data,self.dim).astype(np.uint8)
@@ -38,24 +41,22 @@ class Img_processor:
             ret, self.thresh = cv2.threshold(self.gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             self.thresh=255-self.thresh
             self.thresh = cv2.erode(self.thresh, None, iterations=self.erode)
-            print('ret=' + str(ret))
 
         elif self.thresh_method is "hist_cap":
             hist = np.histogram(self.gray, 50);
             thresh_val = hist[1][-5] # -5 is random chosen #TODO make dynamic?
             ret, self.thresh = cv2.threshold(self.gray, thresh_val, 255, cv2.THRESH_BINARY)
-            print('ret=' + str(ret))
+
         else:
             raise NotImplementedError
 
-        return self.thresh
-
-    def __add_contours_and_centroid(self):
-        contours, hierarchy = cv2.findContours(self.thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        cv2.drawContours(self.img, contours, -1, 100, 3) #params: all contours,color,thickness
-        print('num of contours=' + str(len(contours)))
-        for c in contours:
-            print(cv2.contourArea(c))
+    def __determine_contours_centroids(self):
+        #clear old centroids
+        self.centroids=[]
+        self.contours, hierarchy = cv2.findContours(self.thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        print('num of contours=' + str(len(self.contours)))
+        for c in self.contours:
+            ##print(cv2.contourArea(c))
             # calculate moments for each contour
             M = cv2.moments(c)
             # calculate x,y coordinate of center
@@ -64,28 +65,43 @@ class Img_processor:
                 cY = int(M["m01"] / M["m00"])
             else:
                 cX, cY = 0, 0
-            #print(cX)
-            #print(cY)
-            cv2.circle(self.img, (cX, cY), 5, (255, 255, 0), -1)
+            self.centroids.append([cX,cY])
 
-    def process(self,data,thresh_method=None,draw=True):
+    def process(self,data):
         '''
         this is the public function which implements the whole process
         :param data: a np array of size 24*32 (dimensions don't matter), containing RAW sensor_data
-        :param thresh_method:  allows to reselect a thresh method for the class
-        :param draw: only false if you want the thresh image (used for tracking)
-        :return:  a np.array with dim 24*32*3 in RGB color space, containing all centroids and contours
+        :return:
         '''
-
-        if thresh_method:
-            assert(self.thresh_method in self.thresh_methods)
-            self.thresh_method=thresh_method
         assert (np.size(data)==int(self.dim[0]*self.dim[1]))
         self.data=data
         self.__get_img()
-        thresh=self.__process_into_binary()
-        if not draw:
-            return thresh
-        self.__add_contours_and_centroid()
-        #cv2.imshow('res',self.img)
+        self.__process_into_binary()
+        self.__determine_contours_centroids()
+
+
+    def set_treshold_method(self,method):
+        '''
+        public function to change threshold method
+        :param method: a string, element of self.thresh_methods
+        :return:
+        '''
+        assert (method in self.thresh_methods)
+        self.thresh_method = method
+
+    def plot_frame(self,rel_pos=True):
+        '''
+        public function which adds current centroids & contours to the current image
+        :param rel_pos: determines whether the relative coords are added to the figure
+        :return: np array in RGB format
+        '''
+        #add centroids
+        for centroid in self.centroids:
+            [cX,cY]=centroid
+            cv2.circle(self.img, (cX, cY), 5, (255, 255, 0), -1)
+            if (rel_pos):
+                string=str(cX)+","+str(cY)
+                cv2.putText(self.img,string,(cX,cY),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255))
+        #add contours
+        cv2.drawContours(self.img, self.contours, -1, 100, 3) #params: all contours,color,thickness
         return cv2.cvtColor(self.img.copy(),cv2.COLOR_BGR2RGB)
