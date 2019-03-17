@@ -32,6 +32,13 @@ class Tracker:
         else:
             raise KeyError
 
+    def reset_tracker(self):
+        self.ID_COUNTER=1
+        self.current_positions = {}
+        self.prev_positions = []
+        self.out_of_frame = {}
+        self.current_centroids = []
+
     def update(self):
         self.__update_current_centroids()
         self.__remove_dupl_centroids()
