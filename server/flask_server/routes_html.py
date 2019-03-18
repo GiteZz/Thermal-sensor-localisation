@@ -13,3 +13,7 @@ def get_test_stream_screen():
 @app.route("/socketio_test")
 def get_socketio_test():
     return render_template('test_socketio.html')
+
+@app.route("/main")
+def get_main():
+    return render_template('main.html')

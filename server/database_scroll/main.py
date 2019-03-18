@@ -17,7 +17,7 @@ from datetime import timedelta
 
 from ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
-from help_module.time_helper import meas_to_time, clean_diff
+from help_module.time_helper import meas_to_time, clean_diff, get_time_str
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
 from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
 
@@ -27,7 +27,8 @@ from qt_extra_classes import ZoomQGraphicsView
 class MyUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui = None
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
         with open('configuration.json', 'r') as f:
             data = json.load(f)
 
@@ -38,7 +39,7 @@ class MyUI(QtWidgets.QMainWindow):
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
-        self.episode_index = 0
+        self.episode_index = -1
         self.frame_index = 0
         self.frame_jump = 10
         self.time = 0
@@ -66,9 +67,6 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.mode = 'frame'
 
-    def confirmUI(self, ui_widgets):
-        print("confirming ui")
-        self.ui = ui_widgets
         self.ui.refreshButton.clicked.connect(self.refresh_sensor_ids)
         self.ui.timeList.currentRowChanged.connect(self.episode_clicked)
 
@@ -135,7 +133,6 @@ class MyUI(QtWidgets.QMainWindow):
             if widg.isChecked():
                 self.vis_cur_meth.append(self.vis_methods[index])
         self.draw_plot()
-
 
     def update_connect_time(self, value):
         print("update connect time to " + str(value))
@@ -388,9 +385,12 @@ class MyUI(QtWidgets.QMainWindow):
 
         # Create string for UI list and populate that list
         for episode in self.episodes:
-            str_timestamp = str(episode[0].timestamp)
-            print(str_timestamp)
-            self.ui.timeList.addItem(str_timestamp.split('.')[0])
+            date_str = get_time_str(episode[0].timestamp, time=False)
+            start_time_str = get_time_str(episode[0].timestamp, date=False)
+            stop_time_str = get_time_str(episode[-1].timestamp, date=False)
+
+            episode_str = f'{date_str} {start_time_str}->{stop_time_str}'
+            self.ui.timeList.addItem(episode_str)
 
     def episode_clicked(self, index):
         """
@@ -592,7 +592,6 @@ class MyUI(QtWidgets.QMainWindow):
 
         return meas_set
 
-
     def refresh_sensor_ids(self):
         self.clear_sources('sensor')
 
@@ -616,13 +615,8 @@ class MyUI(QtWidgets.QMainWindow):
 
 
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = MyUI()
-    ui = Ui_MainWindow()
 
-    ui.setupUi(MainWindow)
-    MainWindow.confirmUI(ui)
-
-    MainWindow.show()
-    sys.exit(app.exec_())
+app = QtWidgets.QApplication(sys.argv)
+MainWindow = MyUI()
+MainWindow.show()
+sys.exit(app.exec_())

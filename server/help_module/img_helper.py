@@ -80,7 +80,7 @@ def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=True):
         else:
             return fig
     else:
-        return fast_thermal_image(data,1) #already rescaled in the processing functions
+        return Image.fromarray(data, 'RGB') #already rescaled in the processing functions
 
 
 
@@ -97,6 +97,7 @@ def plt_fig_to_png_bytes(fig):
     FigureCanvas(fig).print_png(buf)
     buf.seek(0)
     return buf
+
 
 
 def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
@@ -131,6 +132,7 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
         rgb_img = np.zeros((24, 32+15, 3), dtype=np.uint8)
     else:
         rgb_img = np.zeros((24, 32, 3), dtype=np.uint8)
+
     for x in range(24):
         for y in range(32):
             for index, color_range in enumerate(deltas):
@@ -138,6 +140,7 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
                 if img_ar[x,y] < color_range:
                     rgb_img[x,y] = colors[index]
                     break
+
     rgb_img = rgb_img.repeat(scale, axis=0)
     rgb_img = rgb_img.repeat(scale, axis=1)
 
@@ -165,6 +168,7 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
     d.text((x_sq_stop + 10, amount_delta * color_square_height), color_text, fill=(255, 255, 255))
 
     return img
+
 
 
 def bits_to_thermal_image(width, height, pixels, scale=1, interpolate=False, fixed_range=True, heat_min=10, heat_max=45):

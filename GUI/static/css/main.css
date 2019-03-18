@@ -1,0 +1,30 @@
+body{
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.header{
+    height: 5vh;
+    width: 100%;
+    background-color: lightgray;
+    overflow: hidden;
+}
+.header_left{
+    height: 100%;
+    width:auto;
+    float: left;
+}
+.header_left > a > img{
+    height: 100%;
+    width: auto;
+}
+.header_right{
+    height: 100%;
+    width: auto;
+    float: right;
+}
+.header_right > a{
+    display: block;
+    height: 100%;
+    width:auto;
+    border: burlywood 1px;
+}

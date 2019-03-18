@@ -149,7 +149,7 @@ class Ui_MainWindow(object):
         self.frameAmountSpinbox.setObjectName("frameAmountSpinbox")
         self.verticalLayout_2.addWidget(self.frameAmountSpinbox)
         self.timeList = QtWidgets.QListWidget(self.centralwidget)
-        self.timeList.setMaximumSize(QtCore.QSize(120, 16777215))
+        self.timeList.setMaximumSize(QtCore.QSize(140, 16777215))
         self.timeList.setObjectName("timeList")
         self.verticalLayout_2.addWidget(self.timeList)
         self.frame = QtWidgets.QFrame(self.centralwidget)

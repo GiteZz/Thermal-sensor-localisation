@@ -277,7 +277,7 @@
          <widget class="QListWidget" name="timeList">
           <property name="maximumSize">
            <size>
-            <width>120</width>
+            <width>140</width>
             <height>16777215</height>
            </size>
           </property>

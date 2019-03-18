@@ -1,15 +1,48 @@
 import time
 import datetime
+from tzlocal import get_localzone
 
 date_conv = '%Y-%m-%d %H:%M:%S.%f%z'
+local_zone = get_localzone()
+
+NO_SECONDS = '%Y-%m-%d %H:%M'
+
+STRF_DATE = '%d-%m-%Y'
+STRF_TIME = '%H:%M'
+
+
+def get_time_str(dt, local=True, date=True, time=True, seconds=False, microseconds=False):
+    strf_str = create_strf_str(date, time, seconds, microseconds)
+
+    if local:
+        return (dt + dt.utcoffset()).strftime(strf_str)
+    else:
+        return dt.strftime(strf_str)
+
+
+def meas_to_time(meas):
+    return get_time_str(meas.timestamp, date=False)
+
+def create_strf_str(date=True, time=True, seconds=False, microseconds=False):
+    strf_str = ''
+
+    if date:
+        strf_str += STRF_DATE
+    if date and time:
+        strf_str += ' '
+    if time:
+        strf_str += STRF_TIME
+    if seconds:
+        strf_str += ':%S'
+    if microseconds and seconds:
+        strf_str += '.%f'
+
+    return strf_str
+
 
 def convert_to_datetime(input):
     time_string = input[:-3] + input[-2:]
     return datetime.datetime.strptime(time_string, date_conv)
-
-
-def meas_to_time(meas):
-    return str(meas.timestamp).split(".")[0]
 
 
 # time1 - time2
@@ -20,6 +53,7 @@ def clean_diff(time1, time2):
         return -1 * diff
     else:
         return diff
+
 
 def abs_diff(time1, time2):
     if time1 > time2:
@@ -39,4 +73,9 @@ if __name__ == "__main__":
     t1 = convert_to_datetime(s1)
     t2 = convert_to_datetime(s2)
 
-    print(clean_diff(t1,t2))
+    print(t1)
+    print(t1.combine(t1.date(), t1.timetz()))
+    print(t1.tzinfo)
+    print(t1.utcoffset())
+    print(t1 + t1.utcoffset())
+    print(local_time_str(t1, date=False))
