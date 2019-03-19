@@ -5,30 +5,19 @@ import cbor2
 import json
 import math
 from help_module.img_helper import create_timed_image
-
-img_refresh = 10
-img_index = 0
+from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
-    print('NEW post request')
     data = request.json
-    print(data)
-
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
-    print(data)
 
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
     db.session.add(new_db_data)
     db.session.commit()
 
     socketio.emit('new_image', {'device_id': data['device_id']})
-
-    global img_index
-    img_index = (img_index + 1) % img_refresh
-
-    if img_index == 0:
-        create_timed_image()
+    save_webcam_frame(new_db_data)
 
     return "Hello World!"
 
@@ -53,7 +42,6 @@ def receive_sensor_bits():
     db.session.add(new_db_data)
     db.session.commit()
     print(data)
-
 
     print('NEW post request')
 
@@ -85,3 +73,34 @@ def send_data():
     ret_json = {"data":last_result.data, "time":last_result.timestamp, "sensor_id": last_result.sensor_id}
     print(last_result)
     return jsonify(ret_json)
+
+@app.route('/webcam/setip', methods=['POST'])
+def configure_webcam_ip():
+    sensor_id = request.form.get('sensor_id')
+    ip = request.form.get('ip')
+    print(sensor_id)
+    print(ip)
+    if sensor_id is None or ip is None:
+        return "Invalid request"
+
+    config_webcam_ip(int(sensor_id), ip)
+
+    return redirect(url_for('config_webcams'))
+
+@app.route('/webcam/start', methods=['GET'])
+def start_webcams_req():
+    start_webcams()
+    return redirect(url_for('config_webcams'))
+
+@app.route('/webcam/stop', methods=['GET'])
+def stop_webcams_req():
+    stop_webcams()
+    return redirect(url_for('config_webcams'))
+
+@app.route('/webcam/<sensor_id>/delete', methods=['GET'])
+def delete_webcam(sensor_id):
+    remove_webcam(sensor_id)
+    return redirect(url_for('config_webcams'))
+
+
+

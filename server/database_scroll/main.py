@@ -29,12 +29,16 @@ class MyUI(QtWidgets.QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        with open('configuration.json', 'r') as f:
-            data = json.load(f)
+        # with open('configuration_files/db_configuration.json', 'r') as f:
+        #     data = json.load(f)
 
-        postgres_user = data['postgres']['username']
-        postgres_pass = data['postgres']['password']
-        postgres_db = data['postgres']['db_name']
+        # postgres_user = data['postgres']['username']
+        # postgres_pass = data['postgres']['password']
+        # postgres_db = data['postgres']['db_name']
+
+        postgres_user = 'postgres'
+        postgres_pass = 'Gilles'
+        postgres_db = 'VOP'
         self.engine = create_engine(f'postgres://{postgres_user}:{postgres_pass}@localhost:5432/{postgres_db}')
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)

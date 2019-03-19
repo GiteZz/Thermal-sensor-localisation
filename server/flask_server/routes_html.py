@@ -1,6 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
 from flask_server import app, db
 from flask_server.models import *
+from help_module.webcam_helper import get_values
 
 @app.route("/debug_screen")
 def get_debug_screen():
@@ -17,3 +18,8 @@ def get_socketio_test():
 @app.route("/main")
 def get_main():
     return render_template('main.html')
+
+@app.route('/config/webcams')
+def config_webcams():
+    current_webcams = get_values()
+    return render_template('webcam_information.html', current_webcams=current_webcams)

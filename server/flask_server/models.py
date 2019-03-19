@@ -10,7 +10,6 @@ class Measurement(db.Model):
     timestamp = db.Column('timestamp',db.DateTime, nullable=False,
                         default=datetime.utcnow,primary_key=True)
     data_type = db.Column('data_type', db.SmallInteger)
-    rgb_image = db.Column('rgb_image', db.Integer)
 
     def __repr__(self):
         return f'<Measurement :: sensor_id={self.sensor_id}, sequence_id={self.sequence_id}>'
@@ -23,7 +22,6 @@ class Measurement_test(db.Model):
     timestamp = db.Column('timestamp',db.DateTime, nullable=False,
                         default=datetime.utcnow,primary_key=True)
     data_type = db.Column('data_type', db.SmallInteger)
-    rgb_image = db.Column('rgb_image', db.Integer)
 
     def __repr__(self):
         return f'<Measurement :: sensor_id={self.sensor_id}, sequence_id={self.sequence_id}>'

@@ -2,8 +2,9 @@ from flask import render_template, url_for, flash, redirect, request, jsonify, R
 from flask_server import app, db
 from flask_server.models import Measurement_test, Measurement
 
-from help_module.img_helper import fast_thermal_image, PIL_to_bytes
+from help_module.img_helper import fast_thermal_image, PIL_to_bytes, combine_imgs
 from help_module.flask_helper import serve_pil_image
+from help_module.webcam_helper import get_webcam_img
 import time
 
 @app.route("/")
@@ -66,7 +67,7 @@ def get_sensor_last_image(id):
 
     return Response(img)
 
-def stream_gen(id, simulated):
+def stream_gen(id, simulated, show_webcam=True):
     print(f'requested stream for {id}')
     while True:
         time.sleep(.1)
@@ -74,9 +75,20 @@ def stream_gen(id, simulated):
             last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
         else:
             last_result = Measurement.query.filter(Measurement.sensor_id == id).order_by(Measurement.timestamp.desc()).first()
-        img = PIL_to_bytes(fast_thermal_image(last_result.data))
+
+        img = fast_thermal_image(last_result.data)
+        try:
+            if show_webcam:
+                webcam_img = get_webcam_img(last_result)
+                if webcam_img is not None:
+                    print('webcam is not none')
+                    img = combine_imgs([img, webcam_img])
+        except:
+            pass
+
+        bytes = PIL_to_bytes(img)
         yield (b'--frame\r\n'
-               b'Content-Type: image/png\r\n\r\n' + img + b'\r\n')
+               b'Content-Type: image/png\r\n\r\n' + bytes + b'\r\n')
 
 
 
@@ -85,4 +97,7 @@ def get_sensor_stream(id):
     print('requested stream')
     simulated = request.args.get('simulate')
     simulated = True if simulated == "1" else False
+
+    # show_webcam = request.args.get('webcam')
+    # show_webcam = True if show_webcam == "1" else False
     return Response(stream_gen(id, simulated), mimetype='multipart/x-mixed-replace; boundary=frame')

@@ -226,6 +226,31 @@ def get_grid_form(amount):
 
     return grid
 
+def combine_imgs(img_list, title=None):
+    min_width = float('inf')
+    for img in img_list:
+        if img.size[0] < min_width:
+            min_width = img.size[0]
+
+    rescaled_imgs = []
+    total_height = 0
+    for img in img_list:
+        width, height = img.size
+        factor = min_width / width
+        new_height = int(factor * height)
+        rescaled_imgs.append(img.resize((min_width, new_height)))
+        total_height += new_height
+
+    comp = Image.new('RGB', (min_width, total_height))
+    current_height = 0
+
+    for img in rescaled_imgs:
+        comp.paste(img, (0,current_height))
+        current_height += img.size[1]
+
+    return comp
+
+
 if __name__ == "__main__":
     result = read_data("sensor_data_episode_20190221-143435_0.csv")
     frame = result[30][0]

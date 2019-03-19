@@ -1,5 +1,6 @@
 from flask_server import app, socketio
 import socket
+from help_module.webcam_helper import start_webcams
 
 run_local = False
 
@@ -10,6 +11,7 @@ for ip_adr in ip_adresses:
     if ip_adr.split('.')[2] == '0' or ip_adr.split('.')[2] == '1':
         local_ip = ip_adr
         break
+
 
 if __name__ == '__main__':
     if run_local:
