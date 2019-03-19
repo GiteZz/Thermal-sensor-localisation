@@ -49,7 +49,7 @@ def receive_sensor_bits():
     return "Hello World!"
 
 
-@app.route('/test/cbor', methods=['POST'])
+@app.route('/sensor/raw', methods=['POST'])
 def test_cbor():
     print("============== CBOR Test ================")
     data = request.get_data()

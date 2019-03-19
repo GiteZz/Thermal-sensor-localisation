@@ -1,9 +1,9 @@
 import time
 import datetime
-from tzlocal import get_localzone
+
 
 date_conv = '%Y-%m-%d %H:%M:%S.%f%z'
-local_zone = get_localzone()
+
 
 NO_SECONDS = '%Y-%m-%d %H:%M'
 
@@ -78,4 +78,3 @@ if __name__ == "__main__":
     print(t1.tzinfo)
     print(t1.utcoffset())
     print(t1 + t1.utcoffset())
-    print(local_time_str(t1, date=False))

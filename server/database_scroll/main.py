@@ -147,40 +147,28 @@ class MyUI(QtWidgets.QMainWindow):
         self.slice_time = value
 
     def one_forward(self):
-        if self.mode == 'frame':
-            if self.frame_index < len(self.episodes[self.episode_index]) - 1:
-                self.frame_index += 1
-        else:
-            if self.time + self.small_time_jump <= self.max_time:
-                self.time += self.small_time_jump
-        self.adjust_after_shift()
+        self.move_time_or_frame(self.small_time_jump, 1)
 
     def one_backward(self):
-        if self.mode == 'frame':
-            if self.frame_index >= 1:
-                self.frame_index -= 1
-        else:
-            if self.time - self.small_time_jump >= 0:
-                self.time -= self.small_time_jump
-        self.adjust_after_shift()
+        self.move_time_or_frame(-self.small_time_jump, -1)
 
     def more_forward(self):
-        if self.mode == 'frame':
-            if self.frame_index < len(self.episodes[self.episode_index]) - 1 - self.frame_jump:
-                self.frame_index += self.frame_jump
-        else:
-            if self.time + self.big_time_jump <= self.max_time:
-                self.time += self.big_time_jump
-        self.adjust_after_shift()
+        self.move_time_or_frame(self.big_time_jump, self.frame_jump)
 
     def more_backward(self):
+        self.move_time_or_frame(-self.big_time_jump, -self.frame_jump)
+
+    def move_time_or_frame(self, time_jump, frame_jump):
+        if self.episode_index < 0 or self.episode_index >= len(self.episodes):
+            return
         if self.mode == 'frame':
-            if self.frame_index >= self.frame_jump:
-                self.frame_index -= self.frame_jump
+            if 0 <= self.frame_index + frame_jump < len(self.episodes):
+                self.frame_index += frame_jump
         else:
-            if self.time - self.big_time_jump > 0:
-                self.time -= self.big_time_jump
+            if 0 <= self.time + time_jump <= self.max_time:
+                self.time += time_jump
         self.adjust_after_shift()
+
 
     def adjust_after_shift(self):
         if self.mode == 'frame':
@@ -445,6 +433,10 @@ class MyUI(QtWidgets.QMainWindow):
 
     def draw_plot(self):
         self.plot_scene.clear()
+
+        if self.episode_index < 0:
+            return
+
         scene_size = self.plotGraphicsView.size()
 
         self.qt_imgs = []
@@ -466,7 +458,7 @@ class MyUI(QtWidgets.QMainWindow):
             self.qt_imgs.extend(qt_imgs)
             self.qt_pix.extend(qt_pix)
 
-            self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, second=True)}')
+            self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
             self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
         else:
             meas = self.get_close_measurements()
