@@ -138,6 +138,7 @@ class Ui_MainWindow(object):
         self.sliceLabel.setObjectName("sliceLabel")
         self.verticalLayout_2.addWidget(self.sliceLabel)
         self.sliceTimeSpinbox = QtWidgets.QSpinBox(self.centralwidget)
+        self.sliceTimeSpinbox.setMaximum(1000)
         self.sliceTimeSpinbox.setObjectName("sliceTimeSpinbox")
         self.verticalLayout_2.addWidget(self.sliceTimeSpinbox)
         self.label = QtWidgets.QLabel(self.centralwidget)

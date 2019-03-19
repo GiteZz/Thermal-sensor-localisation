@@ -254,7 +254,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="sliceTimeSpinbox"/>
+         <widget class="QSpinBox" name="sliceTimeSpinbox">
+          <property name="maximum">
+           <number>1000</number>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="label">

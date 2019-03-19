@@ -466,7 +466,7 @@ class MyUI(QtWidgets.QMainWindow):
             self.qt_imgs.extend(qt_imgs)
             self.qt_pix.extend(qt_pix)
 
-            self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas)}')
+            self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, second=True)}')
             self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
         else:
             meas = self.get_close_measurements()

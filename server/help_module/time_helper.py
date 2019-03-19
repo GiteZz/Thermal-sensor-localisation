@@ -20,8 +20,8 @@ def get_time_str(dt, local=True, date=True, time=True, seconds=False, microsecon
         return dt.strftime(strf_str)
 
 
-def meas_to_time(meas):
-    return get_time_str(meas.timestamp, date=False)
+def meas_to_time(meas, seconds=False):
+    return get_time_str(meas.timestamp, date=False, seconds=seconds)
 
 def create_strf_str(date=True, time=True, seconds=False, microseconds=False):
     strf_str = ''

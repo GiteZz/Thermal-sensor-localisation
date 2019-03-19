@@ -50,24 +50,22 @@ def get_values():
 
 
 def save_webcam_frame(meas):
-    print('saving webcam frame')
-    print(webcam_dict)
-    print(meas.sensor_id)
     if str(meas.sensor_id) in webcam_dict:
-        print("further")
+        print("found webcam for sensor")
         capture = webcam_dict[str(meas.sensor_id)]
         s, img = capture.read()
-
-        filename = meas_to_filename(meas)
-
-        cv2.imwrite(filename, img)
+        if s:
+            filename = meas_to_filename(meas)
+            cv2.imwrite(filename, img)
+            print('saving webcam frame')
+        else:
+            print("frame was not valid")
 
 def meas_to_filename(meas):
     return f'rgb_database/{meas.timestamp.strftime("%Y%m%d%H%M%S%f%z").replace("+", "")}_{meas.sensor_id}.jpg'
 
 def get_webcam_img(meas):
     filename = meas_to_filename(meas)
-    print(filename)
     if not os.path.isfile(filename):
         return None
 
