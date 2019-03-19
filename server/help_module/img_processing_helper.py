@@ -18,7 +18,7 @@ class ImageProcessor:
         self.thresh=None #[0|255]
         self.thresh_method="hist_cap"
         self.erode=10
-
+        self.scale_factor=10
         self.thresh_methods=["otsu","hist_cap"]
 
         self.centroids=[] #2D array
@@ -31,8 +31,8 @@ class ImageProcessor:
        self.img=cv2.imread('temp_img.png')
        self.__resize_img()
 
-    def __resize_img(self,factor=10):
-        self.img= cv2.resize(self.img,None,fx=factor,fy=factor)
+    def __resize_img(self):
+        self.img= cv2.resize(self.img,None,fx=self.scale_factor,fy=self.scale_factor)
 
     def __process_into_binary(self):
         self.gray=cv2.cvtColor(self.img,cv2.COLOR_BGR2GRAY)
