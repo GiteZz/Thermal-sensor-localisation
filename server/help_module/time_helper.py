@@ -1,9 +1,7 @@
 import time
 import datetime
 
-
 date_conv = '%Y-%m-%d %H:%M:%S.%f%z'
-
 
 NO_SECONDS = '%Y-%m-%d %H:%M'
 

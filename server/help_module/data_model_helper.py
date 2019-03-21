@@ -27,6 +27,7 @@ class CSV_Measurement:
         self.timestamp = convert_to_datetime(row[1])
         self.sequence_id = int(row[2])
         self.sensor_id = 'csv_' + row[3]
+        self.data_type= int(row[4])
 
     def set_values(self, sensor_id, data, sequence_id, timestamp, data_type):
         self.sensor_id = sensor_id

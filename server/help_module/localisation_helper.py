@@ -8,7 +8,7 @@ parallel to the plane which contains the floor
 class Localiser (ImageProcessor):
     def __init__(self):
         ImageProcessor.__init__(self)
-        self.data_height=180
+        self.data_height=175
         self.sensor_height=0
         self.sensor_center=(0,0)
         self.origin_corner=(0,0) #corner for which centroid would be (0,0)
