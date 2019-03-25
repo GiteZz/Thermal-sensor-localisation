@@ -13,4 +13,9 @@ class ServerBridge:
             raise Exception('Sensor doesn\'t have a Localiser')
 
     def add_localiser(self, sensor_id, calibrate_data=None):
-        self.localization_dict[sensor_id] = Localiser(calibrate_data)
+        new_localiser = Localiser()
+        if calibrate_data is not None:
+            new_localiser.calibrate(calibrate_data)
+        new_localiser.set_tracker(self.tracker)
+
+        self.localization_dict[sensor_id] = Localiser()

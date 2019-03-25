@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 class Localiser (ImageProcessor):
-    def __init__(self, calibration_data):
+    def __init__(self):
         ImageProcessor.__init__(self)
         self.data_height = 180
         self.sensor_height = 0
@@ -19,8 +19,7 @@ class Localiser (ImageProcessor):
         self.y_pixel_length = 0
 
         self.tracker = None
-
-        self.calibrate(calibration_data)
+        self.calibrated = False
 
     def __determine_transformation_matrix(self):
         # determine angle between system of the room and relative system
@@ -95,7 +94,9 @@ class Localiser (ImageProcessor):
         self.tracker = tracker
 
     def calibrate(self, cal_points):
+        self.calibrated = True
         raise NotImplementedError
 
     def update(self, thermal_img):
+        # First process image en then determine abs location, after that send it to the tracker
         raise NotImplementedError
