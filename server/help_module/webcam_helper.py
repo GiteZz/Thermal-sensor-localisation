@@ -6,6 +6,7 @@ import os
 config_file = "configuration_files/webcam_configuration.json"
 webcam_dict = {}
 recording = False
+rgb_database_loc = 'D:/Programmeer projecten/VOP/server/rgb_database'
 
 
 def start_webcams(sensor_ids=None):
@@ -74,15 +75,14 @@ def save_webcam_frame(meas):
 
 def meas_to_filename(meas, sensor_id=None):
     if sensor_id is None:
-        return f'rgb_database/{meas.timestamp.strftime("%Y%m%d%H%M%S%f%z").replace("+", "")}_{meas.sensor_id}.jpg'
+        return f'{rgb_database_loc}/{meas.timestamp.strftime("%Y%m%d%H%M%S%f%z").replace("+", "")}_{meas.sensor_id}.jpg'
     else:
-        return f'rgb_database/{meas.timestamp.strftime("%Y%m%d%H%M%S%f%z").replace("+", "")}_{sensor_id}.jpg'
+        return f'{rgb_database_loc}/{meas.timestamp.strftime("%Y%m%d%H%M%S%f%z").replace("+", "")}_{sensor_id}.jpg'
 
-def get_webcam_img(meas):
-    filename = meas_to_filename(meas)
+def get_webcam_img(meas, sensor_id=None):
+    filename = meas_to_filename(meas, sensor_id=sensor_id)
     if not os.path.isfile(filename):
         return None
-
     img = Image.open(filename)
     return img
 

@@ -65,6 +65,7 @@ class ImageProcessor:
                 cY = int(M["m01"] / M["m00"])
             else:
                 cX, cY = 0, 0
+            print(f'found centroid: {cX}, {cY}')
             self.centroids.append([cX,cY])
 
     def process(self,data):
