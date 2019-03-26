@@ -5,6 +5,7 @@ class Localiser:
     def __init__(self):
         self.matrix=[]
         self.calibration_points=[] # key=px_index, val=world_coord
+        self.tracker = None
 
     def add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])
@@ -27,8 +28,16 @@ class Localiser:
 #TODO: communicate with Gilles to determine purpose of these functions
     def calibrate_data(self):
         raise NotImplementedError
+
     def set_tracker(self):
         raise NotImplementedError
+
+    def update(self, data, timestamp):
+        raise NotImplementedError
+
+    def update_world_co(self, centroids):
+        # each value in centroids should be a pair (loc, timestamp)
+        self.tracker.update(centroids)
 
 if __name__=='__main__':
     H=Localiser()
