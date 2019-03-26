@@ -77,7 +77,7 @@ def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=False)
     if mtplotlib:
         fig = Figure()
         ax0 = fig.add_subplot(1, 1, 1)
-        ax0.imshow(data,origin="lower")
+        ax0.imshow(data) #add this to mirror ,origin="lower"
         if to_pil:
             return plt_fig_to_PIL(fig)
         else:

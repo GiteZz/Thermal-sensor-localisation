@@ -1,25 +1,25 @@
 from help_module.img_processing_helper import ImageProcessor
 import numpy as np
 import math
-
+'''
+for this class, the assumption is made that the sensor is positioned in a plane,
+parallel to the plane which contains the floor
+'''
 class Localiser (ImageProcessor):
     def __init__(self):
         ImageProcessor.__init__(self)
-        self.data_height = 180
-        self.sensor_height = 0
-        self.sensor_center = (0,0)
-        self.origin_corner = (0,0) #corner for which centroid would be (0,0)
+        self.data_height=180
+        self.sensor_height=0
+        self.sensor_center=(0,0)
+        self.origin_corner=(0,0) #corner for which centroid would be (0,0)
         #from documentation, in top view this is the right upper corner with respect to the notch
 
         self.absolute_positions=[]
-        self.rotmatrix = np.matrix(np.zeros((2,2)))
-        self.transmatrix = np.matrix(np.zeros((2,1)))
-        self.pixels = (self.scale_factor*32,self.scale_factor*24)
-        self.x_pixel_length = 0
-        self.y_pixel_length = 0
-
-        self.tracker = None
-        self.calibrated = False
+        self.rotmatrix=np.matrix(np.zeros((2,2)))
+        self.transmatrix=np.matrix(np.zeros((2,1)))
+        self.pixels=(self.scale_factor*32,self.scale_factor*24)
+        self.x_pixel_length=0
+        self.y_pixel_length=0
 
     def __determine_transformation_matrix(self):
         # determine angle between system of the room and relative system
@@ -32,7 +32,6 @@ class Localiser (ImageProcessor):
         self.transmatrix+=np.matrix([[self.center[0]],[self.center[1]]])
         print('rot='+str(self.rotmatrix))
         print('trans='+str(self.transmatrix))
-
     def set_corner_and_center(self,corner,center):
         '''
         set the absolute positioning of the sensor
@@ -48,7 +47,8 @@ class Localiser (ImageProcessor):
             raise NotImplementedError
         self.__determine_transformation_matrix()
 
-    def set_height(self, height):
+
+    def set_heigt(self,height):
         '''
         set height and check accuracy of measurements
         :param height: height in CM of sensor to the floor
@@ -90,13 +90,13 @@ class Localiser (ImageProcessor):
             self.absolute_positions.append([centroid[0][0],centroid[0][1]])
         return self.absolute_positions
 
-    def set_tracker(self, tracker):
-        self.tracker = tracker
 
-    def calibrate(self, cal_points):
-        self.calibrated = True
-        raise NotImplementedError
 
-    def update(self, thermal_img):
-        # First process image en then determine abs location, after that send it to the tracker
-        raise NotImplementedError
+
+
+
+
+
+
+
+

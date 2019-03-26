@@ -102,7 +102,15 @@ class ImageProcessor:
             cv2.circle(self.img, (cX, cY), 5, (255, 255, 0), -1)
             if (rel_pos):
                 string=str(cX)+","+str(cY)
-                cv2.putText(self.img,string,(cX,cY),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255))
+                if cX>self.scale_factor*32/2:
+                    pos_x=min(cX-len(string)*10,32*self.scale_factor-15*(len(string)))
+                else:
+                    pos_x=cX+20
+                if cY>self.scale_factor*24/2:
+                    pos_y=cY-10
+                else:
+                    pos_y=cY+30
+                cv2.putText(self.img,string,(pos_x,pos_y),cv2.QT_FONT_NORMAL,0.8,(255,255,255))
         #add contours
         cv2.drawContours(self.img, self.contours, -1, 100, 3) #params: all contours,color,thickness
         return cv2.cvtColor(self.img.copy(),cv2.COLOR_BGR2RGB)

@@ -9,6 +9,12 @@ class Homomorphy:
     def add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])
 
+    def add_calibration_array(self,left_x,left_y,right_x,right_y,n):
+        for i in range(n):
+            x_i=left_x+i/n*right_x
+            y_i=left_y +i/n*right_y
+            self.add_calibration_point(self,x_i,y_i)
+
     def determine_matrix(self):
         assert(len(self.calibration_points)>=4)
         self.calibration_points=np.array(self.calibration_points).astype(np.float32)
@@ -22,7 +28,7 @@ class Homomorphy:
 if __name__=='__main__':
     H=Homomorphy()
     #points 5,7,8,9,10,11
-    #H.add_calibration_point(143,74,210,304)
+    H.add_calibration_point(143,74,210,304)
     H.add_calibration_point(265,29,106,32)
     H.add_calibration_point(264,115,287,83)
     H.add_calibration_point(126,164,345,337)
