@@ -21,6 +21,7 @@ def get_time_str(dt, local=True, date=True, time=True, seconds=False, microsecon
 def meas_to_time(meas, seconds=False):
     return get_time_str(meas.timestamp, date=False, seconds=seconds)
 
+
 def create_strf_str(date=True, time=True, seconds=False, microseconds=False):
     strf_str = ''
 
@@ -41,6 +42,7 @@ def create_strf_str(date=True, time=True, seconds=False, microseconds=False):
 def convert_to_datetime(input):
     time_string = input[:-3] + input[-2:]
     return datetime.datetime.strptime(time_string, date_conv)
+
 
 
 # time1 - time2

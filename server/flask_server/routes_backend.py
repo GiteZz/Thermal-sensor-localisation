@@ -1,5 +1,5 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
-from flask_server import app, db, socketio
+from flask_server import app, db, socketio, loc_bridge
 from flask_server.models import Measurement, Measurement_test
 import cbor2
 import json
@@ -20,6 +20,8 @@ def receive_sensor_debug():
     socketio.emit('new_image', {'device_id': data['device_id']})
     save_webcam_frame(new_db_data)
 
+    loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
+
     return "Hello World!"
 
 @app.route('/sensor/simulate', methods=['POST'])
@@ -29,7 +31,11 @@ def receive_simulate():
     new_db_data = Measurement_test(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
     db.session.add(new_db_data)
     db.session.commit()
+
     socketio.emit('new_image', {'device_id': data['device_id']})
+
+    loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
+
     return "Succes"
 
 @app.route('/sensor/bits', methods=['POST'])

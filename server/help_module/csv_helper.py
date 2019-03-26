@@ -30,7 +30,7 @@ def read_data(filename,start=0,end=None):
     return data
 
 
-def load_csv(filename, to_numpy=True, split=False):
+def load_csv(filename, to_numpy=True, split=False, csv_tag=True):
     """
     This function takes in a filename and creates a list of CSV_Measurements
     :param filename: csv filename
@@ -45,7 +45,7 @@ def load_csv(filename, to_numpy=True, split=False):
         reader = csv.reader(csvfile, delimiter=',')
         for index, row in enumerate(reader):
             if index != 0 and row != '':
-                n_csv = CSV_Measurement(row, to_numpy)
+                n_csv = CSV_Measurement(row, to_numpy=to_numpy,csv_tag=csv_tag)
                 if split:
                     if n_csv.sensor_id in data:
                         data[n_csv.sensor_id].append(n_csv)

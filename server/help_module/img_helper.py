@@ -61,7 +61,7 @@ def hist_plot(pixels, blur=True, to_pil=True):
     else:
         return fig
 
-def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=True):
+def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=False):
     '''
     this function processes a raw image
     :param pixels: raw sensor data

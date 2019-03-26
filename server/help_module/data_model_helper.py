@@ -19,15 +19,17 @@ class Measurement(Base):
         return f'<Measurement :: sensor_id={self.sensor_id}, sequence_id={self.sequence_id}>'
 
 class CSV_Measurement:
-    def __init__(self, row, to_numpy=True):
+    def __init__(self, row, to_numpy=True, csv_tag=True):
         if to_numpy:
             self.data = np.array(eval(row[0]))
         else:
             self.data = eval(row[0])
         self.timestamp = convert_to_datetime(row[1])
         self.sequence_id = int(row[2])
-        self.sensor_id = 'csv_' + row[3]
-        self.data_type= int(row[4])
+        if csv_tag:
+            self.sensor_id = 'csv_' + row[3]
+        else:
+            self.sensor_id = row[3]
 
     def set_values(self, sensor_id, data, sequence_id, timestamp, data_type):
         self.sensor_id = sensor_id
