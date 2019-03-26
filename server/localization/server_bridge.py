@@ -1,5 +1,5 @@
 from localization.tracker import Tracker
-from localization.localizer import Localiser
+from localization.localiser import Localiser
 
 class ServerBridge:
     def __init__(self):

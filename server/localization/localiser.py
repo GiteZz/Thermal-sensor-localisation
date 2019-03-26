@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-class Homomorphy:
+class Localiser:
     def __init__(self):
         self.matrix=[]
         self.calibration_points=[] # key=px_index, val=world_coord
@@ -24,9 +24,14 @@ class Homomorphy:
     def get_world_coords(self, cam_x,cam_y):
         return np.matmul(self.matrix,np.transpose(np.array([cam_x,cam_y,1])))
 
+#TODO: communicate with Gilles to determine purpose of these functions
+    def calibrate_data(self):
+        raise NotImplementedError
+    def set_tracker(self):
+        raise NotImplementedError
 
 if __name__=='__main__':
-    H=Homomorphy()
+    H=Localiser()
     #points 5,7,8,9,10,11
     H.add_calibration_point(143,74,210,304)
     H.add_calibration_point(265,29,106,32)
