@@ -91,7 +91,6 @@ class Tracker:
 
     def angle_dist_fac(self, value):
         offset = 1
-
         return (math.atan(value - offset) + math.pi/2) / math.pi
 
     def angle_prob(self, angle_diff):

@@ -25,9 +25,9 @@ class Localiser:
         return np.matmul(self.matrix,np.transpose(np.array([cam_x,cam_y,1])))
 
 #TODO: communicate with Gilles to determine purpose of these functions
-    def calibrate_data(self):
+    def calibrate(self,data):
         raise NotImplementedError
-    def set_tracker(self):
+    def set_tracker(self,tracker):
         raise NotImplementedError
 
 if __name__=='__main__':
