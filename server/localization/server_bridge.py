@@ -37,7 +37,9 @@ class ServerBridge:
         if self.current_calibrate is not None:
             amount_active_sensors = len(self.localization_dict)
             if sensor_id not in self.current_calibrate['img_data']:
-                self.current_calibrate['img_data'][sensor_id] = data
+                processor=self.localization_dict[sensor_id].processor
+                assert(len(processor.centroids) == 1)
+                self.current_calibrate['img_data'][sensor_id] = processor.centroids[0]
 
             if len(self.current_calibrate['img_data']) == amount_active_sensors:
                 self.calibrate_data.append(self.current_calibrate)
