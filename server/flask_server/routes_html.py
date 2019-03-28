@@ -12,6 +12,10 @@ def get_debug_screen():
 def get_test_stream_screen():
     return render_template('test_stream.html')
 
+@app.route("/view/debug_tracker")
+def get_debug_tracker():
+    return render_template('debug_tracker.html')
+
 @app.route("/socketio_test")
 def get_socketio_test():
     return render_template('test_socketio.html')

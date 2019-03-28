@@ -15,11 +15,11 @@ class Tracker:
         self.current_persons = []
         self.edges = []
 
-    def update(self, centroids):
+    def update(self, centroids, timestamp):
         for centroid in centroids:
             # if centroid[0] is not np.array:
             #     raise Exception('Expected numpy array as data type')
-            self.centroid_update(centroid[0], centroid[1])
+            self.centroid_update(centroid, timestamp)
 
     def centroid_update(self, centroid, timestamp):
         closest_persons = self.get_closest_centroids(centroid, 2)
