@@ -54,7 +54,7 @@ class ImageProcessor:
         #clear old centroids
         self.centroids=[]
         self.contours, hierarchy = cv2.findContours(self.thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        print('num of contours=' + str(len(self.contours)))
+        # print('num of contours=' + str(len(self.contours)))
         for c in self.contours:
             ##print(cv2.contourArea(c))
             #TODO:area filtering
@@ -66,7 +66,7 @@ class ImageProcessor:
                 cY = int(M["m01"] / M["m00"])
             else:
                 cX, cY = 0, 0
-            print(f'found centroid: {cX}, {cY}')
+            # print(f'found centroid: {cX}, {cY}')
             self.centroids.append([cX,cY])
 
     def process(self,data):

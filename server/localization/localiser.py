@@ -34,7 +34,8 @@ class Localiser:
         self.tracker = tracker
 
     def update(self, data, timestamp):
-        raise NotImplementedError
+        pass
+        # raise NotImplementedError
 
     def update_world_co(self, centroids):
         # each value in centroids should be a pair (loc, timestamp)

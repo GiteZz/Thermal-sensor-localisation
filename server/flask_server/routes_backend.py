@@ -11,7 +11,7 @@ from help_module.calibration_helper import add_calibration_point, get_calibratio
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
-    print(data)
+    # print(data)
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
 
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)

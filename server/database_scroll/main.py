@@ -248,12 +248,16 @@ class MyUI(QtWidgets.QMainWindow):
         :param type: type of source to be removed
         :return:
         """
+        delete_keys = []
         for key, value in self.source_checkboxes.items():
             if value['type'] == type:
-                res = dict.pop(key)
-                res['label'].deleteLater()
-                res['layout'].deleteLater()
-                key.deleteLater()
+                delete_keys.append(key)
+
+        for key in delete_keys:
+            res = self.source_checkboxes.pop(key)
+            res['label'].deleteLater()
+            res['layout'].deleteLater()
+            key.deleteLater()
 
     def load_source(self, source):
         """
