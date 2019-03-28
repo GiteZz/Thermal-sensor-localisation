@@ -23,4 +23,3 @@ def get_calibration_points():
         data = json.load(f)
         return data['points']
 
-def get_co(name)
