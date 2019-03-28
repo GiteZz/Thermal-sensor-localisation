@@ -29,8 +29,8 @@ class Localiser:
     def calibrate_data(self):
         raise NotImplementedError
 
-    def set_tracker(self):
-        raise NotImplementedError
+    def set_tracker(self, tracker):
+       self.tracker = tracker
 
     def update(self, data, timestamp):
         raise NotImplementedError

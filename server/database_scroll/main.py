@@ -29,7 +29,7 @@ class MyUI(QtWidgets.QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        with open(r'C:\Users\Thomas\Documents\School\VOP\VOP\server\configuration_files\configuration.json', 'r') as f:
+        with open(r'..\configuration_files\db_configuration.json', 'r') as f:
              data = json.load(f)
 
              postgres_user = data['postgres']['username']

@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 from help_module.data_model_helper import CSV_Measurement
+from datetime import datetime, timedelta
 
 def process_csv_row(row):
     '''
@@ -99,3 +100,19 @@ def write_csv_frame(frame, path):
         writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
     print('csv saved')
 
+def load_csv_tracker_path(fname):
+    path = []
+    cur_time = datetime.now()
+    with open(fname) as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for index, row in enumerate(reader):
+            if index == 0:
+                continue
+            co_x = float(row[0])
+            co_y = float(row[1])
+            seconds_delta = float(row[2])
+            time_delta = timedelta(seconds=seconds_delta)
+            cur_time += time_delta
+            path.append((np.array([co_x, co_y]), cur_time))
+
+    return path

@@ -17,8 +17,8 @@ class Tracker:
 
     def update(self, centroids):
         for centroid in centroids:
-            if centroid[0] is not np.ndarray:
-                raise Exception('Expected numpy array as data type')
+            # if centroid[0] is not np.array:
+            #     raise Exception('Expected numpy array as data type')
             self.centroid_update(centroid[0], centroid[1])
 
     def centroid_update(self, centroid, timestamp):
@@ -32,12 +32,13 @@ class Tracker:
                 highest_prob = prob
                 best_person = person
 
+        print(f'Highest prob of same person: {highest_prob}')
+
         if highest_prob > self.SAME_OBJECT_TRESHHOLD:
             best_person.add_location(centroid, timestamp)
         else:
             new_prob = self.get_new_prob(centroid)
-            new_pers = Person()
-            new_pers.add_location(centroid, timestamp)
+            new_pers = Person(centroid, timestamp)
             self.current_persons.append(new_pers)
             if new_prob > self.NEW_OBJECT_TRESSHOLD:
                 print("HIGH probability of new person")
@@ -56,7 +57,7 @@ class Tracker:
     def get_closest_centroids(self, centroid, amount):
         distances = {}
         for person in self.current_persons:
-            distances[person] = point_dist(person.loc, centroid)
+            distances[person] = point_dist(person.get_prev_location(), centroid)
 
         sorted_list = sorted(distances, key=distances.__getitem__)
 
@@ -66,20 +67,24 @@ class Tracker:
         prev_loc_1 = person.get_closest_loc(timestamp, 1)
         prev_loc_2 = person.get_closest_loc(timestamp, 2)
 
-        prev_mov_vec = prev_loc_2 - prev_loc_1
-        cur_mov_vec = prev_loc_1 - current_loc
+        if prev_loc_1 != prev_loc_2:
+            prev_mov_vec = prev_loc_2 - prev_loc_1
+            cur_mov_vec = prev_loc_1 - current_loc
 
-        prev_dist = vec_norm(prev_mov_vec)
-        cur_dist = vec_norm(cur_mov_vec)
+            prev_dist = vec_norm(prev_mov_vec)
+            cur_dist = vec_norm(cur_mov_vec)
 
-        angle_diff = math.acos((prev_mov_vec @ cur_mov_vec) / (prev_dist * cur_dist))
+            angle_diff = math.acos((prev_mov_vec @ cur_mov_vec) / (prev_dist * cur_dist))
 
-        p_dst = self.distance_prob(cur_dist, prev_dist)
-        p_angle = self.angle_prob(angle_diff)
+            p_dst = self.distance_prob(cur_dist, prev_dist)
+            p_angle = self.angle_prob(angle_diff)
 
-        fac = self.angle_dist_fac(cur_dist)
+            fac = self.angle_dist_fac(cur_dist)
 
-        return (1 - fac) * p_dst + fac * p_angle
+            return (1 - fac) * p_dst + fac * p_angle
+        else:
+            dist = current_loc - prev_loc_1
+            return
 
     def distance_prob(self, new_dist, cur_dist):
         sigma = 5

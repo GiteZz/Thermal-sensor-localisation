@@ -6,6 +6,7 @@ import json
 import math
 from help_module.img_helper import create_timed_image
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
+from help_module.calibration_helper import add_calibration_point, get_calibration_points, remove_calibration_point
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
@@ -108,6 +109,29 @@ def stop_webcams_req():
 def delete_webcam(sensor_id):
     remove_webcam(sensor_id)
     return redirect(url_for('config_webcams'))
+
+@app.route('/config/calibrate/addpoint', methods=['POST'])
+def config_add_calibration_point():
+    name = request.form.get('name')
+    co_x = int(request.form.get('xco'))
+    co_y = int(request.form.get('yco'))
+    print(f'Adding calibration point: ({co_x}, {co_y})')
+
+    add_calibration_point(name, (co_x, co_y))
+    return redirect(url_for('config_calibrate'))
+
+@app.route('/config/calibrate/<pointname>/delete', methods=['GET'])
+def config_remove_calibration_point(pointname):
+    remove_calibration_point(pointname)
+    # loc_bridge.calibrate_point((co_x, co_y))
+    return redirect(url_for('config_calibrate'))
+
+@app.route('/config/calibrate/<pointname>/start', methods=['GET'])
+def config_start_calibration_point(pointname):
+    remove_calibration_point(pointname)
+    # loc_bridge.calibrate_point((co_x, co_y))
+    return redirect(url_for('config_calibrate'))
+
 
 
 

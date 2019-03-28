@@ -17,7 +17,7 @@ img= cv2.imread("layout.png")
 cv2.imshow('layout',img)
 cv2.waitKey(0) #required for opencv rendering
 res=pyautogui.locateOnScreen('plot_edge.png')
-if res==None:
+if res == None:
     print("detection failed")
 else:
     xu,yu,xl,yl=res

@@ -65,10 +65,10 @@ body{
     grid-template-columns: 4fr 12fr 1fr;
 
 }
-.webcam_wrapper > div{
+.link_grid > div{
     margin-bottom: 1vh;
 }
-.webcam_wrapper  a{
+.link_grid  a{
     color: black;
     text-decoration: none;
 }
