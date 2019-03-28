@@ -44,7 +44,7 @@ class ImageProcessor:
 
         elif self.thresh_method is "hist_cap":
             hist = np.histogram(self.gray, 50);
-            thresh_val = hist[1][-5] # -5 is random chosen #TODO make dynamic?
+            thresh_val = hist[1][-15] # -5 is random chosen #TODO make dynamic?
             ret, self.thresh = cv2.threshold(self.gray, thresh_val, 255, cv2.THRESH_BINARY)
 
         else:
