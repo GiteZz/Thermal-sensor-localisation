@@ -35,6 +35,7 @@ class ImageProcessor:
         self.img= cv2.resize(self.img,None,fx=self.scale_factor,fy=self.scale_factor)
 
     def __process_into_binary(self):
+        #TODO: filter empty frames
         self.gray=cv2.cvtColor(self.img,cv2.COLOR_BGR2GRAY)
         if self.thresh_method is "otsu":
             self.gray=255-self.gray
@@ -46,7 +47,6 @@ class ImageProcessor:
             hist = np.histogram(self.gray, 50);
             thresh_val = hist[1][-15] # -5 is random chosen #TODO make dynamic?
             ret, self.thresh = cv2.threshold(self.gray, thresh_val, 255, cv2.THRESH_BINARY)
-
         else:
             raise NotImplementedError
 
@@ -57,6 +57,7 @@ class ImageProcessor:
         print('num of contours=' + str(len(self.contours)))
         for c in self.contours:
             ##print(cv2.contourArea(c))
+            #TODO:area filtering
             # calculate moments for each contour
             M = cv2.moments(c)
             # calculate x,y coordinate of center

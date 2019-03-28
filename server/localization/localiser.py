@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
-
+from help_module.img_processing_helper import ImageProcessor
 class Localiser:
     def __init__(self):
         self.matrix=[]
         self.calibration_points=[] # key=px_index, val=world_coord
         self.tracker = None
+        self.processor = ImageProcessor()
 
     def add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])
@@ -30,7 +31,7 @@ class Localiser:
         raise NotImplementedError
 
     def set_tracker(self, tracker):
-       self.tracker = tracker
+        self.tracker = tracker
 
     def update(self, data, timestamp):
         raise NotImplementedError
