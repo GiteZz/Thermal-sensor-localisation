@@ -98,10 +98,6 @@ class PathGenerator:
             for i in range(1,len(positions)):
                 writer.writerow([positions[i][0], positions[i][1], np.sum(d[:i-1])/vel])
 
-def main(filename,png=True):
-    pg=PathGenerator()
-    pg.generate_points()
-    pg.get_csv_and_png(filename,png)
 
 if __name__=='__main__':
     pg = PathGenerator()
@@ -110,7 +106,13 @@ if __name__=='__main__':
     png=True
     pg.get_csv_and_png(filename, png)
 
+
 '''
+def main(filename,png=True):
+    pg=PathGenerator()
+    pg.generate_points()
+    pg.get_csv_and_png(filename,png)
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-fn', '--filename', type=str, required=True, help="filename")

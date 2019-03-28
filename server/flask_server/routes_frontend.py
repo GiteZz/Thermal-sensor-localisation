@@ -5,6 +5,7 @@ from flask_server.models import Measurement_test, Measurement
 from help_module.img_helper import fast_thermal_image, PIL_to_bytes, combine_imgs
 from help_module.flask_helper import serve_pil_image
 from help_module.webcam_helper import get_webcam_img
+from help_module.img_processing_helper import ImageProcessor
 import time
 
 @app.route("/")
@@ -48,6 +49,8 @@ def get_ids():
 
 @app.route("/thermal_sensor/<id>/last_image", methods=['GET'])
 def get_sensor_last_image(id):
+    processor=ImageProcessor()
+
     print(f'requesting last image with id={id}')
     scaled_up = request.args.get('scale_up')
     scaled_up = 1 if scaled_up is None else int(scaled_up)
@@ -62,8 +65,10 @@ def get_sensor_last_image(id):
         last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
     else:
         last_result = Measurement.query.filter(Measurement.sensor_id == int(id)).order_by(Measurement.timestamp.desc()).first()
-
-    img = fast_thermal_image(last_result.data, scale=scaled_up, interpolate=interpolate)
+    #get processed frame
+    processor.process(last_result.data)
+    cv2_data=processor.plot_frame()
+    img = fast_thermal_image(cv2_data, scale=scaled_up)
 
     return Response(img)
 
@@ -89,7 +94,6 @@ def stream_gen(id, simulated, show_webcam=True):
         bytes = PIL_to_bytes(img)
         yield (b'--frame\r\n'
                b'Content-Type: image/png\r\n\r\n' + bytes + b'\r\n')
-
 
 
 @app.route("/thermal_sensor/<id>/stream", methods=['GET'])
