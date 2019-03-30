@@ -1,5 +1,16 @@
 {% extends "main.html" %}
 
 {% block content %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/debug.css')}}">
 
+<h1>Tracker testing</h1>
+<div class="main_wrapper">
+    <div class="debug_img">
+        <img src="../static/Img/layout.png" alt="">
+        <div class="dot"></div>
+    </div>
+    <div class="legend">
+        <h3>Objects</h3>
+    </div>
+</div>
 {% endblock %}
