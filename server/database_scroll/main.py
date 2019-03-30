@@ -21,7 +21,7 @@ from help_module.time_helper import meas_to_time, clean_diff, get_time_str
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
 from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
 
-from qt_extra_classes import ZoomQGraphicsView
+from qt_extra_classes import ZoomQGraphicsView, Sensor
 
 
 class MyUI(QtWidgets.QMainWindow):
@@ -218,26 +218,22 @@ class MyUI(QtWidgets.QMainWindow):
         for key in n_csv_sources:
             self.add_source('csv_id', file_name=filename, data=n_csv_sources[key], sensor_id=key)
 
-    def add_source(self, type, sensor_id=None, file_name=None, data=None):
+    def add_source(self, sensor_type, sensor_id=None, file_name=None, data=None):
         """
         Creates a source but doesn't load in the data, if type == 'csv' file_name should be specified
         If type == 'sensor' sensor_id should be used
 
-        :param type:
+        :param sensor_type:
         :param sensor_id:
         :param file_name:
         :return:
         """
-        new_layout = QHBoxLayout()
-        label = QLabel(f'{type}: {sensor_id if sensor_id is not None else file_name}')
-        checkbox = QCheckBox()
-        new_layout.addWidget(label)
-        new_layout.addWidget(checkbox)
+        n_sensor = Sensor(sensor_type, sensor_id, file_name, data)
+        new_layout = n_sensor.create_ui()
 
-        source_set = {'layout': new_layout, 'label': label, 'data': data, 'type': type, 'sensor_id': sensor_id, 'filename': file_name}
         self.source_checkboxes[checkbox] = source_set
 
-        checkbox.stateChanged.connect(self.sensor_state_changed)
+        self.checkbox.stateChanged.connect(checkbox_activate)
 
         self.ui.sourcesVLayout.addLayout(new_layout)
 
