@@ -1,8 +1,7 @@
 from PyQt5 import QtWidgets
 
-
 class ZoomQGraphicsView(QtWidgets.QGraphicsView):
-    def __init__ (self, parent=None):
+    def __init__(self, parent=None):
         super(ZoomQGraphicsView, self).__init__ (parent)
 
     def wheelEvent(self, event):
@@ -31,3 +30,4 @@ class ZoomQGraphicsView(QtWidgets.QGraphicsView):
         # Move scene to old position
         delta = newPos - oldPos
         self.translate(delta.x(), delta.y())
+

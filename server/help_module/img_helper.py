@@ -107,7 +107,7 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
     """
     Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
     There are only 9 different colorbrackets
-    :param pixels:
+    :param pixels: list with length 32x24 that contains the pixels from the sensor
     :param scale:
     :param smooth:
     :return:

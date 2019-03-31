@@ -23,3 +23,21 @@ def get_calibration_points():
         data = json.load(f)
         return data['points']
 
+def get_calibration_co(name):
+    with open(config_file, 'r+') as f:
+        data = json.load(f)
+        return data['points'][name]
+
+def save_calibration_data(calibration_points):
+    with open(config_file, 'r+') as f:
+        data = json.load(f)
+        prev_points = data["calibration_data"]
+
+        for point in calibration_points:
+            prev_points[point["name"]] = point["img_data"]
+
+        data["calibration_data"] = prev_points
+
+        f.seek(0)
+        json.dump(data, f, indent=4)
+        f.truncate()

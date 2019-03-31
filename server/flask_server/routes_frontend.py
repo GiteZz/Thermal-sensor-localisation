@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect, request, jsonify, R
 from flask_server import app, db
 from flask_server.models import Measurement_test, Measurement
 
-from help_module.img_helper import fast_thermal_image, PIL_to_bytes, combine_imgs
+from help_module.img_helper import fast_thermal_image, PIL_to_bytes, combine_imgs, processed_color_plot
 from help_module.flask_helper import serve_pil_image
 from help_module.webcam_helper import get_webcam_img
 from help_module.img_processing_helper import ImageProcessor
@@ -74,14 +74,16 @@ def get_sensor_last_image(id):
 
 def stream_gen(id, simulated, show_webcam=True):
     print(f'requested stream for {id}')
+    processor=ImageProcessor()
     while True:
         time.sleep(.1)
         if simulated:
             last_result = Measurement_test.query.filter(Measurement_test.sensor_id == id).order_by(Measurement_test.timestamp.desc()).first()
         else:
             last_result = Measurement.query.filter(Measurement.sensor_id == id).order_by(Measurement.timestamp.desc()).first()
+        # get processed frame
+        img=processed_color_plot(last_result.data)
 
-        img = fast_thermal_image(last_result.data)
         try:
             if show_webcam:
                 webcam_img = get_webcam_img(last_result)

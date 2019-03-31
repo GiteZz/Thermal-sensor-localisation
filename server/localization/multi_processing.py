@@ -1,13 +1,8 @@
-'''
-this document contains help functions to process the np array from the DB
-into a number of objects which are visualised and of which the centroid is determined
-to use this class, all you need is the process function, see below
-'''
 import cv2
 import numpy as np
 import matplotlib.image as image
 import scipy.ndimage.filters as filter
-
+import math
 
 class ImageProcessor:
     def __init__(self):
@@ -23,6 +18,47 @@ class ImageProcessor:
 
         self.centroids=[] #2D array
         self.contours=[]
+
+        self.history_amount = 10
+        self.past_frames = []
+        self.current_frame = None
+
+        self.sensor_id = None
+
+        # Should be smaller then 1/history_amount
+        self.weight_min = 1/20
+        self.weight_step = self.calculate_step_weight()
+        self.weight_values = self.calculate_weights()
+
+    def calculate_step_weight(self):
+        top = -2*(self.weight_min * self.history_amount - 1)
+        bottom = self.history_amount*(self.history_amount - 1)
+
+        return top/bottom
+
+    def calculate_weights(self):
+        return [self.weight_step * i + self.weight_min for i in range(self.history_amount)]
+
+    def add_frame(self, frame):
+
+        if len(self.past_frames) == self.history_amount:
+            self.past_frames.pop(0)
+        self.past_frames.append(self.current_frame)
+        self.current_frame = frame
+
+    def img_ready(self):
+        return len(self.past_frames) == self.history_amount
+
+    def get_processed_img(self):
+        if not self.img_ready():
+            return None
+
+    def subtract_history(self):
+        new_frame = self.current_frame.copy()
+        for mul_value, index in enumerate(self.weight_values):
+            new_frame = new_frame - mul_value * self.past_frames[index]
+
+        return new_frame
 
     def __get_img(self):
        self.data = np.reshape(self.data,self.dim).astype(np.uint8)

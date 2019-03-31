@@ -6,12 +6,12 @@ import json
 import math
 from help_module.img_helper import create_timed_image
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
-from help_module.calibration_helper import add_calibration_point, get_calibration_points, remove_calibration_point
+from help_module.calibration_helper import add_calibration_point, get_calibration_points, remove_calibration_point, get_calibration_co
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
-    print(data)
+    # print(data)
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
 
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
@@ -129,8 +129,13 @@ def config_remove_calibration_point(pointname):
 
 @app.route('/config/calibrate/<pointname>/start', methods=['GET'])
 def config_start_calibration_point(pointname):
-    remove_calibration_point(pointname)
-    # loc_bridge.calibrate_point((co_x, co_y))
+    co = get_calibration_co(pointname)
+    loc_bridge.calibrate_point(pointname, co)
+    return redirect(url_for('config_calibrate'))
+
+@app.route('/config/calibrate/save', methods=['GET'])
+def config_save_calibration_data():
+    loc_bridge.bridge_save_cal_data()
     return redirect(url_for('config_calibrate'))
 
 '''

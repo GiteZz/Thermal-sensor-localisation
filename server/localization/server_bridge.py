@@ -1,5 +1,6 @@
 from localization.tracker import Tracker
 from localization.localiser import Localiser
+from help_module.calibration_helper import save_calibration_data
 
 class ServerBridge:
     def __init__(self):
@@ -7,13 +8,13 @@ class ServerBridge:
         self.tracker = Tracker()
         self.calibrate_data = []
         self.current_calibrate = None
+        self.auto_localiser = True
 
     def update(self, sensor_id, data, timestamp):
         self.check_updates(sensor_id, data, timestamp)
-        if sensor_id in self.localization_dict:
-            self.localization_dict[sensor_id].update(data, timestamp)
-        else:
-            raise Exception('Sensor doesn\'t have a Localiser')
+        if sensor_id not in self.localization_dict:
+            self.add_localiser(sensor_id)
+        self.localization_dict[sensor_id].update(data, timestamp)
 
     def add_localiser(self, sensor_id, calibrate_data=None):
         new_localiser = Localiser()
@@ -23,12 +24,11 @@ class ServerBridge:
 
         self.localization_dict[sensor_id] = Localiser()
 
-    def calibrate_point(self, co):
+    def calibrate_point(self,name,  co):
         if self.current_calibrate is None:
-            self.current_calibrate = {'co': co, 'img_data': {}}
+            self.current_calibrate = {'name': name, 'co': co, 'img_data': {}}
         else:
             print('WARNING there is still a calibration point active')
-
 
     def check_updates(self, sensor_id, data, timestamp):
         self.check_calibrate(sensor_id, data, timestamp)
@@ -38,6 +38,8 @@ class ServerBridge:
             amount_active_sensors = len(self.localization_dict)
             if sensor_id not in self.current_calibrate['img_data']:
                 processor=self.localization_dict[sensor_id].processor
+                processor.process(data)
+                print(f'amount of centroid: {len(processor.centroids)}')
                 if len(processor.centroids) == 1:
                     self.current_calibrate['img_data'][sensor_id] = processor.centroids[0]
                 else:
@@ -46,6 +48,13 @@ class ServerBridge:
 
 
             if len(self.current_calibrate['img_data']) == amount_active_sensors:
+                print("Saved the calibration point")
+
                 self.calibrate_data.append(self.current_calibrate)
+                save_calibration_data(self.calibrate_data)
                 self.current_calibrate = None
+
+    def bridge_save_cal_data(self):
+        save_calibration_data(self.calibrate_data)
+        print("Saved loc data")
 

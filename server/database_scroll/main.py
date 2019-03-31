@@ -4,8 +4,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QImage, QTransform
 import scipy.ndimage.filters as fil
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from PyQt5.QtCore import QDateTime, QSize
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 import numpy as np
 import json
 import operator
@@ -22,6 +21,8 @@ from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_fr
 from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
 
 from qt_extra_classes import ZoomQGraphicsView
+from db_bridge import DB_Bridge
+from sensor import Sensor
 
 
 class MyUI(QtWidgets.QMainWindow):
@@ -29,17 +30,8 @@ class MyUI(QtWidgets.QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        with open(r'..\configuration_files\db_configuration.json', 'r') as f:
-             data = json.load(f)
 
-             postgres_user = data['postgres']['username']
-             postgres_pass = data['postgres']['password']
-             postgres_db = data['postgres']['db_name']
 
-        self.engine = create_engine(f'postgres://{postgres_user}:{postgres_pass}@localhost:5432/{postgres_db}')
-        Base.metadata.create_all(bind=self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
         self.episode_index = -1
         self.frame_index = 0
         self.frame_jump = 10
@@ -51,8 +43,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.download_path = ''
         self.sensor = 0
         self.episode_selected = 0
-
-        self.source_checkboxes = {}
 
         self.episodes = []
         self.episode_sensors = []
@@ -113,6 +103,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.ignoreStartCheckbox.stateChanged.connect(self.update_episodes_ui_update)
         self.ui.ignoreStopCheckbox.stateChanged.connect(self.update_episodes_ui_update)
 
+        self.sensors = []
+
         for method_name in self.vis_methods_name:
             n_label = QLabel(method_name)
             n_checkbox = QCheckBox()
@@ -127,6 +119,8 @@ class MyUI(QtWidgets.QMainWindow):
             self.vis_checkboxes.append(n_checkbox)
             self.vis_labels.append(n_label)
             self.vis_layouts.append(n_layout)
+
+        self.db_bridge = DB_Bridge()
 
     def update_vis_methods(self):
         self.vis_cur_meth = []
@@ -218,89 +212,53 @@ class MyUI(QtWidgets.QMainWindow):
         for key in n_csv_sources:
             self.add_source('csv_id', file_name=filename, data=n_csv_sources[key], sensor_id=key)
 
-    def add_source(self, type, sensor_id=None, file_name=None, data=None):
+    def add_source(self, sensor_type, sensor_id=None, file_name=None, data=None):
         """
         Creates a source but doesn't load in the data, if type == 'csv' file_name should be specified
         If type == 'sensor' sensor_id should be used
 
-        :param type:
+        :param sensor_type:
         :param sensor_id:
         :param file_name:
         :return:
         """
-        new_layout = QHBoxLayout()
-        label = QLabel(f'{type}: {sensor_id if sensor_id is not None else file_name}')
-        checkbox = QCheckBox()
-        new_layout.addWidget(label)
-        new_layout.addWidget(checkbox)
-
-        source_set = {'layout': new_layout, 'label': label, 'data': data, 'type': type, 'sensor_id': sensor_id, 'filename': file_name}
-        self.source_checkboxes[checkbox] = source_set
-
-        checkbox.stateChanged.connect(self.sensor_state_changed)
-
+        n_sensor = Sensor(self.db_bridge, self)
+        n_sensor.set_sensor_values(sensor_type, sensor_id, file_name, data)
+        new_layout = n_sensor.create_ui(self.sensor_state_changed)
+        self.sensors.append(n_sensor)
         self.ui.sourcesVLayout.addLayout(new_layout)
 
-    def clear_sources(self, type):
+    def clear_sources(self, sensor_type):
         """
         Clears the UI elements and the list that contain references to sources
 
         :param type: type of source to be removed
         :return:
         """
-        for key, value in self.source_checkboxes.items():
-            if value['type'] == type:
-                res = dict.pop(key)
-                res['label'].deleteLater()
-                res['layout'].deleteLater()
-                key.deleteLater()
+        n_list = [sensor for sensor in self.sensors if sensor.sensor_type != sensor_type]
+        del_list = [sensor for sensor in self.sensors if sensor.sensor_type == sensor_type]
 
-    def load_source(self, source):
-        """
-        This function takes a source and then looks at its type to find the function to get that data
+        for sensor in del_list:
+            sensor.delete_ui()
 
-        :param source: A dict containing all the information to load the data
-        :return: list of measurements
-        """
+        self.sensors = n_list
 
-        if source['type'] == 'csv':
-            return load_csv(source['filename'])
-        elif source['type'] == 'sensor':
-            return self.load_sensor(source['sensor_id'])
-        else:
-            raise Exception('Source type was not recognized')
+    def get_query_param(self):
+        param = {}
+        param['act_start'] = not self.ui.ignoreStartCheckbox.isChecked()
+        param['act_stop'] = not self.ui.ignoreStopCheckbox.isChecked()
+        param['time_start'] = self.ui.startTimeEdit.dateTime().toPyDateTime()
+        param['time_stop'] = self.ui.stopTimeEdit.dateTime().toPyDateTime()
+        param['amount_limit'] = self.ui.frameAmountSpinbox.value()
 
-    def load_sensor(self, sensor_id):
-        """
-        Uses a database query to get measurements from the sensor with id == sensor_id
-        TODO Take into account the time limits
+        return param
 
-        :param sensor_id:
-        :return:
-        """
-        start_time = self.ui.startTimeEdit.dateTime().toPyDateTime()
-        stop_time = self.ui.stopTimeEdit.dateTime().toPyDateTime()
-
-        basic_query = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id)
-
-        if not self.ui.ignoreStartCheckbox.isChecked():
-            basic_query = basic_query.filter(Measurement.timestamp > start_time)
-
-        if not self.ui.ignoreStopCheckbox.isChecked():
-            basic_query = basic_query.filter(Measurement.timestamp < stop_time)
-
-
-        sensor_values = basic_query.order_by(Measurement.timestamp.desc()). \
-            limit(self.ui.frameAmountSpinbox.value()).all()
-
-        return sensor_values
 
     def reload_sources(self, type):
-        for checkbox, source in self.source_checkboxes.items():
-            if checkbox.isChecked() and source['type'] == type:
-                source['data'] = self.load_source(source)
+        for sensor in self.sensors:
+            sensor.reload()
 
-    def sensor_state_changed(self):
+    def sensor_state_changed(self, sensor):
         """
         This function looks at the selected sources and then creates a episode list.
         A episode is defined as measurements that all satisfy the conditions.
@@ -315,15 +273,9 @@ class MyUI(QtWidgets.QMainWindow):
         :return: Fills up self.episodes
         """
 
-        # This sometimes happens when clearing listwidgets
-        sender = self.sender()
-
-        source = self.source_checkboxes[sender]
-
         # Load data if not loaded
-        if source['data'] is None:
-            source['data'] = self.load_source(source)
-            self.source_checkboxes[sender] = source
+        if not sensor.data_loaded():
+            sensor.load_data()
 
         self.update_episodes()
 
@@ -331,9 +283,9 @@ class MyUI(QtWidgets.QMainWindow):
 
         # Combine data from different sources and sort for easier plotting
         data = []
-        for checkbox, source in self.source_checkboxes.items():
-            if checkbox.isChecked():
-                data.extend(source['data'])
+        for sensor in self.sensors:
+            if sensor.is_active():
+                data.extend(sensor.get_data())
 
         data = sorted(data, key=operator.attrgetter('timestamp'), reverse=True)
 
@@ -588,8 +540,7 @@ class MyUI(QtWidgets.QMainWindow):
     def refresh_sensor_ids(self):
         self.clear_sources('sensor')
 
-        sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
-        id_list = [meas.sensor_id for meas in sensor_ids]
+        id_list = self.db_bridge.get_distinct_ids()
         for id in id_list:
             self.add_source('sensor', id)
 
