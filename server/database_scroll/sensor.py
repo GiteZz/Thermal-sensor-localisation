@@ -1,7 +1,14 @@
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from help_module.csv_helper import load_csv
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
-
+from help_module.img_helper import fast_thermal_image, plt_fig_to_PIL, get_deltas_img, grid_plot, hist_plot, fast_thermal_image_num
+from help_module.time_helper import abs_diff
+from localization.multi_processing import ImageProcessor
+from datetime import timedelta
+import scipy.ndimage.filters as filter
+from matplotlib.figure import Figure
+import numpy as np
+import cv2
 
 class Sensor:
     def __init__(self, db_bridge, app):
@@ -13,10 +20,16 @@ class Sensor:
         self.checkbox = None
 
         self.checkbox_callback = None
+        self.img_processor = ImageProcessor()
+
+        self.start_time = None
+        self.stop_time = None
+
+        self.meas_list = None
 
     def set_sensor_values(self, sensor_type, sensor_id=None, file_name=None, data=None):
         self.sensor_type = sensor_type
-        self.data = data
+        self.meas_list = data
         self.file_name = file_name
         self.sensor_id = sensor_id
 
@@ -41,19 +54,19 @@ class Sensor:
         self.checkbox.deleteLater()
 
     def data_loaded(self):
-        return self.data is not None
+        return self.meas_list is not None
 
     def reload(self):
-        if self.data is not None:
+        if self.meas_list is not None:
             self.load_data()
 
     def is_active(self):
         return self.checkbox.isChecked()
 
     def get_data(self):
-        if self.data is None:
+        if self.meas_list is None:
             print("WARNING attempting to load data that is not loaded")
-        return self.data
+        return self.meas_list
 
     def load_data(self):
         """
@@ -63,11 +76,20 @@ class Sensor:
         :return: list of measurements
         """
         if self.sensor_type == 'csv':
-            self.data = load_csv(self.file_name)
+            self.meas_list = load_csv(self.file_name)
         elif self.sensor_type == 'sensor':
-            self.data = self.load_sensor()
+            self.meas_list = self.load_sensor()
         else:
             raise Exception('Source type was not recognized')
+
+        self.start_time = self.meas_list[0].timestamp
+        self.stop_time = self.meas_list[-1].timestamp
+
+        for index, meas in enumerate(self.meas_list):
+            meas.set_or_index(index)
+            meas.set_sensor(self)
+            meas.convert_to_numpy()
+
 
     def load_sensor(self):
         """
@@ -79,4 +101,81 @@ class Sensor:
         param = self.app.get_query_param()
         return self.db_bridge.get_values(self.sensor_id, param)
 
+    def get_default_vis(self, index):
+        thermal_data = self.meas_list[index].data
+        img = np.reshape(thermal_data, (24, 32))
+        img = img.repeat(10, axis=0)
+        img = img.repeat(10, axis=1)
 
+        img = filter.gaussian_filter(img, 15)
+        hist_amount,  hist_temp = np.histogram(img)
+        max_temp_index = np.argmax(hist_amount)
+        img[img <= hist_temp[max_temp_index]] = 0
+        # print(hist_data)
+
+        fast = fast_thermal_image_num(img, dim=(240, 320), scale=1)
+        hist = hist_plot(np.reshape(img, (-1, 1)).ravel())
+        return [fast, hist]
+
+    def get_multi_processing(self, index):
+        hist_amount = self.img_processor.get_hist_length()
+        start_index = max(0, index - hist_amount)
+        prev_frames = [meas.data for meas in self.meas_list[start_index:index]]
+        cur_frame = self.meas_list[index].data
+
+        self.img_processor.set_current_frame(cur_frame)
+        self.img_processor.set_history(prev_frames)
+
+        return self.img_processor.subtract_history()
+
+    def get_closest_meas(self, time):
+        cur_time = timedelta(seconds=time)
+
+        min_diff = float('inf')
+        min_index = 0
+
+        for meas, index in enumerate(self.meas_list):
+            if abs_diff(meas.timestamp, cur_time) < min_diff:
+                min_diff = abs_diff(meas.timestamp, cur_time)
+                min_index = index
+
+        return min_index
+
+    def multi_plot(self, thermal_data, blur=False, size=10):
+        thermal_data = thermal_data.repeat(size, axis=0)
+        thermal_data = thermal_data.repeat(size, axis=1)
+        if blur:
+            thermal_data = filter.gaussian_filter(thermal_data, 10)
+
+
+        deltas = get_deltas_img(thermal_data)
+        imgs = []
+        hists = []
+        locs = []
+
+        for x in range(3):
+            for y in range(4):
+                sub_img = thermal_data[x * size * 8:(x + 1) * size * 8, y * size * 8:(y + 1) * size * 8]
+
+                n_img = fast_thermal_image(sub_img, deltas=deltas, dim=(8 * size, 8 * size), side=False)
+                n_hist = hist_plot(sub_img.reshape((-1,1)).ravel())
+                imgs.append(n_img)
+                hists.append(n_hist)
+                locs.append((y, x))
+
+        imgs_offset = []
+        locs_offset = []
+
+        for x in range(2):
+            for y in range(3):
+                sub_img = thermal_data[x * size * 8 + size * 4:(x + 1) * size * 8 + size * 4, y * size * 8 + size * 4:(y + 1) * size * 8 + size * 4]
+
+                n_img = fast_thermal_image(sub_img, deltas=deltas, dim=(size * 8, size * 8), side=False)
+                imgs_offset.append(n_img)
+                locs_offset.append((y, x))
+
+        plot1 = grid_plot(imgs, locs, 100, 100, 15)
+        plot2 = grid_plot(hists, locs, 100, 100, 15)
+        plot3 = grid_plot(imgs_offset, locs_offset, 100, 100, 15)
+
+        return [plot1, plot2, plot3]

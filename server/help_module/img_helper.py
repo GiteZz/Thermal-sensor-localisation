@@ -5,7 +5,6 @@ import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import scipy.ndimage.filters as fil
-from cv2 import *
 from datetime import datetime
 import time
 from help_module.csv_helper import read_data
@@ -45,14 +44,14 @@ def blur_color_plot(pixels, to_pil=True):
     else:
         return fig
 
-def hist_plot(pixels, blur=True, to_pil=True):
+def hist_plot(data, blur=True, to_pil=True):
     fig = Figure()
     ax0 = fig.add_subplot(1, 1, 1)
-    img_ar = np.array(pixels).reshape((24, 32))
-    if blur:
-        img_ar = fil.gaussian_filter(img_ar, 1)
+    # img_ar = np.array(pixels).reshape((24, 32))
+    # if blur:
+    #     img_ar = fil.gaussian_filter(img_ar, 1)
 
-    data = img_ar.reshape((1, -1)).ravel()
+    # data = img_ar.reshape((1, -1)).ravel()
 
     ax0.hist(data, bins=20)
 
@@ -102,8 +101,74 @@ def plt_fig_to_png_bytes(fig):
     return buf
 
 
+def get_deltas(min_val, max_val, amount=8):
+    delta = (max_val - min_val) / amount
 
-def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
+    deltas = [min_val]
+
+    for i in range(amount - 1):
+        deltas.append(min_val + (i+1) * delta)
+
+    deltas.append(float("inf"))
+
+    return deltas
+
+def get_deltas_img(img):
+    min_img = np.min(img[img != 0])
+    max_img = np.max(img)
+
+    return get_deltas(min_img, max_img)
+
+def get_fitted_img(img, max_size, return_mar=False):
+    width, height = img.size
+    ratio_x = max_size[0] / width
+    ratio_y = max_size[1] / height
+    ratio = max(ratio_x, ratio_y)
+
+    n_width = int(ratio * width)
+    n_height = int(ratio * height)
+    img_res = img.resize((n_width, n_height))
+    if not return_mar:
+        return img_res
+    else:
+        return img_res, (int((max_size[0] - n_width)/2), int((max_size[1] - n_height)/2))
+
+def grid_plot(images, locs, width, height, margin):
+    """
+    creates a grid of images
+
+    :param images: assumed PIL images
+    :param locs: (x,y) x and y are the two indices of were the image will be located
+    :param width: height of one grid space
+    :param height: width of one grid space
+    :param margin: space between two grid spaces
+    :return:
+    """
+    x_max_index = -1
+    y_max_index = -1
+    for loc in locs:
+        x_max_index = loc[0] if loc[0] > x_max_index else x_max_index
+        y_max_index = loc[1] if loc[1] > y_max_index else y_max_index
+
+    img_width = (x_max_index + 1) * width + x_max_index * margin
+    img_height = (y_max_index + 1) * height + y_max_index * margin
+
+    grid_img = Image.new('RGB', (img_width, img_height))
+
+    for index, img in enumerate(images):
+        res_img, n_mar = get_fitted_img(img, (width, height), return_mar=True)
+
+        x_start = locs[index][0] * (width + margin) + n_mar[0]
+        y_start = locs[index][1] * (height + margin) + n_mar[1]
+
+        grid_img.paste(res_img, (x_start, y_start))
+
+    return grid_img
+
+
+
+
+def fast_thermal_image(pixels, scale=10, smooth=False, side=True, deltas=None, dim=(24,32)):
     """
     Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
     There are only 9 different colorbrackets
@@ -112,34 +177,31 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
     :param smooth:
     :return:
     """
-    img_ar = np.array(pixels).reshape((24,32))
+    img_ar = np.array(pixels)
+
+    if img_ar.shape != dim:
+        img_ar = img_ar.reshape(dim)
 
     if smooth:
         img_ar = fil.gaussian_filter(img_ar, 1)
 
-    # nan gets converted to 0
-    min_img = np.min(img_ar[img_ar != 0])
-    max_img = np.max(img_ar)
-
     amount_delta = 8
-    delta = (max_img - min_img) / amount_delta
+
+    if deltas is None:
+        deltas = get_deltas_img(img_ar)
+
     colors = ((0,0,0),(68,1,84),(70,50,126),(54,92,141),(39,127,142),(31,161,135),(74,193,109),(160,218,57),(253,231,37))
 
-    deltas = [min_img]
-
-    for i in range(amount_delta - 1):
-        deltas.append(min_img + (i+1) * delta)
-
-    deltas.append(float("inf"))
     if side:
-        rgb_img = np.zeros((24, 32+15, 3), dtype=np.uint8)
+        rgb_img = np.zeros((dim[0], dim[1]+15, 3), dtype=np.uint8)
     else:
-        rgb_img = np.zeros((24, 32, 3), dtype=np.uint8)
+        rgb_img = np.zeros((dim[0], dim[1], 3), dtype=np.uint8)
 
-    for x in range(24):
-        for y in range(32):
+
+
+    for x in range(dim[0]):
+        for y in range(dim[1]):
             for index, color_range in enumerate(deltas):
-                pixel_value = img_ar[x,y]
                 if img_ar[x,y] < color_range:
                     rgb_img[x,y] = colors[index]
                     break
@@ -154,9 +216,9 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
 
     d = ImageDraw.Draw(img)
 
-    x_sq_start = 32 * scale + 10
+    x_sq_start = dim[1] * scale + 10
     x_sq_stop = x_sq_start + 50
-    color_square_height = (24 * scale) / (amount_delta + 1)
+    color_square_height = (dim[0] * scale) / (amount_delta + 1)
 
     for i in range(1, amount_delta):
         color_text = f'{deltas[i-1]}-{deltas[i]}'
@@ -172,6 +234,69 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True):
 
     return img
 
+
+def fast_thermal_image_num(pixels, scale=10, smooth=False, side=False, deltas=None, dim=(24, 32)):
+    """
+    Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
+    There are only 9 different colorbrackets
+    :param pixels: list with length 32x24 that contains the pixels from the sensor
+    :param scale:
+    :param smooth:
+    :return:
+    """
+    img_ar = np.array(pixels)
+
+    if img_ar.shape != dim:
+        img_ar = img_ar.reshape(dim)
+
+    if smooth:
+        img_ar = fil.gaussian_filter(img_ar, 1)
+
+    amount_delta = 8
+
+    if deltas is None:
+        deltas = get_deltas_img(img_ar)
+
+    colors = ((0, 0, 0), (68, 1, 84), (70, 50, 126), (54, 92, 141), (39, 127, 142), (31, 161, 135), (74, 193, 109),
+              (160, 218, 57), (253, 231, 37))
+
+    if side:
+        rgb_img = np.zeros((dim[0], dim[1] + 15, 3), dtype=np.uint8)
+    else:
+        rgb_img = np.zeros((dim[0], dim[1], 3), dtype=np.uint8)
+
+    for color_range, color in zip(reversed(deltas), reversed(colors)):
+        rgb_img[img_ar <= color_range] = np.array(color)
+
+    rgb_img = rgb_img.repeat(scale, axis=0)
+    rgb_img = rgb_img.repeat(scale, axis=1)
+
+    img = Image.fromarray(rgb_img, 'RGB')
+
+    if not side:
+        return img
+
+    d = ImageDraw.Draw(img)
+
+    x_sq_start = dim[1] * scale + 10
+    x_sq_stop = x_sq_start + 50
+    color_square_height = (dim[0] * scale) / (amount_delta + 1)
+
+    for i in range(1, amount_delta):
+        color_text = f'{deltas[i-1]}-{deltas[i]}'
+        d.rectangle([(x_sq_start, i * color_square_height), (x_sq_stop, (i + 1) * color_square_height)], fill=colors[i])
+        d.text((x_sq_stop + 10, i * color_square_height), color_text, fill=(255, 255, 255))
+
+    color_text = f'-inf-{deltas[0]}'
+    d.text((x_sq_stop + 10, 0), color_text, fill=(255, 255, 255))
+
+    color_text = f'{deltas[-2]}-inf'
+    d.rectangle(
+        [(x_sq_start, amount_delta * color_square_height), (x_sq_stop, (amount_delta + 1) * color_square_height)],
+        fill=colors[-1])
+    d.text((x_sq_stop + 10, amount_delta * color_square_height), color_text, fill=(255, 255, 255))
+
+    return img
 
 
 def bits_to_thermal_image(width, height, pixels, scale=1, interpolate=False, fixed_range=True, heat_min=10, heat_max=45):
@@ -198,10 +323,10 @@ def create_timed_image():
     time.sleep(0.1)
     imwrite('images/' + time_str + ".jpg", img)
 
-def test_speed(data, function):
+def test_speed(img, function, dim):
     t0 = time.time()
-    for meas in data:
-        function(meas.data)
+    for _ in range(100):
+        function(img, dim=dim)
     t1 = time.time()
 
     total = t1 - t0
@@ -252,12 +377,14 @@ def combine_imgs(img_list, title=None):
 
 
 if __name__ == "__main__":
-    result = read_data("sensor_data_episode_20190221-143435_0.csv")
+    result = read_data("9.csv")
     frame = result[30][0]
-    raw_color_plot(frame).show()
 
-    processed_color_plot(frame).show()
+    img = np.reshape(frame, (24, 32))
+    img = img.repeat(10, axis=0)
+    img = img.repeat(10, axis=1)
 
-    # fast_thermal_image(result[0].data)
-    # test_speed(result[0:100], fast_thermal_image)
-    # test_speed(result[0:100], convert_to_thermal_image)
+    img = fil.gaussian_filter(img, 10)
+
+    test_speed(img, fast_thermal_image, (240,320))
+    test_speed(img, fast_thermal_image_num, (240, 320))

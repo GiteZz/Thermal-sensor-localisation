@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.image as image
 import scipy.ndimage.filters as filter
 import math
+import scipy.ndimage.filters as fil
 
 class ImageProcessor:
     def __init__(self):
@@ -19,7 +20,7 @@ class ImageProcessor:
         self.centroids=[] #2D array
         self.contours=[]
 
-        self.history_amount = 10
+        self.history_amount = 2
         self.past_frames = []
         self.current_frame = None
 
@@ -27,48 +28,17 @@ class ImageProcessor:
 
         # Should be smaller then 1/history_amount
         self.weight_min = 1/20
-        self.weight_step = self.calculate_step_weight()
-        self.weight_values = self.calculate_weights()
 
-    def calculate_step_weight(self):
-        top = -2*(self.weight_min * self.history_amount - 1)
-        bottom = self.history_amount*(self.history_amount - 1)
+   # def set_
 
-        return top/bottom
 
-    def calculate_weights(self):
-        return [self.weight_step * i + self.weight_min for i in range(self.history_amount)]
+    def get_cv2_img(self, thermal_data):
+        image.imsave('temp_img.png', thermal_data)
+        img = cv2.imread('temp_img.png')
+        return img
 
-    def add_frame(self, frame):
-
-        if len(self.past_frames) == self.history_amount:
-            self.past_frames.pop(0)
-        self.past_frames.append(self.current_frame)
-        self.current_frame = frame
-
-    def img_ready(self):
-        return len(self.past_frames) == self.history_amount
-
-    def get_processed_img(self):
-        if not self.img_ready():
-            return None
-
-    def subtract_history(self):
-        new_frame = self.current_frame.copy()
-        for mul_value, index in enumerate(self.weight_values):
-            new_frame = new_frame - mul_value * self.past_frames[index]
-
-        return new_frame
-
-    def __get_img(self):
-       self.data = np.reshape(self.data,self.dim).astype(np.uint8)
-       self.data = filter.gaussian_filter(self.data, 1).astype(np.uint8)
-       image.imsave('temp_img.png', self.data)
-       self.img = cv2.imread('temp_img.png')
-       self.__resize_img()
-
-    def __resize_img(self):
-        self.img = cv2.resize(self.img,None,fx=self.scale_factor,fy=self.scale_factor)
+    def __resize_img(self, img):
+        return cv2.resize(img, None, fx=self.scale_factor, fy=self.scale_factor)
 
     def __process_into_binary(self):
         #TODO: filter empty frames
@@ -105,15 +75,21 @@ class ImageProcessor:
             # print(f'found centroid: {cX}, {cY}')
             self.centroids.append([cX,cY])
 
-    def process(self,data):
+    def get_processed_img(self, thermal_data):
         '''
         this is the public function which implements the whole process
         :param data: a np array of size 24*32 (dimensions don't matter), containing RAW sensor_data
         :return:
         '''
-        assert (np.size(data)==int(self.dim[0]*self.dim[1]))
-        self.data=data
-        self.__get_img()
+        img = np.reshape(thermal_data, (24, 32))
+        img = img.repeat(10, axis=0)
+        img = img.repeat(10, axis=1)
+
+        img = filter.gaussian_filter(img, 10)
+
+        img = self.get_cv2_img(img)
+
+
         self.__process_into_binary()
         self.__determine_contours_centroids()
 

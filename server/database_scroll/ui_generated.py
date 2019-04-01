@@ -146,7 +146,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addWidget(self.label)
         self.frameAmountSpinbox = QtWidgets.QSpinBox(self.centralwidget)
         self.frameAmountSpinbox.setMaximum(9999999)
-        self.frameAmountSpinbox.setProperty("value", 10000)
+        self.frameAmountSpinbox.setProperty("value", 1000)
         self.frameAmountSpinbox.setObjectName("frameAmountSpinbox")
         self.verticalLayout_2.addWidget(self.frameAmountSpinbox)
         self.timeList = QtWidgets.QListWidget(self.centralwidget)

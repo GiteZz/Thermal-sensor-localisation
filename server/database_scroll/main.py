@@ -438,8 +438,9 @@ class MyUI(QtWidgets.QMainWindow):
         :return:
         """
         text_margin = 10
-
-        qt_imgs = [ImageQt(method(meas.data)) for method in self.vis_cur_meth]
+        sensor = meas.sensor
+        imgs = sensor.get_default_vis(meas.or_index)
+        qt_imgs = [ImageQt(img) for img in imgs]
         qt_pix = [QPixmap.fromImage(img) for img in qt_imgs]
 
         plot_amount = len(qt_pix)
@@ -472,8 +473,6 @@ class MyUI(QtWidgets.QMainWindow):
             img_offset_y = (grid_height - img_height * scale) / (2 * scale)
 
             scene_img.setPos(img_offset_x + frame_offset_x, img_offset_y + frame_offset_y)
-
-
 
         scene_text = self.plot_scene.addText(str(meas.sensor_id))
         scene_text.setPos(frame[0] + 2, frame[1] + 2)

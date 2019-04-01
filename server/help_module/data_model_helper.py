@@ -14,6 +14,17 @@ class Measurement(Base):
     timestamp = Column('timestamp',DateTime, nullable=False,
                         default=datetime.utcnow,primary_key=True)
     data_type = Column('data_type', SmallInteger)
+    or_index = None
+    sensor = None
+
+    def set_or_index(self, index):
+        self.or_index = index
+
+    def set_sensor(self, sensor):
+        self.sensor = sensor
+
+    def convert_to_numpy(self):
+        self.data = np.array(self.data)
 
     def __repr__(self):
         return f'<Measurement :: sensor_id={self.sensor_id}, sequence_id={self.sequence_id}>'
@@ -30,6 +41,8 @@ class CSV_Measurement:
             self.sensor_id = 'csv_' + row[3]
         else:
             self.sensor_id = row[3]
+        self.or_index = None
+        self.sensor = None
 
     def set_values(self, sensor_id, data, sequence_id, timestamp, data_type):
         self.sensor_id = sensor_id
@@ -37,3 +50,12 @@ class CSV_Measurement:
         self.sequence_id = sequence_id
         self.timestamp = timestamp
         self.data_type = data_type
+
+    def set_or_index(self, index):
+        self.or_index = index
+
+    def set_sensor(self, sensor):
+        self.sensor = sensor
+
+    def convert_to_numpy(self):
+        self.data = np.array(self.data)
