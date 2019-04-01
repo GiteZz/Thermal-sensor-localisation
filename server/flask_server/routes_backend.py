@@ -39,6 +39,7 @@ def receive_simulate():
 
     return "Succes"
 
+
 @app.route('/sensor/bits', methods=['POST'])
 def receive_sensor_bits():
     data = request.json
@@ -137,6 +138,13 @@ def config_save_calibration_data():
     loc_bridge.bridge_save_cal_data()
     return redirect(url_for('config_calibrate'))
 
-
+'''
+request of form: IP:5000/tracker/update?ID=<>&position_x=<>&position_y=<>
+'''
+@app.route('/tracker/update', methods=['POST'])
+def tracker_vis_update():
+    data= request.args
+    socketio.emit('tracker_update',{'ID':data['ID'],'position':(data["position_x"],data["position_y"])})
+    return 'update received and relayed by server'
 
 
