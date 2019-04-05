@@ -17,13 +17,12 @@ class ServerBridge:
         self.localization_dict[sensor_id].update(data, timestamp)
 
     def add_localiser(self, sensor_id, calibrate_data=None):
-        new_localiser = Localiser()
+        new_localiser = Localiser(sensor_id)
         if calibrate_data is not None:
             new_localiser.calibrate(calibrate_data)
         new_localiser.set_tracker(self.tracker)
 
-        self.localization_dict[sensor_id] = Localiser()
-
+        self.localization_dict[sensor_id] = new_localiser
     def calibrate_point(self,name,  co):
         if self.current_calibrate is None:
             self.current_calibrate = {'name': name, 'co': co, 'img_data': {}}

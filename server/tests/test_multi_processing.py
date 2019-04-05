@@ -1,4 +1,4 @@
-from localization.multi_processing import ImageProcessor
+from localization.processing import ImageProcessor
 
 proc = ImageProcessor()
 

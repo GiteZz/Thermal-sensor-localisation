@@ -19,9 +19,9 @@ def receive_sensor_debug():
     db.session.commit()
 
     socketio.emit('new_image', {'device_id': data['device_id']})
-    save_webcam_frame(new_db_data)
-
-    loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
+    # save_webcam_frame(new_db_data)
+    print(data)
+    # loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
 
     return "Hello World!"
 

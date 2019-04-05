@@ -10,7 +10,7 @@ device_amount = 1
 
 sequence_array = [0] * device_amount
 
-sensor_ids = [5]
+sensor_ids = [400, 500]
 index = 0
 
 POST_url = 'http://localhost:5000/sensor/debug'

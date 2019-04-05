@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from help_module.csv_helper import load_csv
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
-from help_module.img_helper import fast_thermal_image, plt_fig_to_PIL, get_deltas_img, grid_plot, hist_plot, fast_thermal_image_num
+from help_module.img_helper import fast_thermal_image, plt_fig_to_PIL, get_deltas_img, grid_plot, hist_plot
 from help_module.time_helper import abs_diff
-from localization.multi_processing import ImageProcessor
+from localization.processing import ImageProcessor
 from datetime import timedelta
 import scipy.ndimage.filters as filter
 from matplotlib.figure import Figure
@@ -110,10 +110,10 @@ class Sensor:
         img = filter.gaussian_filter(img, 15)
         hist_amount,  hist_temp = np.histogram(img)
         max_temp_index = np.argmax(hist_amount)
-        img[img <= hist_temp[max_temp_index]] = 0
+        # img[img <= hist_temp[max_temp_index]] = 0
         # print(hist_data)
 
-        fast = fast_thermal_image_num(img, dim=(240, 320), scale=1)
+        fast = fast_thermal_image(img, dim=(240, 320), scale=1)
         hist = hist_plot(np.reshape(img, (-1, 1)).ravel())
         return [fast, hist]
 

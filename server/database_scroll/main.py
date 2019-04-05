@@ -162,6 +162,7 @@ class MyUI(QtWidgets.QMainWindow):
 
 
     def adjust_after_shift(self):
+        print("Adjust after shift")
         if self.mode == 'frame':
             slider_index = self.frame_index
         else:

@@ -82,7 +82,7 @@ def stream_gen(id, simulated, show_webcam=True):
         else:
             last_result = Measurement.query.filter(Measurement.sensor_id == id).order_by(Measurement.timestamp.desc()).first()
         # get processed frame
-        img=processed_color_plot(last_result.data)
+        img=fast_thermal_image(last_result.data)
 
         try:
             if show_webcam:

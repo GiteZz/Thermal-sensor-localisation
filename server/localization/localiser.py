@@ -53,7 +53,7 @@ class Localiser:
 
     def update(self, data, timestamp):
         self.processor.process(data)
-        self.tracker.update(self.processor.centroids,timestamp)
+        self.tracker.update(self.processor.centroids, timestamp)
 
 
 if __name__=='__main__':

@@ -166,9 +166,7 @@ def grid_plot(images, locs, width, height, margin):
     return grid_img
 
 
-
-
-def fast_thermal_image(pixels, scale=10, smooth=False, side=True, deltas=None, dim=(24,32)):
+def fast_thermal_image(pixels, scale=1, smooth=False, side=False, deltas=None, dim=(24, 32), as_numpy=False):
     """
     Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
     There are only 9 different colorbrackets
@@ -185,72 +183,8 @@ def fast_thermal_image(pixels, scale=10, smooth=False, side=True, deltas=None, d
     if smooth:
         img_ar = fil.gaussian_filter(img_ar, 1)
 
-    amount_delta = 8
-
-    if deltas is None:
-        deltas = get_deltas_img(img_ar)
-
-    colors = ((0,0,0),(68,1,84),(70,50,126),(54,92,141),(39,127,142),(31,161,135),(74,193,109),(160,218,57),(253,231,37))
-
-    if side:
-        rgb_img = np.zeros((dim[0], dim[1]+15, 3), dtype=np.uint8)
-    else:
-        rgb_img = np.zeros((dim[0], dim[1], 3), dtype=np.uint8)
-
-
-
-    for x in range(dim[0]):
-        for y in range(dim[1]):
-            for index, color_range in enumerate(deltas):
-                if img_ar[x,y] < color_range:
-                    rgb_img[x,y] = colors[index]
-                    break
-
-    rgb_img = rgb_img.repeat(scale, axis=0)
-    rgb_img = rgb_img.repeat(scale, axis=1)
-
-    img = Image.fromarray(rgb_img, 'RGB')
-
-    if not side:
-        return img
-
-    d = ImageDraw.Draw(img)
-
-    x_sq_start = dim[1] * scale + 10
-    x_sq_stop = x_sq_start + 50
-    color_square_height = (dim[0] * scale) / (amount_delta + 1)
-
-    for i in range(1, amount_delta):
-        color_text = f'{deltas[i-1]}-{deltas[i]}'
-        d.rectangle([(x_sq_start, i*color_square_height), (x_sq_stop, (i + 1)*color_square_height)], fill=colors[i])
-        d.text((x_sq_stop + 10, i*color_square_height), color_text, fill=(255,255,255))
-
-    color_text = f'-inf-{deltas[0]}'
-    d.text((x_sq_stop + 10, 0), color_text, fill=(255, 255, 255))
-
-    color_text = f'{deltas[-2]}-inf'
-    d.rectangle([(x_sq_start, amount_delta * color_square_height), (x_sq_stop, (amount_delta + 1) * color_square_height)], fill=colors[-1])
-    d.text((x_sq_stop + 10, amount_delta * color_square_height), color_text, fill=(255, 255, 255))
-
-    return img
-
-
-def fast_thermal_image_num(pixels, scale=10, smooth=False, side=False, deltas=None, dim=(24, 32)):
-    """
-    Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
-    There are only 9 different colorbrackets
-    :param pixels: list with length 32x24 that contains the pixels from the sensor
-    :param scale:
-    :param smooth:
-    :return:
-    """
-    img_ar = np.array(pixels)
-
-    if img_ar.shape != dim:
-        img_ar = img_ar.reshape(dim)
-
-    if smooth:
-        img_ar = fil.gaussian_filter(img_ar, 1)
+    if dim != (24,32):
+        scale = 1
 
     amount_delta = 8
 
@@ -270,6 +204,9 @@ def fast_thermal_image_num(pixels, scale=10, smooth=False, side=False, deltas=No
 
     rgb_img = rgb_img.repeat(scale, axis=0)
     rgb_img = rgb_img.repeat(scale, axis=1)
+
+    if as_numpy:
+        return rgb_img
 
     img = Image.fromarray(rgb_img, 'RGB')
 
@@ -387,4 +324,3 @@ if __name__ == "__main__":
     img = fil.gaussian_filter(img, 10)
 
     test_speed(img, fast_thermal_image, (240,320))
-    test_speed(img, fast_thermal_image_num, (240, 320))
