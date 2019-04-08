@@ -9,6 +9,7 @@ import scipy.ndimage.filters as filter
 from matplotlib.figure import Figure
 import numpy as np
 import cv2
+from PIL import Image
 
 class Sensor:
     def __init__(self, db_bridge, app):
@@ -103,6 +104,8 @@ class Sensor:
 
     def get_default_vis(self, index):
         thermal_data = self.meas_list[index].data
+        self.img_processor.set_thermal_data(thermal_data)
+        centr = Image.fromarray(self.img_processor.plot_centroids(), 'RGB')
         img = np.reshape(thermal_data, (24, 32))
         img = img.repeat(10, axis=0)
         img = img.repeat(10, axis=1)
@@ -115,7 +118,7 @@ class Sensor:
 
         fast = fast_thermal_image(img, dim=(240, 320), scale=1)
         hist = hist_plot(np.reshape(img, (-1, 1)).ravel())
-        return [fast, hist]
+        return [fast, hist, centr]
 
     def get_multi_processing(self, index):
         hist_amount = self.img_processor.get_hist_length()

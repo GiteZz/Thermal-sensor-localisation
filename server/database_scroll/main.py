@@ -23,6 +23,7 @@ from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, p
 from qt_extra_classes import ZoomQGraphicsView
 from db_bridge import DB_Bridge
 from sensor import Sensor
+import logging
 
 
 class MyUI(QtWidgets.QMainWindow):
@@ -104,6 +105,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.ignoreStopCheckbox.stateChanged.connect(self.update_episodes_ui_update)
 
         self.sensors = []
+
 
         for method_name in self.vis_methods_name:
             n_label = QLabel(method_name)
