@@ -129,12 +129,35 @@ class ImageProcessor:
 
         self.centroids = []
 
-        mod_thresh = self.thresh_img - np.min(self.thresh_img)
-        scale_factor = math.floor(255 / np.max(mod_thresh))
+        unique_val = np.unique(self.thresh_img)
 
-        self.contours, hierarchy = cv2.findContours(mod_thresh * scale_factor, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        or_contours, hierarchy = cv2.findContours(self.thresh_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contour_hier = [or_contours]
+        mod_thresh = self.thresh_img.copy()
+
+        for i in range(1, unique_val.size - 1):
+            mod_thresh[mod_thresh == unique_val[i]] = 0
+            con, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contour_hier.append(con)
+
+        self.contours = []
+        self.contours.extend(contour_hier[-1])
+
+        for i in reversed(range(0, len(contour_hier) - 1)):
+            for new_contour in contour_hier[i]:
+                add_contour = True
+                for current_contour in self.contours:
+                    dst = cv2.pointPolygonTest(new_contour, (current_contour[0, 0, 0], current_contour[0, 0, 1]), True)
+                    if dst >= 0:
+                        add_contour = False
+
+                if add_contour:
+                    self.contours.append(new_contour)
+
         # print('num of contours=' + str(len(self.contours)))
         for c in self.contours:
+            print(self.thresh_img[c[0,0,1], c[0,0,0]])
             M = cv2.moments(c)
             # calculate x,y coordinate of center
             if M["m00"] != 0:

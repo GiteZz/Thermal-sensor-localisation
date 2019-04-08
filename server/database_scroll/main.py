@@ -105,7 +105,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.ignoreStopCheckbox.stateChanged.connect(self.update_episodes_ui_update)
 
         self.sensors = []
-
+        
+        self.logger = logging.getLogger('database_scrol_logger')
 
         for method_name in self.vis_methods_name:
             n_label = QLabel(method_name)
@@ -132,11 +133,11 @@ class MyUI(QtWidgets.QMainWindow):
         self.draw_plot()
 
     def update_connect_time(self, value):
-        print("update connect time to " + str(value))
+        self.logger.info("update connect time to " + str(value))
         self.connect_time = value
 
     def update_slice_time(self, value):
-        print("update slice time to: " + str(value))
+        self.logger.info("update slice time to: " + str(value))
         self.slice_time = value
 
     def one_forward(self):
@@ -164,7 +165,7 @@ class MyUI(QtWidgets.QMainWindow):
 
 
     def adjust_after_shift(self):
-        print("Adjust after shift")
+        self.logger.info("Adjust after shift")
         if self.mode == 'frame':
             slider_index = self.frame_index
         else:
@@ -448,7 +449,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         plot_amount = len(qt_pix)
         grid = get_grid_form(plot_amount)
-        print(f'Current grid is: {grid}')
+        self.logger.info(f'Current grid is: {grid}')
 
         frame_width = frame[2]
         frame_height = frame[3] - text_margin
@@ -547,14 +548,14 @@ class MyUI(QtWidgets.QMainWindow):
             self.add_source('sensor', id)
 
     def get_csv_current_episode(self):
-        print("clicked")
+        self.logger.info("clicked")
         if not self.episode_selected:
-            print('No episode selected')
+            self.logger.info('No episode selected')
             return
         write_csv_list_frames(self.episodes[self.episode_index], self.download_path)
 
     def get_csv_current_frame(self):
-        print("clicked")
+        self.logger.info("clicked")
         if not self.episode_selected:
             return
         write_csv_frame(self.episodes[self.episode_index][self.frame_index], self.download_path)
