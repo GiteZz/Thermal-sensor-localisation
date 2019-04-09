@@ -11,18 +11,33 @@ class ServerBridge:
         self.auto_localiser = True
 
     def update(self, sensor_id, data, timestamp):
+        """
+        This is the main input of the ServerBridge, accepts thermal input and will send is the a localiser.
+        :param sensor_id:
+        :param data:
+        :param timestamp:
+        :return:
+        """
         self.check_updates(sensor_id, data, timestamp)
         if sensor_id not in self.localization_dict:
-            self.add_localiser(sensor_id)
+            self.__add_localiser(sensor_id)
         self.localization_dict[sensor_id].update(data, timestamp)
 
-    def add_localiser(self, sensor_id, calibrate_data=None):
+    def __add_localiser(self, sensor_id, calibrate_data=None):
+        """
+        Creates new Localiser and add the tracker
+        TODO: how to do calibration?
+        :param sensor_id:
+        :param calibrate_data:
+        :return:
+        """
         new_localiser = Localiser(sensor_id)
-        if calibrate_data is not None:
-            new_localiser.calibrate(calibrate_data)
+        # if calibrate_data is not None:
+        #     new_localiser.calibrate(calibrate_data)
         new_localiser.set_tracker(self.tracker)
 
         self.localization_dict[sensor_id] = new_localiser
+
     def calibrate_point(self,name,  co):
         if self.current_calibrate is None:
             self.current_calibrate = {'name': name, 'co': co, 'img_data': {}}

@@ -10,31 +10,30 @@ import logging
 
 class ImageProcessor:
     def __init__(self):
-        self.data = None
         self.dim = (24, 32)
 
-        self.img = None  # BGR
-        self.thresh_img = None  # [0|255]
         self.thermal_data = None
+
+        # These variables need to be reset when new thermal data is added
+        self.img = None
+        self.thresh_img = None
         self.deltas = None
+        self.centroids = None
+        self.contours = None
 
         self.thresh_method = "hist_cap"
         self.erode = 4
-        self.scale_factor = 10
-        self.thresh_methods = ["otsu", "hist_cap"]
-
-        self.centroids = []  # 2D array
-        self.contours = []
-
-        self.history_amount = 2
-        self.past_frames = []
-        self.current_frame = None
 
         self.sensor_id = None
 
         self.log_system = logging.getLogger('ImageProcessingLogger')
 
     class decorators:
+        """
+        This class is used to add decorators to the functions of the ImageProcessor class, these decorators
+        are used to check if the needed variables are valid and if they are not generate that data.
+        The check_thermal data throws an exception if no thermal data is present.
+        """
         @staticmethod
         def check_img(func):
             def wrapper(self):
@@ -81,16 +80,30 @@ class ImageProcessor:
             return wrapper
 
     def enable_logging(self):
+        """
+        If you want output in the terminal, use this function.
+        :return:
+        """
         c_handler = logging.StreamHandler()
         self.log_system.addHandler(c_handler)
         self.log_system.setLevel(logging.INFO)
 
     def set_thermal_data(self, thermal_data):
+        """
+        This function is the function to input data into the class. The useful output only gets calculated
+        when needed.
+        :param thermal_data: numpy array with dim 786
+        :return:
+        """
         self.thermal_data = thermal_data
         self.__reset()
 
     @decorators.check_centroids
     def get_centroids(self):
+        """
+        Get the location of the hotspots on the thermal data.
+        :return:
+        """
         return self.centroids
 
     def save_progress(self):
@@ -131,6 +144,11 @@ class ImageProcessor:
         return result
 
     def __reset(self):
+        """
+        Sets all the needed variables to None in order to show that new thermal data is added and the
+        old values are invalid.
+        :return:
+        """
         self.contours = None
         self.centroids = None
         self.thresh_img = None
@@ -139,6 +157,12 @@ class ImageProcessor:
 
     @decorators.check_thermal_data
     def __set_img(self):
+        """
+        Creates an image (numpy array is good for opencv) that is needed for further analyzing the image,
+        First the image gets scaled because opencv works better when there is a bit more resolution.
+        Then a blur is added to smooth out the noise. The numpy array has to be np.uint8 to be valid for opencv.
+        :return:
+        """
         self.log_system.info("Setting image")
 
         img = np.reshape(self.thermal_data, (24, 32))
@@ -149,10 +173,20 @@ class ImageProcessor:
 
     @decorators.check_img
     def __set_deltas(self):
+        """
+        This funtion is used to set the deltas for the fast_thermal_image functions, these deltas are needed to
+        make the colors equal on the different images.
+        :return:
+        """
         self.deltas = get_deltas_img(self.img)
 
     @decorators.check_img
     def __set_thresh_img(self):
+        """
+        This function is used to remove the background from the image, this is done by removing everything
+        smaller and equal then the temperature that is used most in the image (histogram max).
+        :return:
+        """
         self.log_system.info("Setting thresh img")
 
         hist_amount, hist_temp = np.histogram(self.img)
@@ -168,7 +202,9 @@ class ImageProcessor:
     @decorators.check_tresh
     def __set_centroids(self):
         """
-        This function calculates the centroids from the thresh image
+        This function calculates the centroids from the thresh image. The thresh_img should be set for the initial
+        contours. This function also tries to improve the initial contours be searching smaller contours within the
+        bigger contours.
         :return:
         """
         self.log_system.info("Setting centroids")

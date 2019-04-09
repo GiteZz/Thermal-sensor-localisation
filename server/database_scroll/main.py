@@ -248,6 +248,11 @@ class MyUI(QtWidgets.QMainWindow):
         self.sensors = n_list
 
     def get_query_param(self):
+        """
+        This functions creates a dict that is needed to get the correct information from the db.
+        This is needed because there is no direct connection with the db only via the db_bridge.
+        :return:
+        """
         param = {}
         param['act_start'] = not self.ui.ignoreStartCheckbox.isChecked()
         param['act_stop'] = not self.ui.ignoreStopCheckbox.isChecked()
@@ -256,7 +261,6 @@ class MyUI(QtWidgets.QMainWindow):
         param['amount_limit'] = self.ui.frameAmountSpinbox.value()
 
         return param
-
 
     def reload_sources(self, type):
         for sensor in self.sensors:
@@ -284,7 +288,10 @@ class MyUI(QtWidgets.QMainWindow):
         self.update_episodes()
 
     def update_episodes(self):
-
+        """
+        Calculate episodes based on the selected checkboxes.
+        :return:
+        """
         # Combine data from different sources and sort for easier plotting
         data = []
         for sensor in self.sensors:
@@ -437,6 +444,7 @@ class MyUI(QtWidgets.QMainWindow):
     def draw_frame(self, meas, frame):
         """
         frame consist of (x0,y0,width, height)
+        This draw the given meas in the given frame on the graphicsscene.
         :param meas:
         :param frame:
         :return:
@@ -489,7 +497,11 @@ class MyUI(QtWidgets.QMainWindow):
         self.plot_scene.clear()
 
     def get_close_measurements(self):
-        # TODO optimize
+        """
+        This function is used when the program runs in time mode, this searches for measurements for all id's
+        that are closest the the given time.
+        :return:
+        """
         cut_off_time = 10
 
         cur_episode = self.episodes[self.episode_index]
@@ -559,8 +571,6 @@ class MyUI(QtWidgets.QMainWindow):
         if not self.episode_selected:
             return
         write_csv_frame(self.episodes[self.episode_index][self.frame_index], self.download_path)
-
-
 
 
 app = QtWidgets.QApplication(sys.argv)

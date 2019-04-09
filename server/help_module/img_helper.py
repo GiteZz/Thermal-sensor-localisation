@@ -85,16 +85,23 @@ def processed_color_plot(pixels,to_pil=True,thresh_method=None, mtplotlib=False)
         return Image.fromarray(data, 'RGB') #already rescaled in the processing functions
 
 
-
-
 def plt_fig_to_PIL(fig):
+    """
+    Converts matplotlib fig to PIL Image
+    :param fig:
+    :return:
+    """
     buf = plt_fig_to_png_bytes(fig)
     img = Image.open(buf)
     return img
 
 
-# getvalue for streaming
 def plt_fig_to_png_bytes(fig):
+    """
+    Converts a matplotlib figure to a byte stream with png format
+    :param fig:
+    :return:
+    """
     buf = io.BytesIO()
     FigureCanvas(fig).print_png(buf)
     buf.seek(0)
@@ -102,6 +109,13 @@ def plt_fig_to_png_bytes(fig):
 
 
 def get_deltas(min_val, max_val, amount=8):
+    """
+    This function gives a list with values that are equal dist from each other to divide an image based on these values
+    :param min_val:
+    :param max_val:
+    :param amount:
+    :return:
+    """
     delta = (max_val - min_val) / amount
 
     deltas = [min_val]
@@ -114,12 +128,25 @@ def get_deltas(min_val, max_val, amount=8):
     return deltas
 
 def get_deltas_img(img):
+    """
+    This function acts a wrapper around the get_deltas functions and just calculates the img max/min to give
+    to the get_deltas. 0 is excluded from the min because nan gets converted to 0.
+    :param img:
+    :return:
+    """
     min_img = np.min(img[img != 0])
     max_img = np.max(img)
 
     return get_deltas(min_img, max_img)
 
 def get_fitted_img(img, max_size, return_mar=False):
+    """
+    Given a max size this gives a rescaled PIL image that fits in that size.
+    :param img:
+    :param max_size: (max_width, max_height)
+    :param return_mar: boolean to indicate if the function has to return the margins.
+    :return:
+    """
     width, height = img.size
     ratio_x = max_size[0] / width
     ratio_y = max_size[1] / height
@@ -236,31 +263,14 @@ def fast_thermal_image(pixels, scale=1, smooth=False, side=False, deltas=None, d
     return img
 
 
-def bits_to_thermal_image(width, height, pixels, scale=1, interpolate=False, fixed_range=True, heat_min=10, heat_max=45):
-    img = Image.new('RGB', (width, height))
-    d = ImageDraw.Draw(img)
-
-    for x in range(width):
-        for y in range(height):
-            d.point((x,y), fill=(pixels[x + y * width]*255, pixels[x + y * width]*255, pixels[x + y * width]*255))
-
-    if interpolate:
-        img = img.resize((width * scale, height * scale), resample=Image.BICUBIC)
-    else:
-        img = img.resize((width * scale, height * scale))
-
-    return img
-
-def create_timed_image():
-    time_str = datetime.now().strftime('%Y%m%d%H%M%S%f%z')
-
-    # initialize the camera
-    cam = VideoCapture(1)  # 0 -> index of camera
-    s, img = cam.read()
-    time.sleep(0.1)
-    imwrite('images/' + time_str + ".jpg", img)
-
 def test_speed(img, function, dim):
+    """
+    Useful to test plot generation speed.
+    :param img:
+    :param function:
+    :param dim:
+    :return:
+    """
     t0 = time.time()
     for _ in range(100):
         function(img, dim=dim)
@@ -271,12 +281,22 @@ def test_speed(img, function, dim):
 
 
 def PIL_to_bytes(img):
+    """
+    Converts a PIL Image to jpeg byte stream
+    :param img:
+    :return:
+    """
     img_io = io.BytesIO()
     img.save(img_io, 'JPEG', quality=70)
     img_io.seek(0)
     return img_io.getvalue()
 
 def get_grid_form(amount):
+    """
+    Given an amount of items in the grid this gives the amount of rows and columns
+    :param amount:
+    :return:
+    """
     plot_sizes = [1, 2, 4, 6, 9]
     grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3]]
     grid = grid_sizes[0]
@@ -289,6 +309,12 @@ def get_grid_form(amount):
     return grid
 
 def combine_imgs(img_list, title=None):
+    """
+    Paste imgs on top of each other.
+    :param img_list:
+    :param title:
+    :return:
+    """
     min_width = float('inf')
     for img in img_list:
         if img.size[0] < min_width:
