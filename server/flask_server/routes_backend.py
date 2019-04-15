@@ -4,7 +4,6 @@ from flask_server.models import Measurement, Measurement_test
 import cbor2
 import json
 import math
-from help_module.img_helper import create_timed_image
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
 from help_module.calibration_helper import add_calibration_point, get_calibration_points, remove_calibration_point, get_calibration_co
 
@@ -48,7 +47,7 @@ def receive_sensor_bits():
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
     print(data)
 
-    db.session.add(new_db_data)
+    db.session.add(data)
     db.session.commit()
     print(data)
 
