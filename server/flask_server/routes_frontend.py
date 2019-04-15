@@ -1,5 +1,5 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify, Response
-from flask_server import app, db
+from flask_server import app
 from flask_server.models import Measurement_test, Measurement
 
 from help_module.img_helper import fast_thermal_image, PIL_to_bytes, combine_imgs

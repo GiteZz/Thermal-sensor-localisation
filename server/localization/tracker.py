@@ -4,7 +4,7 @@ from numpy.linalg import norm as vec_norm
 from localization.person import Person
 import math
 import requests
-from flask_server import app, db, socketio
+from flask_server import socketio
 
 class Tracker:
 
@@ -20,16 +20,18 @@ class Tracker:
 
     def update(self, centroids, timestamp):
         for centroid in centroids:
-            # if centroid[0] is not np.array:
-            #     raise Exception('Expected numpy array as data type')
-            self.centroid_update(centroid, timestamp)
-
-        # start code Jente
-        for p in self.current_persons:
-            loc = p.get_curr_loc()
-            json_dict = {'ID': p.get_person_id(), 'position_x': loc[0], 'position_y': loc[1]}
-
-            socketio.emit('tracker_update', json_dict)
+            socketio.emit('tracker_update', {'ID': 5, 'position_x': centroid[0], 'position_y': centroid[1]})
+        # for centroid in centroids:
+        #     # if centroid[0] is not np.array:
+        #     #     raise Exception('Expected numpy array as data type')
+        #     self.centroid_update(centroid, timestamp)
+        #
+        # # start code Jente
+        # for p in self.current_persons:
+        #     loc = p.get_curr_loc()
+        #     json_dict = {'ID': p.get_person_id(), 'position_x': loc[0], 'position_y': loc[1]}
+        #
+        #
 
     def centroid_update(self, centroid, timestamp):
         closest_persons = self.get_closest_centroids(centroid, 2)

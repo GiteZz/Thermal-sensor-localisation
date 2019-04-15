@@ -1,3 +1,1 @@
 # could be use for sensor parameter, enums....
-from localization.tracker import Tracker
-tracker=Tracker()
