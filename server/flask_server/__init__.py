@@ -8,7 +8,7 @@ from localization.server_bridge import ServerBridge
 postgres_user = '??'
 postgres_pass = '??'
 
-with open(r'C:\Users\Thomas\Documents\School\VOP\VOP\server\configuration_files\db_configuration.json', 'r') as f:
+with open('configuration_files\db_configuration.json', 'r') as f:
     data = json.load(f)
 
 postgres_user = data['postgres']['username']

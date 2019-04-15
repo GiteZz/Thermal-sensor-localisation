@@ -5,6 +5,7 @@ import scipy.ndimage.filters as filter
 import math
 import scipy.ndimage.filters as fil
 from help_module.img_helper import fast_thermal_image, get_deltas_img
+from help_module.stat_helper import get_persistent_homology
 import logging
 
 
@@ -22,8 +23,8 @@ class ImageProcessor:
         self.centroids = None
         self.contours = None
 
-        self.thresh_method = "hist_cap"
-        self.erode = 4
+        self.thresh_method = self._set_bin_thresh
+        self.erode = 0
 
         self.sensor_id = None
 
@@ -48,7 +49,7 @@ class ImageProcessor:
         def check_tresh(func):
             def wrapper(self):
                 if self.thresh_img is None:
-                    self._set_thresh_img()
+                    self.thresh_method()
                 return func(self)
 
             return wrapper
@@ -188,17 +189,43 @@ class ImageProcessor:
         smaller and equal then the temperature that is used most in the image (histogram max).
         :return:
         """
+
         self.log_system.info("Setting thresh img")
 
-        hist_amount, hist_temp = np.histogram(self.img)
-        max_temp_index = np.argmax(hist_amount)
+        hist_amount, hist_temp = np.histogram(self.img, bins=20)
 
+        peaks = []
+
+        for i in range(1, len(hist_amount) - 1):
+            prev = hist_amount[i - 1]
+            cur = hist_amount[i] * 1.2
+            next = hist_amount[i + 1]
+            if prev < cur and next < cur:
+                peaks.append(hist_temp[i])
+        print(peaks)
+        max_temp_index = np.argmax(hist_amount)
         thresh = self.img.copy()
         thresh_temp = hist_temp[max_temp_index]
 
-        thresh[thresh <= thresh_temp + 1] = 0
+        thresh[thresh <= math.ceil(peaks[1])] = 0
         thresh = cv2.erode(thresh, None, iterations=self.erode)
         self.thresh_img = thresh
+
+    @decorators.check_img
+    def _set_bin_thresh(self):
+        deltas = get_deltas_img(self.img)
+        self.thresh_img = self.img.copy()
+        for value_range, value in zip(reversed(deltas), reversed(range(len(deltas)))):
+            self.thresh_img[self.img <= value_range] = value
+
+        hist_amount, hist_temp = np.histogram(self.thresh_img, bins=len(deltas))
+        print(hist_amount)
+        max_temp_index = np.argmax(hist_amount)
+        self.thresh_img[self.thresh_img <= hist_temp[max_temp_index] + 1] = 0
+
+        self.thresh_img = cv2.erode(self.thresh_img, None, iterations=2)
+
+
 
     @decorators.check_tresh
     def _set_centroids(self):
@@ -223,6 +250,14 @@ class ImageProcessor:
         for i in range(1, unique_val.size - 1):
             mod_thresh[mod_thresh == unique_val[i]] = 0
             con, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            new_contours = []
+            print("========================")
+            for contour in con:
+                print(cv2.contourArea(contour) )
+                if cv2.contourArea(contour) > 200:
+                    new_contours.append(contour)
+
             contour_hier.append(con)
 
         self.contours = []

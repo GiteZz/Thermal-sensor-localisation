@@ -4,6 +4,7 @@ from numpy.linalg import norm as vec_norm
 from localization.person import Person
 import math
 import requests
+from flask_server import app, db, socketio
 
 class Tracker:
 
@@ -28,8 +29,7 @@ class Tracker:
             loc = p.get_curr_loc()
             json_dict = {'ID': p.get_person_id(), 'position_x': loc[0], 'position_y': loc[1]}
 
-            r = requests.post(self.POST_url, json=json_dict)
-            print(r.status_code)
+            socketio.emit('tracker_update', json_dict)
 
     def centroid_update(self, centroid, timestamp):
         closest_persons = self.get_closest_centroids(centroid, 2)
