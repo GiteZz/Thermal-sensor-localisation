@@ -47,7 +47,7 @@ def receive_sensor_bits():
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
     print(data)
 
-    db.session.add(new_db_data)
+    db.session.add(data)
     db.session.commit()
     print(data)
 

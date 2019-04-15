@@ -11,7 +11,7 @@ from PIL import Image
 
 @app.route("/")
 def home():
-    return "Hello World!"
+    return redirect(url_for('get_debug_screen'))
 
 @app.route("/thermal_data/images", methods=['GET'])
 def get_last_thermal_image():
