@@ -13,6 +13,7 @@ class ImageProcessor:
         self.dim = (24, 32)
 
         self.thermal_data = None
+        self.scale_factor = 10
 
         # These variables need to be reset when new thermal data is added
         self.img = None
@@ -38,7 +39,7 @@ class ImageProcessor:
         def check_img(func):
             def wrapper(self):
                 if self.img is None:
-                    self.__set_img()
+                    self._set_img()
                 return func(self)
 
             return wrapper
@@ -47,7 +48,7 @@ class ImageProcessor:
         def check_tresh(func):
             def wrapper(self):
                 if self.thresh_img is None:
-                    self.__set_thresh_img()
+                    self._set_thresh_img()
                 return func(self)
 
             return wrapper
@@ -56,7 +57,7 @@ class ImageProcessor:
         def check_centroids(func):
             def wrapper(self):
                 if self.centroids is None:
-                    self.__set_centroids()
+                    self._set_centroids()
                 return func(self)
 
             return wrapper
@@ -65,7 +66,7 @@ class ImageProcessor:
         def check_deltas(func):
             def wrapper(self):
                 if self.deltas is None:
-                    self.__set_deltas()
+                    self._set_deltas()
                 return func(self)
 
             return wrapper
@@ -96,7 +97,7 @@ class ImageProcessor:
         :return:
         """
         self.thermal_data = thermal_data
-        self.__reset()
+        self._reset()
 
     @decorators.check_centroids
     def get_centroids(self):
@@ -112,8 +113,8 @@ class ImageProcessor:
         TODO: complete with additional steps
         :return:
         """
-        self.__save_img()
-        self.__save_thresh()
+        self._save_img()
+        self._save_thresh()
 
     @decorators.check_centroids
     def plot_centroids(self, rel_pos=True):
@@ -143,7 +144,7 @@ class ImageProcessor:
         result = cv2.drawContours(draw_img, self.contours, -1, 100, 3)  # params: all contours,color,thickness
         return result
 
-    def __reset(self):
+    def _reset(self):
         """
         Sets all the needed variables to None in order to show that new thermal data is added and the
         old values are invalid.
@@ -156,7 +157,7 @@ class ImageProcessor:
         self.deltas = None
 
     @decorators.check_thermal_data
-    def __set_img(self):
+    def _set_img(self):
         """
         Creates an image (numpy array is good for opencv) that is needed for further analyzing the image,
         First the image gets scaled because opencv works better when there is a bit more resolution.
@@ -172,7 +173,7 @@ class ImageProcessor:
         self.img = filter.gaussian_filter(img, 15).astype(np.uint8)
 
     @decorators.check_img
-    def __set_deltas(self):
+    def _set_deltas(self):
         """
         This funtion is used to set the deltas for the fast_thermal_image functions, these deltas are needed to
         make the colors equal on the different images.
@@ -181,7 +182,7 @@ class ImageProcessor:
         self.deltas = get_deltas_img(self.img)
 
     @decorators.check_img
-    def __set_thresh_img(self):
+    def _set_thresh_img(self):
         """
         This function is used to remove the background from the image, this is done by removing everything
         smaller and equal then the temperature that is used most in the image (histogram max).
@@ -200,7 +201,7 @@ class ImageProcessor:
         self.thresh_img = thresh
 
     @decorators.check_tresh
-    def __set_centroids(self):
+    def _set_centroids(self):
         """
         This function calculates the centroids from the thresh image. The thresh_img should be set for the initial
         contours. This function also tries to improve the initial contours be searching smaller contours within the
@@ -253,12 +254,12 @@ class ImageProcessor:
 
     @decorators.check_img
     @decorators.check_deltas
-    def __save_img(self):
+    def _save_img(self):
         plot_img = fast_thermal_image(self.img, as_numpy=True, deltas=self.deltas, dim=self.img.shape)
         cv2.imwrite("image.png", cv2.cvtColor(plot_img, cv2.COLOR_RGB2BGR))
 
     @decorators.check_img
     @decorators.check_deltas
-    def __save_thresh(self):
+    def _save_thresh(self):
         plot_img = fast_thermal_image(self.thresh_img, as_numpy=True, deltas=self.deltas, dim=self.thresh_img.shape)
         cv2.imwrite("thresh_img.png", cv2.cvtColor(plot_img, cv2.COLOR_RGB2BGR))
