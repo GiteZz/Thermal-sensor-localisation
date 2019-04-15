@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import json
-from help_module.img_processing_helper import ImageProcessor
+from server.help_module.img_processing_helper import ImageProcessor
 class Localiser:
     def __init__(self,sensor_id):
         self.sensor_id=sensor_id

@@ -3,11 +3,13 @@ import numpy as np
 from numpy.linalg import norm as vec_norm
 from localization.person import Person
 import math
+import requests
 
 class Tracker:
 
     SAME_OBJECT_TRESHHOLD = 0.6
     NEW_OBJECT_TRESSHOLD = 0.6
+    POST_url = 'http://192.168.1.115/tracker/update'
 
     def __init__(self):
         self.ID_COUNTER = 0 #generates unique ID's
@@ -20,6 +22,14 @@ class Tracker:
             # if centroid[0] is not np.array:
             #     raise Exception('Expected numpy array as data type')
             self.centroid_update(centroid, timestamp)
+
+        # start code Jente
+        for p in self.current_persons:
+            loc = p.get_curr_loc()
+            json_dict = {'ID': p.get_person_id(), 'position_x': loc[0], 'position_y': loc[1]}
+
+            r = requests.post(self.POST_url, json=json_dict)
+            print(r.status_code)
 
     def centroid_update(self, centroid, timestamp):
         closest_persons = self.get_closest_centroids(centroid, 2)
@@ -38,13 +48,13 @@ class Tracker:
             best_person.add_location(centroid, timestamp)
         else:
             new_prob = self.get_new_prob(centroid)
-            new_pers = Person(centroid, timestamp)
+            new_pers = Person(centroid, timestamp, self.ID_COUNTER)
+            self.ID_COUNTER += 1
             self.current_persons.append(new_pers)
             if new_prob > self.NEW_OBJECT_TRESSHOLD:
                 print("HIGH probability of new person")
             else:
                 print("LOW probability of new person")
-
 
     def get_new_prob(self, centroid):
         offset = 1
