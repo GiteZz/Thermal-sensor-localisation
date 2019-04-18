@@ -1,11 +1,13 @@
 from localization.old_tracker.tracker import Tracker
 from localization.localiser import Localiser
+from localization.com_module import ComModule
 from help_module.calibration_helper import save_calibration_data
 
 class ServerBridge:
     def __init__(self):
         self.localization_dict = {}
         self.tracker = Tracker()
+        self.com_module = ComModule()
         self.calibrate_data = []
         self.current_calibrate = None
         self.auto_localiser = True
@@ -35,6 +37,7 @@ class ServerBridge:
         # if calibrate_data is not None:
         #     new_localiser.calibrate(calibrate_data)
         new_localiser.set_tracker(self.tracker)
+        new_localiser.set_com_module(self.com_module)
 
         self.localization_dict[sensor_id] = new_localiser
 

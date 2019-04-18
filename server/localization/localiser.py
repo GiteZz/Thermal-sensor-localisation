@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import json
-from server.help_module.img_processing_helper import ImageProcessor
+from localization.processing import ImageProcessor
+
 class Localiser:
     def __init__(self,sensor_id):
         self.sensor_id=sensor_id
@@ -9,6 +10,7 @@ class Localiser:
         self.calibration_points=[] # key=px_index, val=world_coord
         self.tracker = None
         self.processor = ImageProcessor()
+        self.com_module = None
 
     def __add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])
@@ -17,7 +19,7 @@ class Localiser:
         for i in range(n):
             x_i=left_x+i/n*right_x
             y_i=left_y +i/n*right_y
-            self.add_calibration_point(self,x_i,y_i)
+            self.__add_calibration_point(self,x_i,y_i)
 
     def __determine_matrix(self):
         assert(len(self.calibration_points)>=4)
@@ -47,13 +49,20 @@ class Localiser:
         print('calibration points added for '+str(self.sensor_id))
         self.__determine_matrix()
 
-
     def set_tracker(self, tracker):
         self.tracker = tracker
 
+    def set_com_module(self, com_module):
+        self.com_module = com_module
+
     def update(self, data, timestamp):
-        self.processor.process(data)
-        self.tracker.update(self.processor.centroids, timestamp)
+        self.processor.set_thermal_data(data)
+
+        if self.com_module is not None:
+            imgs = self.processor.get_imgs()
+            self.com_module.distribute_imgs(self.sensor_id, imgs)
+
+        self.tracker.update(self.processor.get_centroids(), timestamp)
 
 
 

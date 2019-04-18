@@ -5,7 +5,7 @@ import time
 width = 32
 height = 24
 
-test_amount = 20
+test_amount = 4
 device_amount = 1
 
 sequence_array = [0] * device_amount
