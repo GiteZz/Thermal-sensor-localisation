@@ -4,7 +4,7 @@ import matplotlib.image as image
 import scipy.ndimage.filters as filter
 import math
 import scipy.ndimage.filters as fil
-from help_module.img_helper import fast_thermal_image, get_deltas_img, get_thermal_color_tuples
+from help_module.img_helper import fast_thermal_image, get_deltas_img, get_thermal_color_tuples, color_from_indices
 from help_module.stat_helper import get_persistent_homology
 import logging
 from PIL import Image
@@ -354,14 +354,18 @@ class ImageProcessor:
         plot_img = self.plot_all_contours(rgb=True)
         return Image.fromarray(plot_img, 'RGB')
 
+    @decorators.check_centroids
+    @decorators.check_tresh_data
     def _get_img_layers(self):
+        img_arrays = []
         mod_thresh = self.thresh_data.copy()
         unique_val = np.unique(mod_thresh)
 
         # Add biggest contours
         or_contours, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        new_img = fast_thermal_image()
-
+        new_img = color_from_indices(mod_thresh)
+        new_img = cv2.drawContours(new_img, or_contours, -1, (0, 0, 255), thickness=1)
+        img_arrays.append(new_img)
 
         # Add contours within other contours
         for i in range(1, unique_val.size - 1):
@@ -373,8 +377,13 @@ class ImageProcessor:
                 if cv2.contourArea(contour) > 200:
                     new_contours.append(contour)
 
-            self.contour_hier.append(con)
+            new_img = color_from_indices(mod_thresh)
+            new_img = cv2.drawContours(new_img, new_contours, -1, (0, 0, 255), thickness=1)
+            img_arrays.append(new_img)
 
-        self.contours = []
-        self.contours.extend(self.contour_hier[-1])
+        imgs = []
+        for img_ar in img_arrays:
+            imgs.append(Image.fromarray(cv2.cvtColor(img_ar, cv2.COLOR_RGB2BGR), 'RGB'))
+
+        return imgs
 
