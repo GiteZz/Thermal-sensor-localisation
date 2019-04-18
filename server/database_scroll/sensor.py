@@ -105,20 +105,10 @@ class Sensor:
     def get_default_vis(self, index):
         thermal_data = self.meas_list[index].data
         self.img_processor.set_thermal_data(thermal_data)
-        centr = Image.fromarray(self.img_processor.plot_centroids(rgb=True), 'RGB')
-        img = np.reshape(thermal_data, (24, 32))
-        img = img.repeat(10, axis=0)
-        img = img.repeat(10, axis=1)
+        imgs_batch_1 = self.img_processor.get_imgs()
+        imgs_batch_1.extend(self.img_processor.get_img_layers())
 
-        img = filter.gaussian_filter(img, 15)
-        hist_amount,  hist_temp = np.histogram(img)
-        max_temp_index = np.argmax(hist_amount)
-        # img[img <= hist_temp[max_temp_index]] = 0
-        # print(hist_data)
-
-        fast = fast_thermal_image(img, dim=(240, 320), scale=1)
-        hist = hist_plot(np.reshape(img, (-1, 1)).ravel())
-        return [fast, hist, centr]
+        return imgs_batch_1
 
     def get_multi_processing(self, index):
         hist_amount = self.img_processor.get_hist_length()

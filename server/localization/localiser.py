@@ -60,7 +60,7 @@ class Localiser:
 
         if self.com_module is not None:
             # imgs = self.processor.get_imgs()
-            imgs = self.processor._get_img_layers()
+            imgs = self.processor.get_img_layers()
             self.com_module.distribute_imgs(self.sensor_id, imgs)
 
         self.tracker.update(self.processor.get_centroids(), timestamp)

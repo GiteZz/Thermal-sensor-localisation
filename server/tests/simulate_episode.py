@@ -55,7 +55,7 @@ def send_request(timer_list, url, speed_up):
 if __name__ == "__main__":
     csv_folder = '../database_scroll/csv/'
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
-    POST_url = "http://localhost:5000/sensor/simulate"
+    POST_url = "http://192.168.1.31:5000/sensor/simulate"
 
     amount_sensors = 3
 

@@ -1,11 +1,8 @@
 import cv2
 import numpy as np
-import matplotlib.image as image
 import scipy.ndimage.filters as filter
 import math
-import scipy.ndimage.filters as fil
 from help_module.img_helper import fast_thermal_image, get_deltas_img, get_thermal_color_tuples, color_from_indices
-from help_module.stat_helper import get_persistent_homology
 import logging
 from PIL import Image
 
@@ -25,7 +22,6 @@ class ImageProcessor:
         self.centroids = None
         self.contours = None
         self.contour_hier = None
-
 
         self.thresh_method = self._set_bin_thresh
         self.erode = 0
@@ -356,7 +352,7 @@ class ImageProcessor:
 
     @decorators.check_centroids
     @decorators.check_tresh_data
-    def _get_img_layers(self):
+    def get_img_layers(self):
         img_arrays = []
         mod_thresh = self.thresh_data.copy()
         unique_val = np.unique(mod_thresh)
