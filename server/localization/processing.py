@@ -246,6 +246,7 @@ class ImageProcessor:
             next = hist_amount[i + 1]
             if prev < cur and next < cur:
                 peaks.append(hist_temp[i])
+        print(peaks)
         thresh = self.smooth_data.copy()
 
         thresh[thresh <= math.ceil(peaks[1])] = 0
@@ -298,6 +299,13 @@ class ImageProcessor:
 
         self.contours = []
         self.contours.extend(self.contour_hier[-1])
+
+        #remove small contours
+        final_contours = []
+        for c in self.contours:
+            if cv2.contourArea(c) > 300:
+                final_contours.append(c)
+        self.contours = final_contours
 
         # Remove all contours that surround other contours
         for i in reversed(range(0, len(self.contour_hier) - 1)):
@@ -353,28 +361,3 @@ class ImageProcessor:
     def _get_all_centroid_img(self):
         plot_img = self.plot_all_contours(rgb=True)
         return Image.fromarray(plot_img, 'RGB')
-
-    def _get_img_layers(self):
-        mod_thresh = self.thresh_data.copy()
-        unique_val = np.unique(mod_thresh)
-
-        # Add biggest contours
-        or_contours, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        new_img = fast_thermal_image()
-
-
-        # Add contours within other contours
-        for i in range(1, unique_val.size - 1):
-            mod_thresh[mod_thresh == unique_val[i]] = 0
-            con, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-            new_contours = []
-            for contour in con:
-                if cv2.contourArea(contour) > 200:
-                    new_contours.append(contour)
-
-            self.contour_hier.append(con)
-
-        self.contours = []
-        self.contours.extend(self.contour_hier[-1])
-
