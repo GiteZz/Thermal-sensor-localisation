@@ -5,6 +5,7 @@ import scipy.ndimage.filters as filter
 import math
 import scipy.ndimage.filters as fil
 from help_module.img_helper import fast_thermal_image, get_deltas_img
+from help_module.stat_helper import get_persistent_homology
 import logging
 
 
@@ -13,6 +14,7 @@ class ImageProcessor:
         self.dim = (24, 32)
 
         self.thermal_data = None
+        self.scale_factor = 10
 
         # These variables need to be reset when new thermal data is added
         self.img = None
@@ -21,8 +23,8 @@ class ImageProcessor:
         self.centroids = None
         self.contours = None
 
-        self.thresh_method = "hist_cap"
-        self.erode = 4
+        self.thresh_method = self._set_bin_thresh
+        self.erode = 0
 
         self.sensor_id = None
 
@@ -38,7 +40,7 @@ class ImageProcessor:
         def check_img(func):
             def wrapper(self):
                 if self.img is None:
-                    self.__set_img()
+                    self._set_img()
                 return func(self)
 
             return wrapper
@@ -47,7 +49,7 @@ class ImageProcessor:
         def check_tresh(func):
             def wrapper(self):
                 if self.thresh_img is None:
-                    self.__set_thresh_img()
+                    self.thresh_method()
                 return func(self)
 
             return wrapper
@@ -56,7 +58,7 @@ class ImageProcessor:
         def check_centroids(func):
             def wrapper(self):
                 if self.centroids is None:
-                    self.__set_centroids()
+                    self._set_centroids()
                 return func(self)
 
             return wrapper
@@ -65,7 +67,7 @@ class ImageProcessor:
         def check_deltas(func):
             def wrapper(self):
                 if self.deltas is None:
-                    self.__set_deltas()
+                    self._set_deltas()
                 return func(self)
 
             return wrapper
@@ -96,7 +98,7 @@ class ImageProcessor:
         :return:
         """
         self.thermal_data = thermal_data
-        self.__reset()
+        self._reset()
 
     @decorators.check_centroids
     def get_centroids(self):
@@ -112,8 +114,8 @@ class ImageProcessor:
         TODO: complete with additional steps
         :return:
         """
-        self.__save_img()
-        self.__save_thresh()
+        self._save_img()
+        self._save_thresh()
 
     @decorators.check_centroids
     def plot_centroids(self, rel_pos=True):
@@ -143,7 +145,7 @@ class ImageProcessor:
         result = cv2.drawContours(draw_img, self.contours, -1, 100, 3)  # params: all contours,color,thickness
         return result
 
-    def __reset(self):
+    def _reset(self):
         """
         Sets all the needed variables to None in order to show that new thermal data is added and the
         old values are invalid.
@@ -156,7 +158,7 @@ class ImageProcessor:
         self.deltas = None
 
     @decorators.check_thermal_data
-    def __set_img(self):
+    def _set_img(self):
         """
         Creates an image (numpy array is good for opencv) that is needed for further analyzing the image,
         First the image gets scaled because opencv works better when there is a bit more resolution.
@@ -172,7 +174,7 @@ class ImageProcessor:
         self.img = filter.gaussian_filter(img, 15).astype(np.uint8)
 
     @decorators.check_img
-    def __set_deltas(self):
+    def _set_deltas(self):
         """
         This funtion is used to set the deltas for the fast_thermal_image functions, these deltas are needed to
         make the colors equal on the different images.
@@ -181,26 +183,52 @@ class ImageProcessor:
         self.deltas = get_deltas_img(self.img)
 
     @decorators.check_img
-    def __set_thresh_img(self):
+    def _set_thresh_img(self):
         """
         This function is used to remove the background from the image, this is done by removing everything
         smaller and equal then the temperature that is used most in the image (histogram max).
         :return:
         """
+
         self.log_system.info("Setting thresh img")
 
-        hist_amount, hist_temp = np.histogram(self.img)
-        max_temp_index = np.argmax(hist_amount)
+        hist_amount, hist_temp = np.histogram(self.img, bins=20)
 
+        peaks = []
+
+        for i in range(1, len(hist_amount) - 1):
+            prev = hist_amount[i - 1]
+            cur = hist_amount[i] * 1.2
+            next = hist_amount[i + 1]
+            if prev < cur and next < cur:
+                peaks.append(hist_temp[i])
+        print(peaks)
+        max_temp_index = np.argmax(hist_amount)
         thresh = self.img.copy()
         thresh_temp = hist_temp[max_temp_index]
 
-        thresh[thresh <= thresh_temp + 1] = 0
+        thresh[thresh <= math.ceil(peaks[1])] = 0
         thresh = cv2.erode(thresh, None, iterations=self.erode)
         self.thresh_img = thresh
 
+    @decorators.check_img
+    def _set_bin_thresh(self):
+        deltas = get_deltas_img(self.img)
+        self.thresh_img = self.img.copy()
+        for value_range, value in zip(reversed(deltas), reversed(range(len(deltas)))):
+            self.thresh_img[self.img <= value_range] = value
+
+        hist_amount, hist_temp = np.histogram(self.thresh_img, bins=len(deltas))
+        print(hist_amount)
+        max_temp_index = np.argmax(hist_amount)
+        self.thresh_img[self.thresh_img <= hist_temp[max_temp_index] + 1] = 0
+
+        self.thresh_img = cv2.erode(self.thresh_img, None, iterations=2)
+
+
+
     @decorators.check_tresh
-    def __set_centroids(self):
+    def _set_centroids(self):
         """
         This function calculates the centroids from the thresh image. The thresh_img should be set for the initial
         contours. This function also tries to improve the initial contours be searching smaller contours within the
@@ -222,6 +250,14 @@ class ImageProcessor:
         for i in range(1, unique_val.size - 1):
             mod_thresh[mod_thresh == unique_val[i]] = 0
             con, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            new_contours = []
+            print("========================")
+            for contour in con:
+                print(cv2.contourArea(contour) )
+                if cv2.contourArea(contour) > 200:
+                    new_contours.append(contour)
+
             contour_hier.append(con)
 
         self.contours = []
@@ -253,12 +289,12 @@ class ImageProcessor:
 
     @decorators.check_img
     @decorators.check_deltas
-    def __save_img(self):
+    def _save_img(self):
         plot_img = fast_thermal_image(self.img, as_numpy=True, deltas=self.deltas, dim=self.img.shape)
         cv2.imwrite("image.png", cv2.cvtColor(plot_img, cv2.COLOR_RGB2BGR))
 
     @decorators.check_img
     @decorators.check_deltas
-    def __save_thresh(self):
+    def _save_thresh(self):
         plot_img = fast_thermal_image(self.thresh_img, as_numpy=True, deltas=self.deltas, dim=self.thresh_img.shape)
         cv2.imwrite("thresh_img.png", cv2.cvtColor(plot_img, cv2.COLOR_RGB2BGR))

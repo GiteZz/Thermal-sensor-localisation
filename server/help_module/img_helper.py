@@ -107,7 +107,6 @@ def plt_fig_to_png_bytes(fig):
     buf.seek(0)
     return buf
 
-
 def get_deltas(min_val, max_val, amount=8):
     """
     This function gives a list with values that are equal dist from each other to divide an image based on these values

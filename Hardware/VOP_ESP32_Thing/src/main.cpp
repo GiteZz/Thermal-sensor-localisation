@@ -15,12 +15,12 @@
 
 const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX90640
 
-const char* ssid = "Ballegeer_2.4";
-const char* password = "CasaBallegeer";
+const char* ssid = "VOP2.4";
+const char* password = "Marijnsuckt";
 
 const char* host = "Thermal sensor 0x33";
 
-const char* rasp_ip = "192.168.1.6"; //"<rasp-ip>/sensor/debug";
+const char* rasp_ip = "192.168.1.31"; //"<rasp-ip>/sensor/debug";
 const int rasp_port = 5000;
 const char* rasp_path = "/sensor/debug";
 
@@ -124,7 +124,7 @@ void loop() {
 
   //root.set("device_id", MLX90640_address);
   //root.set("device_id", sequence_id);
-  root["device_id"] = MLX90640_address;
+  root["device_id"] = 65;
   root["sequence"] = sequence_id;
   JsonArray& data = root.createNestedArray("data");
   //CborArray array = CborArray(cBuffer);

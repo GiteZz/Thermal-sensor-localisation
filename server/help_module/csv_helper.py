@@ -76,7 +76,7 @@ def write_csv_list_frames(frames, path):
         writer = csv.writer(outfile, delimiter=',')
         writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
         for frame in frames:
-            writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
+            writer.writerow([list(frame.data), frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
     print('csv saved')
 
 
@@ -97,7 +97,7 @@ def write_csv_frame(frame, path):
     with open(filename, 'w', newline='') as outfile:
         writer = csv.writer(outfile, delimiter=',')
         writer.writerow(['data', 'timestamp', 'sequence_ID', 'sensor_ID', 'data_type'])
-        writer.writerow([frame.data, frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
+        writer.writerow([list(frame.data), frame.timestamp, frame.sequence_id, frame.sensor_id, frame.data_type])
     print('csv saved')
 
 def load_csv_tracker_path(fname):

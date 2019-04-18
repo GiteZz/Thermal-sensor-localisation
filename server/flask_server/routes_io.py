@@ -1,4 +1,4 @@
-from flask_server import app, db, socketio
+from flask_server import socketio
 
 @socketio.on('connect')
 def say_hello():

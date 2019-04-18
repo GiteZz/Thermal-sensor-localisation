@@ -1,5 +1,5 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
-from flask_server import app, db
+from flask_server import app
 from flask_server.models import *
 from help_module.webcam_helper import get_values
 from help_module.calibration_helper import get_calibration_points
