@@ -19,7 +19,7 @@ class AdaptedKalmanFilter(KalmanFilter):
         self.x[1] = position[1]
         #TODO: set initial speed.. (perhaps leave at zero?)
         self.previous_timestamp = timestamp
-        self.time_difference =  0
+        self.time_difference = 0
 
         self.time_lived = 0
 
@@ -83,6 +83,9 @@ class AdaptedKalmanFilter(KalmanFilter):
         # TODO: convert to seconds, for now all is considered to be seconds.
         self.F[0, 2] = self.time_difference
         self.F[1, 3] = self.time_difference
+
+    def get_location(self):
+        return self.x[0], self.x[1]
 
 if __name__ == "__main__":
     KF = AdaptedKalmanFilter(np.array([0.,0]),0)

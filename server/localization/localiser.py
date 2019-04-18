@@ -58,9 +58,8 @@ class Localiser:
     def update(self, data, timestamp):
         self.processor.set_thermal_data(data)
 
-        if self.com_module is not None:
-            # imgs = self.processor.get_imgs()
-            imgs = self.processor.get_img_layers()
+        if self.com_module is not None and self.com_module.any_clients():
+            imgs = self.processor.get_imgs()
             self.com_module.distribute_imgs(self.sensor_id, imgs)
 
         self.tracker.update(self.processor.get_centroids(), timestamp)
