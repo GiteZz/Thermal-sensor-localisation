@@ -11,8 +11,9 @@ class ComModule:
         socketio.emit('new_image', {'id': id, 'img': buf.decode('utf-8')})
 
     def tracker_update(self, data_dict):
+        print("tracker update")
         for key, value in data_dict.items():
-            socketio.emit('tracker_update', {'ID': key, 'location': value})
+            socketio.emit('tracker_update', {'ID': key, 'position': value})
 
     @socketio.on('connect')
     def new_connection(self):
@@ -23,4 +24,4 @@ class ComModule:
         self.amount_connections -= 1
 
     def any_clients(self):
-        return self.amount_connections > 0
+        return True

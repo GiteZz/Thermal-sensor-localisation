@@ -85,7 +85,7 @@ class AdaptedKalmanFilter(KalmanFilter):
         self.F[1, 3] = self.time_difference
 
     def get_location(self):
-        return self.x[0], self.x[1]
+        return self.x[0][0], self.x[1][0]
 
 if __name__ == "__main__":
     KF = AdaptedKalmanFilter(np.array([0.,0]),0)

@@ -9,10 +9,10 @@ class Tracker:
         self.visualisations = []
 
     def add_visualisation(self,vis):
-        assert(hasattr(vis,"tracker_update")) # must have update method to send new positions to
+        assert(hasattr(vis, "tracker_update")) # must have update method to send new positions to
         self.visualisations.append(vis)
 
-    def update(self,timestamp, positions):
+    def update(self, positions, timestamp):
         '''
         core function of the tracker
         links positions to existing or new persons
@@ -22,6 +22,7 @@ class Tracker:
         :param positions: list of np arrays (x,y)
         :return: None
         '''
+        timestamp = timestamp.timestamp()
         prob_matrix = self.get_matrix(positions,timestamp)
         tups, new_positions = self.get_assignment(prob_matrix)
         for pers_index,pos_index in tups:
@@ -67,9 +68,14 @@ class Tracker:
         sends new positions to listeners
         :return:
         '''
+        vis_dict = {}
         for person in self.persons:
-            person.get_location()
-        #TODO
+            if person.kalmanfilter.time_lived > person.TTL:
+                vis_dict[person.ID] = person.get_location()
+
+        for vis_object in self.visualisations:
+            vis_object.tracker_update(vis_dict)
+
 
     def _prob(self, x, y):
         '''

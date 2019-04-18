@@ -3,7 +3,7 @@ import numpy as np
 
 class Person:
     def __init__(self,ID,pos,timestamp):
-        self.TTL = 2 # time before being considered as a "valid" person  in seconds
+        self.TTL = 5 # time before being considered as a "valid" person  in seconds
         self.ID = ID
         self.kalmanfilter = AdaptedKalmanFilter(pos,timestamp)
         self.locations = {timestamp:pos} #dicts automatic ordered!
