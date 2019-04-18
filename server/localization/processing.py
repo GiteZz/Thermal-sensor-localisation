@@ -261,7 +261,6 @@ class ImageProcessor:
             self.thresh_data[self.smooth_data <= value_range] = value
 
         hist_amount, hist_temp = np.histogram(self.thresh_data, bins=len(self.deltas))
-        print(hist_amount)
         max_temp_index = np.argmax(hist_amount)
         self.thresh_data[self.thresh_data <= hist_temp[max_temp_index] + 1] = 0
 
@@ -339,7 +338,6 @@ class ImageProcessor:
     @decorators.check_deltas
     def _get_thresh_img(self):
         colors = get_thermal_color_tuples()
-        print(self.thresh_data)
         new_rgb = np.zeros((self.thresh_data.shape[0], self.thresh_data.shape[1], 3)).astype(np.uint8)
         for i in range(len(colors)):
             new_rgb[self.thresh_data == i] = np.array(colors[i])
