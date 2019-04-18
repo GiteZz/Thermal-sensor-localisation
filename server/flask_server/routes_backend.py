@@ -1,7 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
 from flask_server import app, db, socketio, loc_bridge
 from flask_server.models import Measurement, Measurement_test
-import cbor2
 import json
 import math
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
@@ -10,7 +9,7 @@ from help_module.calibration_helper import add_calibration_point, get_calibratio
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
-    # print(data)
+    print(data)
     data['data'] = [0 if math.isnan(a) else a for a in data['data']]
 
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
