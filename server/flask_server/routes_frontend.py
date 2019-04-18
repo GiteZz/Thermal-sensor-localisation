@@ -83,23 +83,7 @@ def stream_gen(id, simulated, show_webcam=True):
         else:
             last_result = Measurement.query.filter(Measurement.sensor_id == id).order_by(Measurement.timestamp.desc()).first()
         # get processed frame
-        img=fast_thermal_image(last_result.data, scale=10)
-        processor.set_thermal_data(last_result.data)
-        plt = processor.plot_centroids()
-        plt = Image.fromarray(plt)
-        img = combine_imgs([img, plt])
 
-        img_bytes = PIL_to_bytes(img)
 
         yield (b'--frame\r\nContent-Type: image/png\r\n\r\n' + img_bytes + b'\r\n')
 
-
-@app.route("/thermal_sensor/<id>/stream", methods=['GET'])
-def get_sensor_stream(id):
-    print('requested stream')
-    simulated = request.args.get('simulate')
-    simulated = True if simulated == "1" else False
-
-    # show_webcam = request.args.get('webcam')
-    # show_webcam = True if show_webcam == "1" else False
-    return Response(stream_gen(id, simulated), mimetype='multipart/x-mixed-replace; boundary=frame')

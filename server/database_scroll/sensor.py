@@ -105,7 +105,7 @@ class Sensor:
     def get_default_vis(self, index):
         thermal_data = self.meas_list[index].data
         self.img_processor.set_thermal_data(thermal_data)
-        centr = Image.fromarray(self.img_processor.plot_centroids(), 'RGB')
+        centr = Image.fromarray(self.img_processor.plot_centroids(rgb=True), 'RGB')
         img = np.reshape(thermal_data, (24, 32))
         img = img.repeat(10, axis=0)
         img = img.repeat(10, axis=1)

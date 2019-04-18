@@ -42,14 +42,14 @@ def send_request(timer_list, url, speed_up):
     if len(timer_list) > 0:
         json_data = timer_list.pop(0)[1]
         next_time = speed_up * timer_list[0][0]
-        print(next_time)
         timer = threading.Timer(next_time, send_request, [timer_list, url, speed_up])
         timer.start()
 
         r = requests.post(url, json=json_data)
-        print(r.status_code)
-
-
+        if r.status_code == 200:
+            print('OK')
+        else:
+            print(r.status_code)
 
 
 if __name__ == "__main__":
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
     POST_url = "http://localhost:5000/sensor/simulate"
 
-    amount_sensors = 6
+    amount_sensors = 3
 
     speed_up = 1/amount_sensors
 
