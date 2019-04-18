@@ -14,15 +14,15 @@ import math
 from datetime import timedelta
 
 
-from ui_generated import Ui_MainWindow
+from server.database_scroll.ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time, clean_diff, get_time_str
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
 from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
 
-from qt_extra_classes import ZoomQGraphicsView
-from db_bridge import DB_Bridge
-from sensor import Sensor
+from server.database_scroll.qt_extra_classes import ZoomQGraphicsView
+from server.database_scroll.db_bridge import DB_Bridge
+from server.database_scroll.sensor import Sensor
 import logging
 
 
@@ -31,6 +31,9 @@ class MyUI(QtWidgets.QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        #added by Jente
+        self.csv_teller = 0
 
 
         self.episode_index = -1
@@ -413,6 +416,15 @@ class MyUI(QtWidgets.QMainWindow):
 
         if self.mode == 'frame':
             current_meas = self.episodes[self.episode_index][self.frame_index]
+
+            # Manually setting sensor and indices in case of CSV (Jente)
+            if current_meas.sensor == None:
+                current_meas.sensor = self.sensors[0]
+            if current_meas.or_index == None:
+                current_meas.or_index = self.csv_teller
+                self.csv_teller += 1
+
+
             frame = (frame_x_start, frame_y_start, frame_width, frame_height)
             qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
             self.qt_imgs.extend(qt_imgs)
