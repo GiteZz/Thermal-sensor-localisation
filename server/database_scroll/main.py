@@ -32,9 +32,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        #added by Jente
-        self.csv_teller = 0
-
 
         self.episode_index = -1
         self.frame_index = 0
@@ -108,6 +105,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.ignoreStopCheckbox.stateChanged.connect(self.update_episodes_ui_update)
 
         self.sensors = []
+
+        self.or_index_counter = 0
         
         self.logger = logging.getLogger('database_scrol_logger')
 
@@ -416,15 +415,6 @@ class MyUI(QtWidgets.QMainWindow):
 
         if self.mode == 'frame':
             current_meas = self.episodes[self.episode_index][self.frame_index]
-
-            # Manually setting sensor and indices in case of CSV (Jente)
-            if current_meas.sensor == None:
-                current_meas.sensor = self.sensors[0]
-            if current_meas.or_index == None:
-                current_meas.or_index = self.csv_teller
-                self.csv_teller += 1
-
-
             frame = (frame_x_start, frame_y_start, frame_width, frame_height)
             qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
             self.qt_imgs.extend(qt_imgs)
@@ -462,6 +452,13 @@ class MyUI(QtWidgets.QMainWindow):
         :return:
         """
         text_margin = 10
+
+        if meas.sensor == None:
+            meas.sensor = self.sensors[0]
+        if meas.or_index == None:
+            meas.or_index = self.or_index_counter
+            self.or_index_counter += 1
+
         sensor = meas.sensor
         imgs = sensor.get_default_vis(meas.or_index)
         qt_imgs = [ImageQt(img) for img in imgs]

@@ -1,0 +1,21 @@
+from localization.Adapted_Kalman import AdaptedKalmanFilter
+import numpy as np
+
+class Person:
+    def __init__(self,ID,pos,timestamp):
+        self.TTL = 2 # time before being considered as a "valid" person  in seconds
+        self.ID = ID
+        self.kalmanfilter = AdaptedKalmanFilter(pos,timestamp)
+        self.locations = {timestamp:pos} #dicts automatic ordered!
+        self.locations.setdefault(None)
+
+    def __repr__(self):
+        return (f"{self.ID} => loc = {self.kalmanfilter.x[0]},{self.kalmanfilter.x[1]}"
+              f" speed = {self.kalmanfilter.x[2]},{self.kalmanfilter.x[3]} at {self.kalmanfilter.previous_timestamp}")
+
+
+
+if __name__ == "__main__":
+    p = Person(1,np.array([0.,0]),0)
+    print(p)
+    print("--")
