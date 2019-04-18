@@ -1,6 +1,6 @@
 from localization.tracker import Tracker
 from localization.localiser import Localiser
-from localization.ComModule import ComModule
+from localization.com_module import ComModule
 from help_module.calibration_helper import save_calibration_data
 
 class ServerBridge:

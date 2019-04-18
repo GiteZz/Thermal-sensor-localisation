@@ -42,55 +42,55 @@ class ImageProcessor:
         """
         @staticmethod
         def check_scaled_data(func):
-            def wrapper(self):
+            def wrapper(self, *args, **kwargs):
                 if self.scaled_data is None:
                     self._set_scaled_data()
-                return func(self)
+                return func(self, *args, **kwargs)
 
             return wrapper
 
         @staticmethod
         def check_smooth_data(func):
-            def wrapper(self):
+            def wrapper(self, *args, **kwargs):
                 if self.smooth_data is None:
                     self._set_smooth_data()
-                return func(self)
+                return func(self, *args, **kwargs)
 
             return wrapper
 
         @staticmethod
         def check_tresh_data(func):
-            def wrapper(self):
+            def wrapper(self, *args, **kwargs):
                 if self.thresh_data is None:
                     self.thresh_method()
-                return func(self)
+                return func(self, *args, **kwargs)
 
             return wrapper
 
         @staticmethod
         def check_centroids(func):
-            def wrapper(self):
+            def wrapper(self, *args, **kwargs):
                 if self.centroids is None:
                     self._set_centroids()
-                return func(self)
+                return func(self, *args, **kwargs)
 
             return wrapper
 
         @staticmethod
         def check_deltas(func):
-            def wrapper(self):
+            def wrapper(self, *args, **kwargs):
                 if self.deltas is None:
                     self._set_deltas()
-                return func(self)
+                return func(self, *args, **kwargs)
 
             return wrapper
 
         @staticmethod
         def check_thermal_data(func):
-            def wrapper(self):
+            def wrapper(self, *args, **kwargs):
                 if self.thermal_data is None:
                     raise Exception('Processing: thermal_data not set')
-                return func(self)
+                return func(self, *args, **kwargs)
 
             return wrapper
 
@@ -141,9 +141,10 @@ class ImageProcessor:
         img1 = self._get_scaled_img()
         img2 = self._get_smooth_img()
         img3 = self._get_thresh_img()
-        img4 = self._get_centroid_img()
+        img4 = self._get_all_centroid_img()
+        img5 = self._get_centroid_img()
 
-        return [img1, img2, img3, img4]
+        return [img1, img2, img3, img4, img5]
 
     @decorators.allow_rgb_switch
     @decorators.check_centroids
@@ -154,7 +155,7 @@ class ImageProcessor:
         :return: np array in RGB format
         '''
         # add centroids
-        draw_img = cv2.cvtColor(fast_thermal_image(self.smooth_data, as_numpy=True, dim=self.smooth_data.shape), cv2.COLOR_RGB2BGR)
+        draw_img = cv2.cvtColor(self._get_thresh_img(as_numpy=True), cv2.COLOR_RGB2BGR)
 
         for centroid in self.centroids:
             [cX, cY] = centroid
@@ -171,18 +172,17 @@ class ImageProcessor:
                     pos_y = cY + 30
                 cv2.putText(draw_img, string, (pos_x, pos_y), cv2.QT_FONT_NORMAL, 0.4, (255, 255, 255))
         # add contours
-        result = cv2.drawContours(draw_img, self.contours, -1, (0,0,0), thickness=1)  # params: all contours,color,thickness
+        result = cv2.drawContours(draw_img, self.contours, -1, (0,0,255), thickness=1)  # params: all contours,color,thickness
         return result
 
     @decorators.allow_rgb_switch
     @decorators.check_centroids
     def plot_all_contours(self):
-        draw_img = cv2.cvtColor(fast_thermal_image(self.smooth_data, as_numpy=True, dim=self.smooth_data.shape),
-                                cv2.COLOR_RGB2BGR)
+        draw_img = cv2.cvtColor(self._get_thresh_img(as_numpy=True), cv2.COLOR_RGB2BGR)
 
         # add contours
         for contours in self.contour_hier:
-            draw_img = cv2.drawContours(draw_img, contours, -1, (0, 0, 0), thickness=1)
+            draw_img = cv2.drawContours(draw_img, contours, -1, (0, 0, 255), thickness=1)
 
         return draw_img
 
@@ -262,7 +262,7 @@ class ImageProcessor:
 
         hist_amount, hist_temp = np.histogram(self.thresh_data, bins=len(self.deltas))
         max_temp_index = np.argmax(hist_amount)
-        self.thresh_data[self.thresh_data <= hist_temp[max_temp_index] + 1] = 0
+        self.thresh_data[self.thresh_data <= hist_temp[max_temp_index] + 2] = 0
 
         self.thresh_data = cv2.erode(self.thresh_data, None, iterations=2)
 
@@ -336,14 +336,21 @@ class ImageProcessor:
 
     @decorators.check_tresh_data
     @decorators.check_deltas
-    def _get_thresh_img(self):
+    def _get_thresh_img(self, as_numpy=False):
         colors = get_thermal_color_tuples()
         new_rgb = np.zeros((self.thresh_data.shape[0], self.thresh_data.shape[1], 3)).astype(np.uint8)
         for i in range(len(colors)):
             new_rgb[self.thresh_data == i] = np.array(colors[i])
 
-        return Image.fromarray(new_rgb, 'RGB')
+        if not as_numpy:
+            return Image.fromarray(new_rgb, 'RGB')
+        else:
+            return new_rgb
 
     def _get_centroid_img(self):
         plot_img = self.plot_centroids(rgb=True)
+        return Image.fromarray(plot_img, 'RGB')
+
+    def _get_all_centroid_img(self):
+        plot_img = self.plot_all_contours(rgb=True)
         return Image.fromarray(plot_img, 'RGB')
