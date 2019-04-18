@@ -1,7 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
 from flask_server import app, db, socketio, loc_bridge
 from flask_server.models import Measurement, Measurement_test
-import cbor2
 import json
 import math
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
