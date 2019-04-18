@@ -3,12 +3,12 @@ import numpy as np
 
 class Tracker:
     def __init__(self):
-        self.id_counter  = 0
+        self.id_counter = 0
         self.persons = []
         self.visualisations = []
 
     def add_visualisation(self,vis):
-        assert(hasattr(vis,"update")) # must have update method to send new positions to
+        assert(hasattr(vis,"tracker_update")) # must have update method to send new positions to
         self.visualisations.append(vis)
 
     def update(self,timestamp, positions):
@@ -53,7 +53,8 @@ class Tracker:
         sends new positions to listeners
         :return:
         '''
-        raise NotImplementedError
+        for person in self.persons:
+            person.get_location()
 
     def __repr__(self):
         s = ("____TRACKER STATE_____ \n")

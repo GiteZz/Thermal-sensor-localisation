@@ -13,6 +13,9 @@ class Person:
         return (f"{self.ID} => loc = {self.kalmanfilter.x[0]},{self.kalmanfilter.x[1]}"
               f" speed = {self.kalmanfilter.x[2]},{self.kalmanfilter.x[3]} at {self.kalmanfilter.previous_timestamp}")
 
+    def get_location(self):
+        return self.kalmanfilter.get_location()
+
 
 
 if __name__ == "__main__":

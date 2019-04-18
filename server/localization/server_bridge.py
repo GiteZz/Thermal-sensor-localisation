@@ -1,4 +1,4 @@
-from localization.old_tracker.tracker import Tracker
+from localization.Tracker import Tracker
 from localization.localiser import Localiser
 from localization.com_module import ComModule
 from help_module.calibration_helper import save_calibration_data
@@ -8,6 +8,7 @@ class ServerBridge:
         self.localization_dict = {}
         self.tracker = Tracker()
         self.com_module = ComModule()
+        self.tracker.add_visualisation(self.com_module)
         self.calibrate_data = []
         self.current_calibrate = None
         self.auto_localiser = True
