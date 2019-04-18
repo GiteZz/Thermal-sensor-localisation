@@ -265,6 +265,14 @@ def fast_thermal_image(pixels, scale=1, smooth=False, side=False, deltas=None, d
 
     return img
 
+def color_from_indices(img):
+    colors = get_thermal_color_tuples()
+    new_rgb = np.zeros((img.shape[0], img.shape[1], 3)).astype(np.uint8)
+    for i in range(len(colors)):
+        new_rgb[img == i] = np.array(colors[i])
+
+    return new_rgb
+
 
 def test_speed(img, function, dim):
     """
