@@ -1,5 +1,5 @@
 from help_module.csv_helper import load_csv_tracker_path
-from localization.tracker import Tracker
+from localization.old_tracker.tracker import Tracker
 from localization.localiser import Localiser
 
 test_path = load_csv_tracker_path('../tracker_data_gen/walkaround_1.csv')

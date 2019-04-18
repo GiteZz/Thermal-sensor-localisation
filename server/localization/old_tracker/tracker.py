@@ -1,9 +1,7 @@
 from help_module.localisation_helper import point_dist, point_line_diff
-import numpy as np
 from numpy.linalg import norm as vec_norm
-from localization.person import Person
+from localization.old_tracker.person import Person
 import math
-import requests
 from flask_server import socketio
 
 class Tracker:
