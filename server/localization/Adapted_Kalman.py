@@ -6,6 +6,10 @@ from functools import lru_cache
 import datetime
 
 class AdaptedKalmanFilter(KalmanFilter):
+
+    # We kunnen witte ruis in rekening brengen, we kunnen gokken dat de omzetting naar wereldcoordinaten een halve meter misrekent
+    Q_STD = 200
+
     '''
     This class Extends the Kalman to allow for irregular time intervals
     '''
@@ -18,11 +22,9 @@ class AdaptedKalmanFilter(KalmanFilter):
         :param timestamp: current timestamp
         '''
 
-        #We kunnen witte ruis in rekening brengen, we kunnen gokken dat de omzetting naar wereldcoordinaten een halve meter misrekent
-        #Q_STD = 50
 
         super().__init__(dim_x,dim_z)
-        self.x = np.asarray([position[0], 100, position[1], 100])
+        self.x = np.asarray([position[0], 0, position[1], 0])
         #De gemiddelde snelheid van een wandelaar is 1.38 m/s, dus pak geprojecteerd op de assen 0.98 m/s
         #We ronden af naar één
 
@@ -32,16 +34,18 @@ class AdaptedKalmanFilter(KalmanFilter):
         self.H = np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
 
         #De std van een wandelaar is 0.37m^2, de variantie op locatie is een gok
-        self.P = np.diag([1,3700,1,3700])
+        self.P = np.diag([100, 3500, 100, 3500])
         
         #We kunnen witte ruis in rekening brengen, maar dit lijkt mij overbodig
-        #q = Q_discrete_white_noise(dim=2, dt=0, var=Q_STD**2)
-        #self..Q = block_diag(q, q)
+        q = Q_discrete_white_noise(dim=2, dt=0, var=AdaptedKalmanFilter.Q_STD**2)
+        self.Q = block_diag(q, q)
 
         #TODO: F should use time_difference to update x using dx/dt
         self.B = np.zeros(1) #no controller actions
         self.u = np.zeros((1)) #no controller actions
         self.F = np.eye(dim_x) # velocity is updated in update_time_diff
+
+        self.R = np.diag([1,1])
 
         #Ik heb geen idee van hoe we R kunnen initialiseren
 
@@ -100,8 +104,8 @@ class AdaptedKalmanFilter(KalmanFilter):
         self.F[2, 3] = self.time_difference
         
         #We kunnen witte ruis in rekening brengen, maar dit lijkt mij overbodig
-        #q = Q_discrete_white_noise(dim=2, dt=self.time_difference, var=Q_STD**2)
-        #self.Q = block_diag(q, q)
+        q = Q_discrete_white_noise(dim=2, dt=self.time_difference, var=AdaptedKalmanFilter.Q_STD**2)
+        self.Q = block_diag(q, q)
 
     def get_location(self):
         return self.x[0], self.x[2]

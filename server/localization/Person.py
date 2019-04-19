@@ -3,8 +3,8 @@ import numpy as np
 
 class Person:
 
-    TTL_initial_value = 10
-    TTS_initial_value = 1
+    TTL_initial_value = 2
+    TTS_initial_value = 2
 
     def __init__(self,ID,pos,timestamp):
         self.time_to_show = 5 # time before being considered as a "valid" person  in seconds
