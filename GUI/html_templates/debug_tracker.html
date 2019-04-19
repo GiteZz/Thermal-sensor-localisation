@@ -11,7 +11,7 @@
         var colors={}; //color per object in a dict
         var socket = io.connect('http://'+ document.domain+':'+location.port);
         var img = document.getElementById("img");
-        var legend = document.getElementById("legend");
+        var legend = document.getElementById("id_list");
 
         var dots = [];
         var legend_items = [];
@@ -22,20 +22,21 @@
 
         socket.on('tracker_update', function(data){
             console.log("update received");
-            console.log(data);
 
-            while (img.firstChild) {
-                img.removeChild(img.firstChild);
+            img_children = img.childNodes;
+            for(i = 0; i < img_children.length; i++){
+                console.log(img_children[i].className);
+                if(img_children[i].className === 'dot'){
+                    img.removeChild(img_children[i])
+                }
             }
-            while(legend.firstChild){
-                legend.removeChild(legend.firstChild);
-            }
-            dots = [];
-            legend_items = [];
+
+            legend.innerHTML = '';
 
             for(person_id in data){
                 person_loc = data[person_id];
                 color = intToRGB(person_id);
+                console.log("Adding person" + person_id)
 
                 var dot = document.createElement("div");
                 dot.id = person_id + "_dot";
@@ -44,14 +45,12 @@
                 dot.style.left = String(parseInt(person_loc[1])-10) + "px";
                 dot.style.backgroundColor = "#" + color;
                 img.appendChild(dot);
-                dots.push(dot);
 
                 var txt = document.createElement("div");
                 txt.className = "p";
                 txt.style.color = "#" + color;
                 txt.innerHTML = ("<strong>ID:" + person_id + "<\strong>");
                 legend.appendChild(txt);
-                legend_items.push(txt);
             }
         });
 
@@ -76,6 +75,9 @@
     </div>
     <div class="legend" id="legend">
         <h3>Objects</h3>
+        <div id="id_list">
+
+        </div>
     </div>
 </div>
 {% endblock %}
