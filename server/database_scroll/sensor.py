@@ -110,7 +110,6 @@ class Sensor:
         thermal_data = self.meas_list[index].data
         self.img_processor.set_thermal_data(thermal_data)
         imgs_batch_1 = self.img_processor.get_imgs()
-        imgs_batch_1.extend(self.img_processor.get_img_layers())
 
         return imgs_batch_1
 

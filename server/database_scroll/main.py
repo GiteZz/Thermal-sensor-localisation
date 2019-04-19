@@ -36,14 +36,10 @@ class MyUI(QtWidgets.QMainWindow):
         self.episode_index = -1
         self.frame_index = 0
         self.frame_jump = 10
-        self.time = 0
-        self.time_to_index = 0
         self.max_time = 0
-        self.small_time_jump = 0.25
-        self.big_time_jump = 1
         self.download_path = ''
         self.sensor = 0
-        self.episode_selected = 0
+        self.episode_selected = False
 
         self.episodes = []
         self.episode_sensors = []
@@ -63,8 +59,8 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.ui.timeSlider.valueChanged.connect(self.move_timeslider)
 
-        self.ui.saveCSVFRAMEButton.clicked.connect(self.get_csv_current_frame)
-        self.ui.saveCSVEPISODEButton.clicked.connect(self.get_csv_current_episode)
+        self.ui.saveCSVFRAMEButton.clicked.connect(self.write_csv_current_frame)
+        self.ui.saveCSVEPISODEButton.clicked.connect(self.write_csv_current_episode)
         self.ui.loadCSVButton.clicked.connect(self.load_csv_button)
 
         now = QDateTime()
@@ -130,7 +126,6 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.adjust_after_shift()
 
-
     def adjust_after_shift(self):
         self.logger.info("Adjust after shift")
 
@@ -153,8 +148,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.draw_plot()
 
     def load_csv_button(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file',
-                                            'c:\\', "CSV files (*.csv)")
+        fname = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "CSV files (*.csv)")
         if fname[0] != "":
             self.add_csv(fname[0])
 
@@ -210,6 +204,12 @@ class MyUI(QtWidgets.QMainWindow):
         return param
 
     def reload_sources(self, type):
+        """
+        This function iterates over all the sensor and then reloads them. This is mainly used when changing the query
+        parameters or loading newly created data from the database
+        :param type: The specific type to reload ex: csv, useful because csv's don't have to be reloaded
+        :return:
+        """
         for sensor in self.sensors:
             sensor.reload()
 
@@ -332,7 +332,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.timeSlider.setMaximum(len(self.episodes[self.episode_index]) - 1)
 
         self.draw_plot()
-        self.episode_selected = 1
+        self.episode_selected = True
 
     def clear_frame(self):
         """
@@ -352,17 +352,21 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.frameTimeLabel.setText(f'Frame time: -')
 
     def draw_plot(self):
+        """
+        This function takes the current measurement and asks the corresponding sensor to provide imgs to visualize
+        that meas. After the imgs are received the function will look at get_grid_from to see how many rows and
+        columns there should be. Important that the qt_imgs and qt_pix always stay in memory by assigning them
+        to the class (put self. in front)
+        :return:
+        """
         self.plot_scene.clear()
         text_margin = 10
 
         if self.episode_index < 0:
             return
 
-        scene_size = self.plotGraphicsView.size()
-
-
+        # Get the measurement and corresponding sensor to load the imgs
         current_meas = self.episodes[self.episode_index][self.frame_index]
-
 
         sensor = current_meas.sensor
         imgs = sensor.get_default_vis(current_meas.or_index)
@@ -374,13 +378,14 @@ class MyUI(QtWidgets.QMainWindow):
         grid = get_grid_form(plot_amount)
         self.logger.info(f'Current grid is: {grid}')
 
+        # Calculate width, height and then get the grid form
+        scene_size = self.plotGraphicsView.size()
         frame_width = scene_size.width()
         frame_height = scene_size.height() - text_margin
         grid_width = math.floor(frame_width / grid[0])
         grid_height = math.floor(frame_height / grid[1])
 
-        # pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in qt_pix]
-
+        # Populate the graphicsscene
         for index, pix in enumerate(self.qt_pix):
             frame_offset_x = grid_width * (index % grid[0])
             frame_offset_y = grid_height * (index // grid[0]) + text_margin
@@ -401,70 +406,13 @@ class MyUI(QtWidgets.QMainWindow):
 
             scene_img.setPos(img_offset_x + frame_offset_x, img_offset_y + frame_offset_y)
 
+        # Add the sensor id on top of the scene
         scene_text = self.plot_scene.addText(str(current_meas.sensor_id))
         scene_text.setPos(2, 2)
 
+        # Provide some extra information on the gui
         self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
         self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
-
-    def draw_time(self):
-        self.plot_scene.clear()
-
-    def get_close_measurements(self):
-        """
-        This function is used when the program runs in time mode, this searches for measurements for all id's
-        that are closest the the given time.
-        :return:
-        """
-        cut_off_time = 10
-
-        cur_episode = self.episodes[self.episode_index]
-        cur_time = cur_episode[0].timestamp + timedelta(seconds=self.time)
-        self.ui.frameTimeLabel.setText(str(cur_time))
-        min_diff = float('inf')
-        min_index = -1
-
-
-        # Find closest meas
-        for index, value in enumerate(cur_episode):
-            diff = clean_diff(cur_time, value.timestamp)
-            if abs(diff) < min_diff:
-                min_diff = abs(diff)
-                min_index = index
-            else:
-                break
-
-        diff_set = {}
-        meas_set = {}
-
-        next_index = min_index
-        while next_index < len(cur_episode):
-            value = cur_episode[next_index]
-            diff = clean_diff(value.timestamp, cur_time)
-            if value.sensor_id not in diff_set:
-                diff_set[value.sensor_id] = diff
-                meas_set[value.sensor_id] = value
-
-            if diff > cut_off_time:
-                break
-
-            next_index += 1
-
-        prev_index = min_index
-        while prev_index > 0:
-            value = cur_episode[prev_index]
-            diff = clean_diff(cur_time, value.timestamp)
-
-            if value.sensor_id in diff_set and diff_set[value.sensor_id] > diff:
-                diff_set[value.sensor_id] = diff
-                meas_set[value.sensor_id] = value
-
-            if diff > cut_off_time:
-                break
-
-            prev_index -= 1
-
-        return meas_set
 
     def refresh_sensor_ids(self):
         self.clear_sources('sensor')
@@ -473,14 +421,22 @@ class MyUI(QtWidgets.QMainWindow):
         for id in id_list:
             self.add_source('sensor', id)
 
-    def get_csv_current_episode(self):
+    def write_csv_current_episode(self):
+        """
+        Activated from the ui.saveCSVEPISODEButton, this writes the entire episode to a csv
+        :return:
+        """
         self.logger.info("clicked")
         if not self.episode_selected:
             self.logger.info('No episode selected')
             return
         write_csv_list_frames(self.episodes[self.episode_index], self.download_path)
 
-    def get_csv_current_frame(self):
+    def write_csv_current_frame(self):
+        """
+        Activated from the ui.saveCSVFRAMEButton, this writes the single active frame to a csv
+        :return:
+        """
         self.logger.info("clicked")
         if not self.episode_selected:
             return
