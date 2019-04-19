@@ -2,12 +2,19 @@ from localization.Adapted_Kalman import AdaptedKalmanFilter
 import numpy as np
 
 class Person:
+
+    TTL_initial_value = 2.5
+    TTS_initial_value = 1
+
     def __init__(self,ID,pos,timestamp):
-        self.TTL = 5 # time before being considered as a "valid" person  in seconds
+        self.time_to_show = 5 # time before being considered as a "valid" person  in seconds
         self.ID = ID
         self.kalmanfilter = AdaptedKalmanFilter(pos,timestamp)
         self.locations = {timestamp:pos} #dicts automatic ordered!
         self.locations.setdefault(None)
+
+        self.TTL = Person.TTL_initial_value
+        self.TTS = Person.TTS_initial_value
 
     def __repr__(self):
         return (f"{self.ID} => loc = {self.kalmanfilter.x[0]},{self.kalmanfilter.x[1]}"

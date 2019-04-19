@@ -17,22 +17,21 @@ class AdaptedKalmanFilter(KalmanFilter):
         :param timestamp: current timestamp
         '''
 
-        #We kunnen witte ruis in rekening brengen, maar dit lijkt mij overbodig
-        #Q_STD = 0
+        #We kunnen witte ruis in rekening brengen, we kunnen gokken dat de omzetting naar wereldcoordinaten een halve meter misrekent
+        #Q_STD = 50
 
         super().__init__(dim_x,dim_z)
-        self.x = np.asarray([position[0], 1, position[1], 1])
+        self.x = np.asarray([position[0], 100, position[1], 100])
         #De gemiddelde snelheid van een wandelaar is 1.38 m/s, dus pak geprojecteerd op de assen 0.98 m/s
         #We ronden af naar één
 
         self.previous_timestamp = timestamp
         self.time_difference = 0
-        self.time_lived = 0
 
         self.H = np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
 
         #De std van een wandelaar is 0.37m^2, de variantie op locatie is een gok
-        self.P = np.diag([1,0.37,1,0.37])
+        self.P = np.diag([1,3700,1,3700])
         
         #We kunnen witte ruis in rekening brengen, maar dit lijkt mij overbodig
         #q = Q_discrete_white_noise(dim=2, dt=0, var=Q_STD**2)
@@ -71,7 +70,6 @@ class AdaptedKalmanFilter(KalmanFilter):
         '''
         self.__update_timedifference(timestamp)
         super().update(z)
-        self.time_lived+= self.time_difference #add time to time lived
         self.previous_timestamp = timestamp #update internal timestamp
         self.time_difference = 0
 
@@ -97,7 +95,6 @@ class AdaptedKalmanFilter(KalmanFilter):
         :return:
         '''
         self.time_difference = timestamp - self.previous_timestamp
-        # TODO: convert to seconds, for now all is considered to be seconds.
         self.F[0, 1] = self.time_difference
         self.F[2, 3] = self.time_difference
         

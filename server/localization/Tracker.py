@@ -7,6 +7,7 @@ class Tracker:
         self.id_counter = 0
         self.persons = []
         self.visualisations = []
+        self.last_tracker_timestamp = timestamp.timestamp()
 
     def add_visualisation(self,vis):
         assert(hasattr(vis, "tracker_update")) # must have update method to send new positions to
@@ -25,13 +26,36 @@ class Tracker:
         timestamp = timestamp.timestamp()
         prob_matrix = self.get_matrix(positions,timestamp)
         tups, new_positions = self.get_assignment(prob_matrix)
-        for pers_index,pos_index in tups:
+        updated_pers_index = []
+        for pers_index, pos_index in tups:
             filter = self.persons[pers_index].kalmanfilter
             filter.predict(timestamp)
+
+            #if its not yet time to show, decrement TTS
+            if self.persons[pers_index].TTS > 0:
+                last_person_timestamp = self.persons[pers_index].kalmanfilter.previous_timestamp
+                self.persons[pers_index].TTS -= (timestamp - last_person_timestamp)
+
+            #rest the TTL to the initial value
+            self.persons[pers_index].TTL = Person.TTL_initial_value
+
             filter.update(positions[pos_index],timestamp)
+            pers_index.append(pers_index)
+        
+        #decrement all the other Person's TTL
+        for pers_index in range(len(self.persons)):
+            if pers_index not in updated_pers_index:
+                self.persons[pers_index].TTL -= (timestamp - self.last_tracker_timestamp)
+                if self.persons[pers_index].TTL <=0:
+                    del self.persons[pers_index]
+                
         for pos_index in new_positions:
             self.persons.append(Person(self.id_counter,positions[pos_index],timestamp))
             self.id_counter+=1
+
+        
+                
+        
         self.visualisations_update()
 
     def get_matrix(self,positions,timestamp):
@@ -70,8 +94,9 @@ class Tracker:
         '''
         vis_dict = {}
         for person in self.persons:
-            if person.kalmanfilter.time_lived > person.TTL:
+            if person.TTS <= 0:
                 vis_dict[person.ID] = person.get_location()
+            
 
         for vis_object in self.visualisations:
             vis_object.tracker_update(vis_dict)
