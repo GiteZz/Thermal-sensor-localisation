@@ -110,22 +110,22 @@ class MyUI(QtWidgets.QMainWindow):
         self.slice_time = value
 
     def one_forward(self):
-        self.move_time_or_frame(self.small_time_jump, 1)
+        self.move_time_or_frame(1)
 
     def one_backward(self):
-        self.move_time_or_frame(-self.small_time_jump, -1)
+        self.move_time_or_frame(-1)
 
     def more_forward(self):
-        self.move_time_or_frame(self.big_time_jump, self.frame_jump)
+        self.move_time_or_frame(self.frame_jump)
 
     def more_backward(self):
-        self.move_time_or_frame(-self.big_time_jump, -self.frame_jump)
+        self.move_time_or_frame(-self.frame_jump)
 
-    def move_time_or_frame(self, time_jump, frame_jump):
-        if self.episode_index < 0 or self.episode_index >= len(self.episodes):
+    def move_time_or_frame(self, frame_jump):
+        if self.episode_index < 0 or self.episode_index >= len(self.episodes[0]):
             return
 
-        if 0 <= self.frame_index + frame_jump < len(self.episodes):
+        if 0 <= self.frame_index + frame_jump < len(self.episodes[0]):
             self.frame_index += frame_jump
 
         self.adjust_after_shift()
