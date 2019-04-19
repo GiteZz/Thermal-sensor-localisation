@@ -3,7 +3,7 @@ import numpy as np
 
 class Person:
 
-    TTL_initial_value = 2.5
+    TTL_initial_value = 10
     TTS_initial_value = 1
 
     def __init__(self,ID,pos,timestamp):

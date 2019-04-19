@@ -41,20 +41,23 @@
 
                     id_div = document.createElement("div");
                     id_div.innerHTML = "ID";
-                    legend.appendChild(id_div)
+                    legend.appendChild(id_div);
                     for(key in keys){
                         new_div = document.createElement("div");
-                        new_div.innerHTML = key;
+                        new_div.innerHTML = keys[key];
                         legend.appendChild(new_div);
                     }
                     set_top = false;
+
                 }
                 new_div = document.createElement('div');
                 new_div.innerHTML = person_id;
                 legend.appendChild(new_div)
                 for(key in keys){
+                    console.log("key:");
+                    console.log(key);
                     new_div = document.createElement("div");
-                    new_div.innerHTML = String(data[person_id][key]);
+                    new_div.innerHTML = String(data[person_id][keys[key]]);
                     legend.appendChild(new_div);
                 }
 

@@ -94,7 +94,10 @@ class Tracker:
         vis_dict = {}
         for person in self.persons:
             if person.TTS <= 0:
-                vis_dict[person.ID] = {'position':person.get_location(), 'timelived': person.TTL}
+                sp1 = round(person.kalmanfilter.x[2], 2)
+                sp2 = round(person.kalmanfilter.x[3], 2)
+                ttl_round = round(person.TTL, 2)
+                vis_dict[person.ID] = {'position':person.get_location(), 'timelived': ttl_round, 'v_x': sp1, 'v_y': sp2}
             
 
         for vis_object in self.visualisations:
