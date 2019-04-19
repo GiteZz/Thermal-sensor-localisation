@@ -1,0 +1,41 @@
+{% extends "main.html" %}
+{% block content %}
+
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/config_calibrate.css') }}" >
+
+<div class="content">
+    <div class="content_item">
+        <h2>Current Points</h2>
+        <div class="point_wrapper link_grid">
+            <div><u>Name</u></div>
+            <div><u>Coordinate</u></div>
+            <div></div>
+            <div></div>
+            {% for name, co in current_points.items() %}
+
+                <div>{{name}}</div>
+                <div>{{co}}</div>
+                <div><a href="/config/calibrate/{{name}}/start" title="{{name}}">&#9654;</a></div>
+                <div><a href="/config/calibrate/{{name}}/delete" title="remove point">x</a></div>
+            {% endfor %}
+
+        </div>
+        <a href="/config/calibrate/save" class="recording_links">Save calibration data</a>
+
+    </div>
+
+    <div class="content_item">
+        <h2>Add Point</h2>
+        <form action="/config/calibrate/addpoint" method="post">
+            <div>Name</div>
+            <input type="text" name="name">
+            <div>X Coordinate</div>
+            <input type="text" name="xco">
+            <div>Y Coordinate</div>
+            <input type="text" name="yco">
+            <input type="submit">
+        </form>
+
+    </div>
+</div>
+{% endblock %}
