@@ -11,6 +11,10 @@ class Localiser:
         self.tracker = None
         self.processor = ImageProcessor()
         self.com_module = None
+        # if this flag is true, all centroids are converted to world coords before
+        # sending to the tracker
+        self.WORLD_CORDS_FLAG = True
+        self.calibrated = False
 
     def __add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])
@@ -31,23 +35,35 @@ class Localiser:
         # each value in centroids should be a pair (loc, timestamp)
         self.tracker.update(centroids)
 
-    def get_world_cords(self, cam_x,cam_y):
+    def get_world_cords(self, points):
         if len(self.matrix) ==0:
             print("not yet callibrated")
         else:
-            return np.matmul(self.matrix,np.transpose(np.array([cam_x,cam_y,1])))
+            world_cords = []
+            for point in points:
+                vec = np.array([point[0],point[1],1])
+                cord = np.matmul(self.matrix,np.transpose(vec))
+                cord *= 1/cord[2]
+                world_cords.append(cord[0:2])
+            return world_cords
 
     def calibrate_data(self):
         with open('configuration_files/calibration_configuration.json', 'r') as f:
+        #with open(f'C:\School\VOP\VOP\server\configuration_files\calibration_configuration.json' ,'r') as f:
             config = json.load(f)
             data=config['calibration_data']
             for key,value in data.items():
-                if value.get(self.sensor_id,None) and min(value.get(self.sensor_id))>0: #if <0 this point is not seen by the sensor
-                    img_cord=value.get(self.sensor_id)
-                    world_cord=config["points"][key]
-                    self.__add_calibration_point(img_cord[0],img_cord[1],world_cord[0],world_cord[1])
-        print('calibration points added for '+str(self.sensor_id))
+                debug = value.get(str(self.sensor_id),None)
+                if value.get(str(self.sensor_id),None):
+                    debug = min(value.get(str(self.sensor_id)))
+                    if min(value.get(str(self.sensor_id)))>0:
+                        #if <0 this point is not seen by the sensor
+                        img_cord=value.get(str(self.sensor_id))
+                        world_cord=config["points"][key]
+                        self.__add_calibration_point(img_cord[0],img_cord[1],world_cord[0],world_cord[1])
+                        print('calibration points added for '+str(self.sensor_id))
         self.__determine_matrix()
+        self.calibrated = True
 
     def set_tracker(self, tracker):
         self.tracker = tracker
@@ -57,17 +73,24 @@ class Localiser:
 
     def update(self, data, timestamp):
         self.processor.set_thermal_data(data)
-
         if self.com_module is not None and self.com_module.any_clients():
             imgs = self.processor.get_imgs()
             self.com_module.distribute_imgs(self.sensor_id, imgs)
+        if not self.WORLD_CORDS_FLAG:
+            print('img cords update by localiser')
+            self.tracker.update(self.processor.get_centroids(), timestamp)
+        else:
+            if self.calibrated:
+                print('world cord update by localiser')
+                self.tracker.update(self.get_world_cords(self.processor.get_centroids()),timestamp)
 
-        self.tracker.update(self.processor.get_centroids(), timestamp)
 
 
 
 if __name__=='__main__':
-    loc=Localiser(243)
+    loc=Localiser(65)
     loc.calibrate_data()
+    print(loc.get_world_cords([[194,79],[194,90]]))
+    print(loc.calibrated)
 
 

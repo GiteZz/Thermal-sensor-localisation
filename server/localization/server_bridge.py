@@ -26,17 +26,17 @@ class ServerBridge:
             self.__add_localiser(sensor_id)
         self.localization_dict[sensor_id].update(data, timestamp)
 
+
     def __add_localiser(self, sensor_id, calibrate_data=None):
         """
         Creates new Localiser and add the tracker
-        TODO: how to do calibration?
         :param sensor_id:
         :param calibrate_data:
         :return:
         """
         new_localiser = Localiser(sensor_id)
-        # if calibrate_data is not None:
-        #     new_localiser.calibrate(calibrate_data)
+        #TODO: auto calibrate? how are we gonna calibrate at the right time with the right data?
+        new_localiser.calibrate_data()
         new_localiser.set_tracker(self.tracker)
         new_localiser.set_com_module(self.com_module)
 

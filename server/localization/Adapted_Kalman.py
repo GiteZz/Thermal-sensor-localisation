@@ -2,6 +2,7 @@ from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from scipy.linalg import block_diag
 import numpy as np
+from functools import lru_cache
 import datetime
 
 class AdaptedKalmanFilter(KalmanFilter):
@@ -48,7 +49,7 @@ class AdaptedKalmanFilter(KalmanFilter):
     def predict(self,timestamp):
         self.__update_timedifference(timestamp)
         super().predict()
-
+    #@lru_cache()
     def get_prediction(self,timestamp):
         '''
         this function performs a prediction without actually changing the internal state

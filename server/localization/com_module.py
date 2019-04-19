@@ -11,7 +11,7 @@ class ComModule:
         socketio.emit('new_image', {'id': id, 'img': buf.decode('utf-8')})
 
     def tracker_update(self, data_dict):
-        print("tracker update")
+        #print("tracker update")
         socketio.emit('tracker_update', data_dict)
 
     @socketio.on('connect')

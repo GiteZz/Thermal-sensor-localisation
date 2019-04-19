@@ -1,13 +1,13 @@
 from localization.Person import Person
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-
+import time
 class Tracker:
     def __init__(self):
         self.id_counter = 0
         self.persons = []
         self.visualisations = []
-        self.last_tracker_timestamp = timestamp.timestamp()
+        self.last_tracker_timestamp = time.time()
 
     def add_visualisation(self,vis):
         assert(hasattr(vis, "tracker_update")) # must have update method to send new positions to
@@ -24,6 +24,7 @@ class Tracker:
         :return: None
         '''
         timestamp = timestamp.timestamp()
+
         prob_matrix = self.get_matrix(positions,timestamp)
         tups, new_positions = self.get_assignment(prob_matrix)
         updated_pers_index = []
@@ -40,7 +41,7 @@ class Tracker:
             self.persons[pers_index].TTL = Person.TTL_initial_value
 
             filter.update(positions[pos_index],timestamp)
-            pers_index.append(pers_index)
+            updated_pers_index.append(pers_index)
         
         #decrement all the other Person's TTL
         for pers_index in range(len(self.persons)):
@@ -53,10 +54,8 @@ class Tracker:
             self.persons.append(Person(self.id_counter,positions[pos_index],timestamp))
             self.id_counter+=1
 
-        
-                
-        
         self.visualisations_update()
+        #print("tracker updated")
 
     def get_matrix(self,positions,timestamp):
         '''
@@ -122,12 +121,14 @@ class Tracker:
 
 
 if __name__ == "__main__":
+    t0 = time.time()
+
     t = Tracker()
-    t.update(0,[np.array([1.,2])])
+    t.update([np.array([1.,2])], t0)
     print(t)
-    t.update(1,[np.array([2.,3]), np.array([5.,6])])
+    t.update([np.array([2.,3]), np.array([5.,6])], t0 + 1)
     print(t)
-    t.update(2,[np.array([3.,4]), np.array([3.,5])])
+    t.update([np.array([3.,4]), np.array([3.,5])], t0 + 2)
     print(t)
-    t.update(3,[ np.array([5.,6])])
+    t.update([ np.array([5.,6])], t0 + 3)
     print(t)
