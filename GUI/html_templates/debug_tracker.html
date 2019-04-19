@@ -13,6 +13,9 @@
         var img = document.getElementById("img");
         var legend = document.getElementById("legend");
 
+        var dots = [];
+        var legend_items = [];
+
         socket.on('connect', function(){
             console.log('Im Connected');
            });
@@ -21,36 +24,35 @@
             console.log("update received");
             console.log(data);
 
-            if(!(current_objects.hasOwnProperty(data["ID"]))) {
-                console.log("new object");
-                current_objects[data["ID"]] = data["position"];
-                colors[data["ID"]] = intToRGB(parseInt(data["ID"])); 
-                //create new dot 
+            while (img.firstChild) {
+                img.removeChild(img.firstChild);
+            }
+            while(legend.firstChild){
+                legend.removeChild(legend.firstChild);
+            }
+            dots = [];
+            legend_items = [];
+
+            for(person_id in data){
+                person_loc = data[person_id];
+                color = intToRGB(person_id);
+
                 var dot = document.createElement("div");
-                dot.id = data["ID"]+"dot";
+                dot.id = person_id + "_dot";
                 dot.className = "dot";
-                console.log(data["position"][0]);
-                dot.style.top = String(parseInt(data["position"][0])-10)+"px";
-                dot.style.left = String(parseInt(data["position"][1])-10)+"px";
-                dot.style.backgroundColor = "#"+colors[data["ID"]];
+                dot.style.top = String(parseInt(person_loc[0])-10) + "px";
+                dot.style.left = String(parseInt(person_loc[1])-10) + "px";
+                dot.style.backgroundColor = "#" + color;
                 img.appendChild(dot);
-                //create object entry
+                dots.push(dot);
+
                 var txt = document.createElement("div");
                 txt.className = "p";
-                txt.style.color = "#"+colors[data["ID"]];
-                txt.innerHTML = ("<strong>ID:"+ +data["ID"]+"<\strong>");
+                txt.style.color = "#" + color;
+                txt.innerHTML = ("<strong>ID:" + person_id + "<\strong>");
                 legend.appendChild(txt);
-
-
-    
-                }
-            else {
-                current_objects[data["ID"]]=data["position"];
-                console.log('position updated of object '+ data["ID"]);
-                //update position
-                var dot = document.getElementById(data["ID"]+"dot")
-                dot.style.top = String(parseInt(data["position"][0])-10)+"px";
-                dot.style.left = String(parseInt(data["position"][1])-10)+"px";            }
+                legend_items.push(txt);
+            }
         });
 
     });
