@@ -94,7 +94,7 @@ class Tracker:
         vis_dict = {}
         for person in self.persons:
             if person.TTS <= 0:
-                vis_dict[person.ID] = person.get_location()
+                vis_dict[person.ID] = {'position':person.get_location(), 'timelived': person.TTL}
             
 
         for vis_object in self.visualisations:
