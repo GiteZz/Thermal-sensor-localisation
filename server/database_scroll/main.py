@@ -32,7 +32,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-
         self.episode_index = -1
         self.frame_index = 0
         self.frame_jump = 10

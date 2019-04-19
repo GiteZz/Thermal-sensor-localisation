@@ -142,6 +142,11 @@ class ImageProcessor:
 
         return [img1, img2, img3, img4, img5]
 
+    def process(self, thermal_data):
+        self.set_thermal_data(thermal_data)
+        return self.get_centroids()
+
+
     @decorators.allow_rgb_switch
     @decorators.check_centroids
     def plot_centroids(self, rel_pos=True):
