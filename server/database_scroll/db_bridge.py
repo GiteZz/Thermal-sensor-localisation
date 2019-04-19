@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from help_module.data_model_helper import Measurement, Base, CSV_Measurement
+from help_module.data_model_helper import Measurement_db, Base, CSV_Measurement
 import json
 
 class DB_Bridge:
@@ -18,21 +18,21 @@ class DB_Bridge:
         self.session = self.Session()
 
     def get_distinct_ids(self):
-        sensor_ids = self.session.query(Measurement).distinct(Measurement.sensor_id).all()
+        sensor_ids = self.session.query(Measurement_db).distinct(Measurement_db.sensor_id).all()
         id_list = [meas.sensor_id for meas in sensor_ids]
 
         return id_list
 
     def get_values(self, sensor_id, param):
-        basic_query = self.session.query(Measurement).filter(Measurement.sensor_id == sensor_id)
+        basic_query = self.session.query(Measurement_db).filter(Measurement_db.sensor_id == sensor_id)
 
         if param['act_start']:
-            basic_query = basic_query.filter(Measurement.timestamp > param['time_start'])
+            basic_query = basic_query.filter(Measurement_db.timestamp > param['time_start'])
 
         if param['act_stop']:
-            basic_query = basic_query.filter(Measurement.timestamp < param['time_stop'])
+            basic_query = basic_query.filter(Measurement_db.timestamp < param['time_stop'])
 
-        sensor_values = basic_query.order_by(Measurement.timestamp.desc()). \
+        sensor_values = basic_query.order_by(Measurement_db.timestamp.desc()). \
             limit(param['amount_limit']).all()
 
         return sensor_values

@@ -15,7 +15,7 @@ from datetime import timedelta
 
 
 from server.database_scroll.ui_generated import Ui_MainWindow
-from help_module.data_model_helper import Measurement, Base, CSV_Measurement
+from help_module.data_model_helper import Measurement_db, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time, clean_diff, get_time_str
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
 from help_module.img_helper import get_grid_form
@@ -236,8 +236,19 @@ class MyUI(QtWidgets.QMainWindow):
 
     def update_episodes(self):
         """
-        Calculate episodes based on the selected checkboxes.
-        :return:
+        This function combines all the data from the active sensors (not actual sensor, the class) and creates one long
+        list from them. After creating this list the values get sorted so the values are in chronological order.
+        After the sorting the list get spliced up into episodes.
+
+        A episode is defined as measurements that all satisfy these conditions:
+
+        -cond1: The next measurement should be within connect time from the previous one.
+                This is used to separate different bursts of measurements. If zero this is ignored.
+
+        -cond2: The difference in time between first and last measurement should be smaller then the slice time.
+                This is used to avoid excessive long episodes. If zero this is ignored.
+
+        :return: -
         """
         # Combine data from different sources and sort for easier plotting
         data = []
@@ -293,7 +304,11 @@ class MyUI(QtWidgets.QMainWindow):
 
     def episode_clicked(self, index):
         """
-        This function sets up the UI to handle an episode (mostly plotting stuff)
+        Gets called when the user click on listwidget inside ui.timeList. This function should find the
+        selected episode and reset all the values so the first frame of the episode is ready to be plotted.
+        The function then calls the plot function.
+
+        Important variables that are changed:  episode_index, frame_index
 
         :param index: episode clicked on self.timeList
         :return:
@@ -338,68 +353,37 @@ class MyUI(QtWidgets.QMainWindow):
 
     def draw_plot(self):
         self.plot_scene.clear()
+        text_margin = 10
 
         if self.episode_index < 0:
             return
 
         scene_size = self.plotGraphicsView.size()
 
-        self.qt_imgs = []
-        self.qt_pix = []
-
-        margin = math.floor(0.05 * scene_size.width())
-        if margin > 20:
-            margin = 20
-
-        frame_width = scene_size.width() - 2 * margin
-        frame_height = scene_size.height() - 2 * margin
-        frame_x_start = margin
-        frame_y_start = margin
 
         current_meas = self.episodes[self.episode_index][self.frame_index]
-        frame = (frame_x_start, frame_y_start, frame_width, frame_height)
-        qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
-        self.qt_imgs.extend(qt_imgs)
-        self.qt_pix.extend(qt_pix)
 
-        self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
-        self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
 
-    def draw_frame(self, meas, frame):
-        """
-        frame consist of (x0,y0,width, height)
-        This draw the given meas in the given frame on the graphicsscene.
-        :param meas:
-        :param frame:
-        :return:
-        """
-        text_margin = 10
+        sensor = current_meas.sensor
+        imgs = sensor.get_default_vis(current_meas.or_index)
 
-        if meas.sensor == None:
-            meas.sensor = self.sensors[0]
-        if meas.or_index == None:
-            meas.or_index = self.or_index_counter
-            self.or_index_counter += 1
+        self.qt_imgs = [ImageQt(img) for img in imgs]
+        self.qt_pix = [QPixmap.fromImage(img) for img in self.qt_imgs]
 
-        sensor = meas.sensor
-        imgs = sensor.get_default_vis(meas.or_index)
-        qt_imgs = [ImageQt(img) for img in imgs]
-        qt_pix = [QPixmap.fromImage(img) for img in qt_imgs]
-
-        plot_amount = len(qt_pix)
+        plot_amount = len(self.qt_pix)
         grid = get_grid_form(plot_amount)
         self.logger.info(f'Current grid is: {grid}')
 
-        frame_width = frame[2]
-        frame_height = frame[3] - text_margin
+        frame_width = scene_size.width()
+        frame_height = scene_size.height() - text_margin
         grid_width = math.floor(frame_width / grid[0])
         grid_height = math.floor(frame_height / grid[1])
 
         # pix_res = [pix.scaled(grid_size, aspectRatioMode=1) for pix in qt_pix]
 
-        for index, pix in enumerate(qt_pix):
-            frame_offset_x = grid_width * (index % grid[0]) + frame[0]
-            frame_offset_y = grid_height * (index // grid[0]) + frame[1] + text_margin
+        for index, pix in enumerate(self.qt_pix):
+            frame_offset_x = grid_width * (index % grid[0])
+            frame_offset_y = grid_height * (index // grid[0]) + text_margin
 
             img_size = pix.size()
             img_width = img_size.width()
@@ -417,12 +401,11 @@ class MyUI(QtWidgets.QMainWindow):
 
             scene_img.setPos(img_offset_x + frame_offset_x, img_offset_y + frame_offset_y)
 
-        scene_text = self.plot_scene.addText(str(meas.sensor_id))
-        scene_text.setPos(frame[0] + 2, frame[1] + 2)
+        scene_text = self.plot_scene.addText(str(current_meas.sensor_id))
+        scene_text.setPos(2, 2)
 
-        self.plot_scene.addRect(frame[0], frame[1], frame_width, frame_height)
-
-        return qt_imgs, qt_pix
+        self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
+        self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
 
     def draw_time(self):
         self.plot_scene.clear()

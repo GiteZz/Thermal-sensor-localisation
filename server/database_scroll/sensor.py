@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from help_module.csv_helper import load_csv
-from help_module.data_model_helper import Measurement, Base, CSV_Measurement
+from help_module.data_model_helper import Measurement_db, Base, CSV_Measurement, Measurement
 from help_module.img_helper import fast_thermal_image, plt_fig_to_PIL, get_deltas_img, grid_plot, hist_plot
 from help_module.time_helper import abs_diff
 from localization.processing import ImageProcessor
@@ -95,12 +95,16 @@ class Sensor:
     def load_sensor(self):
         """
         Uses a database query to get measurements from the sensor with id == sensor_id
+        Explanation for converting to different class is written in the data_model_helper.py
 
         :param sensor_id:
         :return:
         """
         param = self.app.get_query_param()
-        return self.db_bridge.get_values(self.sensor_id, param)
+        db_values = self.db_bridge.get_values(self.sensor_id, param)
+        sens_values = [Measurement(meas) for meas in db_values]
+
+        return sens_values
 
     def get_default_vis(self, index):
         thermal_data = self.meas_list[index].data

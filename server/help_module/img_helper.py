@@ -315,8 +315,8 @@ def get_grid_form(amount):
     :param amount:
     :return:
     """
-    plot_sizes = [1, 2, 4, 6, 9]
-    grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3]]
+    plot_sizes = [1, 2, 4, 6, 9, 12, 15, 20]
+    grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3], [3, 4], [3, 5], [4, 5]]
     grid = grid_sizes[0]
 
     for index in range(len(grid_sizes)):
@@ -358,13 +358,5 @@ def combine_imgs(img_list, title=None):
 
 
 if __name__ == "__main__":
-    result = read_data("9.csv")
-    frame = result[30][0]
-
-    img = np.reshape(frame, (24, 32))
-    img = img.repeat(10, axis=0)
-    img = img.repeat(10, axis=1)
-
-    img = fil.gaussian_filter(img, 10)
-
-    test_speed(img, fast_thermal_image, (240,320))
+    for i in range(9):
+        print(f'{i}: {get_grid_form(i)}')

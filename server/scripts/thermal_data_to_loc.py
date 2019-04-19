@@ -1,3 +1,8 @@
+"""
+This files convert a database (from pgadmin) to a csv that contains 3 columns: the centroids, epoch time and local time
+"""
+
+
 import csv
 from localization.processing import ImageProcessor
 from help_module.time_helper import convert_to_datetime, get_time_str
