@@ -4,7 +4,7 @@ import json
 from localization.processing import ImageProcessor
 
 class Localiser:
-    def __init__(self,sensor_id):
+    def __init__(self, sensor_id):
         self.sensor_id=sensor_id
         self.matrix=[]
         self.calibration_points=[] # key=px_index, val=world_coord

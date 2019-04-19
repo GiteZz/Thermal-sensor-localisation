@@ -25,6 +25,9 @@ class Tracker:
         '''
         timestamp = timestamp.timestamp()
 
+        if self.last_tracker_timestamp is None:
+            self.last_tracker_timestamp = timestamp
+
         prob_matrix = self.get_matrix(positions,timestamp)
         tups, new_positions = self.get_assignment(prob_matrix)
         updated_pers_index = []
@@ -46,15 +49,17 @@ class Tracker:
         #decrement all the other Person's TTL
         for pers_index in range(len(self.persons)):
             if pers_index not in updated_pers_index:
-                self.persons[pers_index].TTL -= (timestamp - self.last_tracker_timestamp)
-                if self.persons[pers_index].TTL <=0:
-                    del self.persons[pers_index]
+                if (self.last_tracker_timestamp < timestamp):
+                    self.persons[pers_index].TTL -= (timestamp - self.last_tracker_timestamp)
+                    if self.persons[pers_index].TTL <= 0:
+                        del self.persons[pers_index]
                 
         for pos_index in new_positions:
             self.persons.append(Person(self.id_counter,positions[pos_index],timestamp))
             self.id_counter+=1
 
         self.visualisations_update()
+        self.last_tracker_timestamp = timestamp
         #print("tracker updated")
 
     def get_matrix(self,positions,timestamp):
