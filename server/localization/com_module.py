@@ -12,8 +12,7 @@ class ComModule:
 
     def tracker_update(self, data_dict):
         print("tracker update")
-        for key, value in data_dict.items():
-            socketio.emit('tracker_update', {'ID': key, 'position': value})
+        socketio.emit('tracker_update', data_dict)
 
     @socketio.on('connect')
     def new_connection(self):

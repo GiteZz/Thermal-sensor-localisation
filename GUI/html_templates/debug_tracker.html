@@ -20,6 +20,7 @@
         socket.on('tracker_update', function(data){
             console.log("update received");
             console.log(data);
+
             if(!(current_objects.hasOwnProperty(data["ID"]))) {
                 console.log("new object");
                 current_objects[data["ID"]] = data["position"];
