@@ -47,13 +47,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.episodes = []
         self.episode_sensors = []
 
-        self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf','mtpltlib RGB processed']
-        self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot, processed_color_plot]
-        self.vis_cur_meth = []
-        self.vis_layouts = []
-        self.vis_labels = []
-        self.vis_checkboxes = []
-
         self.update_from_button = False
 
         self.mode = 'frame'
@@ -93,8 +86,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.plot_scene = QGraphicsScene()
         self.plotGraphicsView.setScene(self.plot_scene)
 
-        self.ui.timeCheckBox.stateChanged.connect(self.to_time_mode)
-
         self.ui.frameAmountSpinbox.valueChanged.connect(self.update_episodes_ui_update)
         self.ui.sliceTimeSpinbox.valueChanged.connect(self.update_episodes_ui_update)
         self.ui.connectTimeSpinbox.valueChanged.connect(self.update_episodes_ui_update)
@@ -109,29 +100,7 @@ class MyUI(QtWidgets.QMainWindow):
         
         self.logger = logging.getLogger('database_scrol_logger')
 
-        for method_name in self.vis_methods_name:
-            n_label = QLabel(method_name)
-            n_checkbox = QCheckBox()
-            n_layout = QHBoxLayout()
-
-            n_layout.addWidget(n_label)
-            n_layout.addWidget(n_checkbox)
-            n_checkbox.stateChanged.connect(self.update_vis_methods)
-
-            self.ui.visualizeVLayout.addLayout(n_layout)
-
-            self.vis_checkboxes.append(n_checkbox)
-            self.vis_labels.append(n_label)
-            self.vis_layouts.append(n_layout)
-
         self.db_bridge = DB_Bridge()
-
-    def update_vis_methods(self):
-        self.vis_cur_meth = []
-        for index, widg in enumerate(self.vis_checkboxes):
-            if widg.isChecked():
-                self.vis_cur_meth.append(self.vis_methods[index])
-        self.draw_plot()
 
     def update_connect_time(self, value):
         self.logger.info("update connect time to " + str(value))
@@ -191,20 +160,6 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             self.time = value
         self.draw_plot()
-
-    def to_time_mode(self):
-        if self.ui.timeCheckBox.isChecked():
-            self.mode = 'time'
-            self.ui.backwardMoreButton.setText(f'-{self.big_time_jump}s')
-            self.ui.backwardOneButton.setText(f'-{self.small_time_jump}s')
-            self.ui.forwardOneButton.setText(f'+{self.small_time_jump}s')
-            self.ui.forwardMoreButton.setText(f'+{self.big_time_jump}s')
-        else:
-            self.mode = 'frame'
-            self.ui.backwardMoreButton.setText('<<<')
-            self.ui.backwardOneButton.setText('<')
-            self.ui.forwardOneButton.setText('>')
-            self.ui.forwardMoreButton.setText('>>>')
 
     def load_csv_button(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file',

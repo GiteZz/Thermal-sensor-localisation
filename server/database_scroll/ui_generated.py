@@ -197,11 +197,6 @@ class Ui_MainWindow(object):
         self.visualizeVLayout.setObjectName("visualizeVLayout")
         self.verticalLayout_5.addLayout(self.visualizeVLayout)
         self.verticalLayout.addWidget(self.frame_2)
-        self.timeCheckBox = QtWidgets.QCheckBox(self.centralwidget)
-        self.timeCheckBox.setObjectName("timeCheckBox")
-        self.verticalLayout.addWidget(self.timeCheckBox)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout.addItem(spacerItem)
         self.gridLayout.addLayout(self.verticalLayout, 0, 2, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -246,8 +241,6 @@ class Ui_MainWindow(object):
         self.saveCSVFRAMEButton.setText(_translate("MainWindow", "Save frame CSV"))
         self.loadCSVButton.setText(_translate("MainWindow", "Load CSV"))
         self.saveCSVEPISODEButton.setText(_translate("MainWindow", "Save episode CSV"))
-        self.label_3.setText(_translate("MainWindow", "Visualize methods"))
-        self.timeCheckBox.setText(_translate("MainWindow", "Time Mode"))
 
 
 if __name__ == "__main__":
