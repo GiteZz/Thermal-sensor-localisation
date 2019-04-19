@@ -119,6 +119,15 @@ class Tracker:
             s += "\n"
         return s
 
+    def reset_tracker(self):
+        '''
+        This function resets the whole state of the tracker
+        '''
+        self.id_counter = 0
+        self.persons = []
+        self.visualisations = []
+        self.last_tracker_timestamp = time.time()
+
 
 if __name__ == "__main__":
     t0 = time.time()
