@@ -5,6 +5,7 @@ import json
 import math
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
 from help_module.calibration_helper import add_calibration_point, get_calibration_points, remove_calibration_point, get_calibration_co
+import datetime
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
@@ -35,6 +36,15 @@ def receive_simulate():
     # socketio.emit('new_image', {'device_id': data['device_id']})
 
     loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
+
+    return "Succes"
+
+@app.route('/sensor/simulate_no_save', methods=['POST'])
+def receive_simulate_no_save():
+    # print("Simulated request")
+    data = request.json
+
+    loc_bridge.update(data["device_id"], data["data"], datetime.datetime.now())
 
     return "Succes"
 

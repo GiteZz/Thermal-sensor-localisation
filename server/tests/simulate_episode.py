@@ -25,11 +25,12 @@ def create_timing_list(data, random_id=False, amount_id=1):
 
     for index in range(1, len(data)):
         add_dict = {}
-        if random_id:
-            index_id = (index_id + 1) % amount_id
-            add_dict['device_id'] = f'sim_{index_list[index_id]}'
-        else:
-            add_dict['device_id'] = str(data[index].sensor_id)
+        # if random_id:
+        #     index_id = (index_id + 1) % amount_id
+        #     add_dict['device_id'] = f'sim_{index_list[index_id]}'
+        # else:
+        #     add_dict['device_id'] = str(data[index].sensor_id)
+        add_dict['device_id'] = 65
         add_dict['data'] = data[index].data
         add_dict['sequence'] = data[index].sequence_id
         time_diff = (data[index].timestamp - data[index - 1].timestamp).microseconds / 1000000
@@ -55,9 +56,9 @@ def send_request(timer_list, url, speed_up):
 if __name__ == "__main__":
     csv_folder = '../database_scroll/csv/'
     csv_file = "sensor_data_episode_20190228-150037_51.csv"
-    POST_url = "http://localhost:5000/sensor/simulate"
+    POST_url = "http://localhost:5000/sensor/simulate_no_save"
 
-    amount_sensors = 3
+    amount_sensors = 1
 
     speed_up = 1/amount_sensors
 

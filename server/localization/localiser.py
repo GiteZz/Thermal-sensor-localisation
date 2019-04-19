@@ -48,10 +48,12 @@ class Localiser:
             return world_cords
 
     def calibrate_data(self):
+        print("Calibrating data")
         with open('configuration_files/calibration_configuration.json', 'r') as f:
-        #with open(f'C:\School\VOP\VOP\server\configuration_files\calibration_configuration.json' ,'r') as f:
+            print("opened file")
             config = json.load(f)
             data=config['calibration_data']
+            print(data)
             for key,value in data.items():
                 debug = value.get(str(self.sensor_id),None)
                 if value.get(str(self.sensor_id),None):
@@ -64,6 +66,7 @@ class Localiser:
                         print('calibration points added for '+str(self.sensor_id))
         self.__determine_matrix()
         self.calibrated = True
+        print(self.calibration_points)
 
     def set_tracker(self, tracker):
         self.tracker = tracker

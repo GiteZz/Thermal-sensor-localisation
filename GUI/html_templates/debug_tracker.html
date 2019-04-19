@@ -10,7 +10,7 @@
         var current_objects = {};  //dict: <key:(x,y)>
         var colors={}; //color per object in a dict
         var socket = io.connect('http://'+ document.domain+':'+location.port);
-        var img = document.getElementById("img");
+        var img = document.getElementById("dot_page");
         var legend = document.getElementById("id_list");
 
         var dots = [];
@@ -22,21 +22,45 @@
 
         socket.on('tracker_update', function(data){
             console.log("update received");
+            console.log(data);
 
             img_children = img.childNodes;
-            for(i = 0; i < img_children.length; i++){
-                console.log(img_children[i].className);
-                if(img_children[i].className === 'dot'){
-                    img.removeChild(img_children[i])
-                }
-            }
+            img.innerHTML = '';
 
             legend.innerHTML = '';
-
+            set_top = true;
+            keys = [];
             for(person_id in data){
-                person_loc = data[person_id];
+                if (set_top){
+                    for(tracker_prop in data[person_id]){
+                        keys.push(tracker_prop);
+                    }
+                    keys.splice( keys.indexOf('position'), 1 );
+
+                    legend.style.gridTemplateColumns = "repeat(" + String(keys.length + 1) + ",1fr)";
+
+                    id_div = document.createElement("div");
+                    id_div.innerHTML = "ID";
+                    legend.appendChild(id_div)
+                    for(key in keys){
+                        new_div = document.createElement("div");
+                        new_div.innerHTML = key;
+                        legend.appendChild(new_div);
+                    }
+                    set_top = false;
+                }
+                new_div = document.createElement('div');
+                new_div.innerHTML = person_id;
+                legend.appendChild(new_div)
+                for(key in keys){
+                    new_div = document.createElement("div");
+                    new_div.innerHTML = String(data[person_id][key]);
+                    legend.appendChild(new_div);
+                }
+
+                person_loc = data[person_id]["position"];
                 color = intToRGB(person_id);
-                console.log("Adding person" + person_id)
+                // console.log("Adding person" + person_id)
 
                 var dot = document.createElement("div");
                 dot.id = person_id + "_dot";
@@ -46,11 +70,11 @@
                 dot.style.backgroundColor = "#" + color;
                 img.appendChild(dot);
 
-                var txt = document.createElement("div");
-                txt.className = "p";
-                txt.style.color = "#" + color;
-                txt.innerHTML = ("<strong>ID:" + person_id + "<\strong>");
-                legend.appendChild(txt);
+                // var txt = document.createElement("div");
+                // txt.className = "p";
+                // txt.style.color = "#" + color;
+                // txt.innerHTML = ("<strong>ID:" + person_id + "<\strong>");
+                // legend.appendChild(txt);
             }
         });
 
@@ -71,11 +95,14 @@
 <h1>Tracker testing</h1>
 <div class="main_wrapper">
     <div class="debug_img" id="img">
-        <img src="../static/Img/layout.png" alt="">
+        <img src="../static/Img/layout.png" alt="" >
+        <div id="dot_page" style="height: 100%; width: 100%; left: 0;top: 0; position: absolute;">
+
+        </div>
     </div>
     <div class="legend" id="legend">
         <h3>Objects</h3>
-        <div id="id_list">
+        <div id="id_list" style="display: grid;">
 
         </div>
     </div>

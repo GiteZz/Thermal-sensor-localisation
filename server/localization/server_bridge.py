@@ -34,6 +34,7 @@ class ServerBridge:
         :param calibrate_data:
         :return:
         """
+        print('adding localiser')
         new_localiser = Localiser(sensor_id)
         #TODO: auto calibrate? how are we gonna calibrate at the right time with the right data?
         new_localiser.calibrate_data()
