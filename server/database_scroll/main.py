@@ -18,7 +18,8 @@ from server.database_scroll.ui_generated import Ui_MainWindow
 from help_module.data_model_helper import Measurement, Base, CSV_Measurement
 from help_module.time_helper import meas_to_time, clean_diff, get_time_str
 from help_module.csv_helper import load_csv, write_csv_list_frames, write_csv_frame
-from help_module.img_helper import raw_color_plot, blur_color_plot, hist_plot, processed_color_plot, get_grid_form
+from help_module.img_helper import get_grid_form
+
 
 from server.database_scroll.qt_extra_classes import ZoomQGraphicsView
 from server.database_scroll.db_bridge import DB_Bridge
@@ -47,16 +48,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.episodes = []
         self.episode_sensors = []
 
-        self.vis_methods_name = ['matplotlib color raw', 'matplotlib color blur', 'histogram bluf','mtpltlib RGB processed']
-        self.vis_methods = [raw_color_plot, blur_color_plot, hist_plot, processed_color_plot]
-        self.vis_cur_meth = []
-        self.vis_layouts = []
-        self.vis_labels = []
-        self.vis_checkboxes = []
-
         self.update_from_button = False
-
-        self.mode = 'frame'
 
         self.ui.refreshButton.clicked.connect(self.refresh_sensor_ids)
         self.ui.timeList.currentRowChanged.connect(self.episode_clicked)
@@ -93,8 +85,6 @@ class MyUI(QtWidgets.QMainWindow):
         self.plot_scene = QGraphicsScene()
         self.plotGraphicsView.setScene(self.plot_scene)
 
-        self.ui.timeCheckBox.stateChanged.connect(self.to_time_mode)
-
         self.ui.frameAmountSpinbox.valueChanged.connect(self.update_episodes_ui_update)
         self.ui.sliceTimeSpinbox.valueChanged.connect(self.update_episodes_ui_update)
         self.ui.connectTimeSpinbox.valueChanged.connect(self.update_episodes_ui_update)
@@ -109,29 +99,7 @@ class MyUI(QtWidgets.QMainWindow):
         
         self.logger = logging.getLogger('database_scrol_logger')
 
-        for method_name in self.vis_methods_name:
-            n_label = QLabel(method_name)
-            n_checkbox = QCheckBox()
-            n_layout = QHBoxLayout()
-
-            n_layout.addWidget(n_label)
-            n_layout.addWidget(n_checkbox)
-            n_checkbox.stateChanged.connect(self.update_vis_methods)
-
-            self.ui.visualizeVLayout.addLayout(n_layout)
-
-            self.vis_checkboxes.append(n_checkbox)
-            self.vis_labels.append(n_label)
-            self.vis_layouts.append(n_layout)
-
         self.db_bridge = DB_Bridge()
-
-    def update_vis_methods(self):
-        self.vis_cur_meth = []
-        for index, widg in enumerate(self.vis_checkboxes):
-            if widg.isChecked():
-                self.vis_cur_meth.append(self.vis_methods[index])
-        self.draw_plot()
 
     def update_connect_time(self, value):
         self.logger.info("update connect time to " + str(value))
@@ -142,35 +110,31 @@ class MyUI(QtWidgets.QMainWindow):
         self.slice_time = value
 
     def one_forward(self):
-        self.move_time_or_frame(self.small_time_jump, 1)
+        self.move_time_or_frame(1)
 
     def one_backward(self):
-        self.move_time_or_frame(-self.small_time_jump, -1)
+        self.move_time_or_frame(-1)
 
     def more_forward(self):
-        self.move_time_or_frame(self.big_time_jump, self.frame_jump)
+        self.move_time_or_frame(self.frame_jump)
 
     def more_backward(self):
-        self.move_time_or_frame(-self.big_time_jump, -self.frame_jump)
+        self.move_time_or_frame(-self.frame_jump)
 
-    def move_time_or_frame(self, time_jump, frame_jump):
-        if self.episode_index < 0 or self.episode_index >= len(self.episodes):
+    def move_time_or_frame(self, frame_jump):
+        if self.episode_index < 0 or self.episode_index >= len(self.episodes[0]):
             return
-        if self.mode == 'frame':
-            if 0 <= self.frame_index + frame_jump < len(self.episodes):
-                self.frame_index += frame_jump
-        else:
-            if 0 <= self.time + time_jump <= self.max_time:
-                self.time += time_jump
+
+        if 0 <= self.frame_index + frame_jump < len(self.episodes[0]):
+            self.frame_index += frame_jump
+
         self.adjust_after_shift()
 
 
     def adjust_after_shift(self):
         self.logger.info("Adjust after shift")
-        if self.mode == 'frame':
-            slider_index = self.frame_index
-        else:
-            slider_index = int(self.time)
+
+        slider_index = self.frame_index
 
         self.update_from_button = True
         self.ui.timeSlider.setValue(slider_index)
@@ -180,31 +144,13 @@ class MyUI(QtWidgets.QMainWindow):
         self.reload_sources('sensor')
         self.update_episodes()
 
-
     def move_timeslider(self, value):
         if self.update_from_button:
             self.update_from_button = False
             return
 
-        if self.mode == 'frame':
-            self.frame_index = value
-        else:
-            self.time = value
+        self.frame_index = value
         self.draw_plot()
-
-    def to_time_mode(self):
-        if self.ui.timeCheckBox.isChecked():
-            self.mode = 'time'
-            self.ui.backwardMoreButton.setText(f'-{self.big_time_jump}s')
-            self.ui.backwardOneButton.setText(f'-{self.small_time_jump}s')
-            self.ui.forwardOneButton.setText(f'+{self.small_time_jump}s')
-            self.ui.forwardMoreButton.setText(f'+{self.big_time_jump}s')
-        else:
-            self.mode = 'frame'
-            self.ui.backwardMoreButton.setText('<<<')
-            self.ui.backwardOneButton.setText('<')
-            self.ui.forwardOneButton.setText('>')
-            self.ui.forwardMoreButton.setText('>>>')
 
     def load_csv_button(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
@@ -368,10 +314,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.sensorEpisodeLabel.setText(f'Sensors: {self.episode_sensors[index]}')
         self.ui.lengthEpisodeLabel.setText(f'Length: 0/{self.max_time}s')
         self.ui.timeSlider.setMinimum(0)
-        if self.mode == 'frame':
-            self.ui.timeSlider.setMaximum(len(self.episodes[self.episode_index]) - 1)
-        else:
-            self.ui.timeSlider.setMaximum(int(self.max_time) - 1)
+        self.ui.timeSlider.setMaximum(len(self.episodes[self.episode_index]) - 1)
+
         self.draw_plot()
         self.episode_selected = 1
 
@@ -412,35 +356,14 @@ class MyUI(QtWidgets.QMainWindow):
         frame_x_start = margin
         frame_y_start = margin
 
-        if self.mode == 'frame':
-            current_meas = self.episodes[self.episode_index][self.frame_index]
-            frame = (frame_x_start, frame_y_start, frame_width, frame_height)
-            qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
-            self.qt_imgs.extend(qt_imgs)
-            self.qt_pix.extend(qt_pix)
+        current_meas = self.episodes[self.episode_index][self.frame_index]
+        frame = (frame_x_start, frame_y_start, frame_width, frame_height)
+        qt_imgs, qt_pix = self.draw_frame(current_meas, frame)
+        self.qt_imgs.extend(qt_imgs)
+        self.qt_pix.extend(qt_pix)
 
-            self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
-            self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
-        else:
-            meas = self.get_close_measurements()
-            keys = list(meas.keys())
-            keys.sort()
-
-            grid = get_grid_form(len(meas))
-
-            grid_width = math.floor(frame_width / grid[0])
-            grid_height = math.floor(frame_height / grid[1])
-
-            for index, key in enumerate(keys):
-                value = meas[key]
-
-                offset_x = grid_width * (index % grid[0]) + frame_x_start
-                offset_y = grid_height * (index // grid[0]) + frame_y_start
-
-                frame = (offset_x, offset_y, grid_width, grid_height)
-                qt_imgs, qt_pix = self.draw_frame(value, frame)
-                self.qt_imgs.extend(qt_imgs)
-                self.qt_pix.extend(qt_pix)
+        self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
+        self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
 
     def draw_frame(self, meas, frame):
         """
