@@ -24,7 +24,6 @@ class AdaptedKalmanFilter(KalmanFilter):
         self.time_lived = 0
 
         #TODO: add ,H,P,Q,R
-        #TODO: F should use time_difference to update x using dx/dt
         self.B = np.zeros(1) #no controller actions
         self.u = np.zeros((1)) #no controller actions
         self.F = np.eye(dim_x) # velocity is updated in update_time_diff
@@ -79,8 +78,12 @@ class AdaptedKalmanFilter(KalmanFilter):
         return super().batch_filter(zs,fs)
 
     def __update_timedifference(self,timestamp):
+        '''
+
+        :param timestamp: time in seconds
+        :return:
+        '''
         self.time_difference = timestamp - self.previous_timestamp
-        # TODO: convert to seconds, for now all is considered to be seconds.
         self.F[0, 2] = self.time_difference
         self.F[1, 3] = self.time_difference
 
