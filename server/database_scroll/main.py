@@ -93,7 +93,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.or_index_counter = 0
         
-        self.logger = logging.getLogger('database_scrol_logger')
+        self.logger = logging.getLogger('database_scroll_logger')
 
         self.db_bridge = DB_Bridge()
 
@@ -148,14 +148,13 @@ class MyUI(QtWidgets.QMainWindow):
         self.draw_plot()
 
     def load_csv_button(self):
+        """
+        Activated from ui.loadCSVButton, opens a filedialog and add csv if filename is valid
+        :return:
+        """
         fname = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "CSV files (*.csv)")
         if fname[0] != "":
-            self.add_csv(fname[0])
-
-    def add_csv(self, filename):
-        n_csv_sources = load_csv(filename, split=True)
-        for key in n_csv_sources:
-            self.add_source('csv_id', file_name=filename, data=n_csv_sources[key], sensor_id=key)
+            self.add_source('csv', file_name=fname[0])
 
     def add_source(self, sensor_type, sensor_id=None, file_name=None, data=None):
         """
