@@ -225,7 +225,7 @@ class Ui_MainWindow(object):
         self.connectLabel.setText(_translate("MainWindow", "Connect time (seconds)"))
         self.sliceLabel.setText(_translate("MainWindow", "Slice time (seconds)"))
         self.label.setText(_translate("MainWindow", "Frame amount"))
-        self.refreshButton.setText(_translate("MainWindow", "Refresh"))
+        self.refreshButton.setText(_translate("MainWindow", "Database Refresh"))
         self.saveCSVFRAMEButton.setText(_translate("MainWindow", "Save frame CSV"))
         self.saveCSVEPISODEButton.setText(_translate("MainWindow", "Save episode CSV"))
         self.loadCSVButton.setText(_translate("MainWindow", "Load CSV"))

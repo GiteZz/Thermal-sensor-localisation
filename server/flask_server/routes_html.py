@@ -4,17 +4,25 @@ from flask_server.models import *
 from help_module.webcam_helper import get_values
 from help_module.calibration_helper import get_calibration_points
 
-@app.route("/debug_screen")
+@app.route("/")
+def home():
+    return redirect(url_for('get_debug_screen'))
+
+@app.route("/view/thermal_data")
 def get_debug_screen():
-    return render_template('debug.html')
+    return render_template('view_thermal_data.html')
 
 @app.route("/view/stream_test")
 def get_test_stream_screen():
     return render_template('test_stream.html')
 
-@app.route("/view/debug_tracker")
-def get_debug_tracker():
-    return render_template('debug_tracker.html')
+@app.route("/view/localiser")
+def get_view_localiser():
+    return render_template('view_localiser.html')
+
+@app.route("/view/tracker")
+def get_view_tracker():
+    return render_template('view_tracker.html')
 
 @app.route("/socketio_test")
 def get_socketio_test():

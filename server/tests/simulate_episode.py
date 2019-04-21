@@ -5,6 +5,13 @@ import random
 from help_module.csv_helper import load_csv
 
 def create_timing_list(data, random_id=False, amount_id=1):
+    """
+
+    :param data:
+    :param random_id:
+    :param amount_id:
+    :return:
+    """
     timing_list = []
 
     add_dict = {}
@@ -17,7 +24,7 @@ def create_timing_list(data, random_id=False, amount_id=1):
         index_id = (index_id + 1) % amount_id
         add_dict['device_id'] = f'sim_{index_list[index_id]}'
     else:
-        add_dict['device_id'] = str(data[0].sensor_id)
+        add_dict['device_id'] = 65
     add_dict['sequence'] = str(data[0].sequence_id)
     time_diff = 0
 

@@ -9,9 +9,7 @@ import time
 from localization.processing import ImageProcessor
 from PIL import Image
 
-@app.route("/")
-def home():
-    return redirect(url_for('get_debug_screen'))
+
 
 @app.route("/thermal_data/images", methods=['GET'])
 def get_last_thermal_image():

@@ -85,7 +85,9 @@ class Localiser:
         else:
             if self.calibrated:
                 print('world cord update by localiser')
-                self.tracker.update(self.get_world_cords(self.processor.get_centroids()),timestamp)
+                world_coords = self.get_world_cords(self.processor.get_centroids())
+                self.tracker.update(world_coords, timestamp)
+                self.com_module.localiser_update(world_coords)
 
 
 

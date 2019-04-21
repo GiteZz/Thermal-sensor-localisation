@@ -46,7 +46,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.update_from_button = False
 
-        self.ui.refreshButton.clicked.connect(self.refresh_sensor_ids)
+        self.ui.refreshButton.clicked.connect(self.reload_db)
         self.ui.timeList.currentRowChanged.connect(self.episode_clicked)
 
         self.ui.forwardOneButton.clicked.connect(self.one_forward)
@@ -413,7 +413,12 @@ class MyUI(QtWidgets.QMainWindow):
         self.ui.frameTimeLabel.setText(f'Frame time: {meas_to_time(current_meas, seconds=True)}')
         self.ui.sensorLabel.setText(f'Sensor: {current_meas.sensor_id}')
 
-    def refresh_sensor_ids(self):
+    def reload_db(self):
+        """
+        This function removes all the sources with 'sensor' type (these contain data from the db) and then
+        gets all the distincts ids from the db and creates new sources with these.
+        :return:
+        """
         self.clear_sources('sensor')
 
         id_list = self.db_bridge.get_distinct_ids()

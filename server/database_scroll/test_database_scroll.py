@@ -18,7 +18,7 @@ MainWindow.confirmUI(ui)
 if start_up_with_csv:
     MainWindow.add_csv('csv/frame1.csv')
 if load_40X_sensors:
-    MainWindow.refresh_sensor_ids()
+    MainWindow.reload_db()
     for key, value in MainWindow.source_checkboxes.items():
         if 400 <= value['sensor_id'] <= 409:
             key.setChecked(True)

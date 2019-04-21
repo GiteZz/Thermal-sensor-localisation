@@ -89,7 +89,7 @@ class Tracker:
         for i in range(prob_matrix.shape[1]):
             if not i in position_index:
                 new_objects.append(i)
-        return tups,new_objects
+        return tups, new_objects
 
     def visualisations_update(self):
         '''

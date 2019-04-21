@@ -10,12 +10,11 @@
             <div><u>Name</u></div>
             <div><u>Coordinate</u></div>
             <div></div>
-            <div></div>
             {% for name, co in current_points.items() %}
 
-                <div>{{name}}</div>
+                <div><a href="/config/calibrate/{{name}}/start" title="{{name}}">&#9654;</a>  {{name}}</div>
                 <div>{{co}}</div>
-                <div><a href="/config/calibrate/{{name}}/start" title="{{name}}">&#9654;</a></div>
+
                 <div><a href="/config/calibrate/{{name}}/delete" title="remove point">x</a></div>
             {% endfor %}
 
