@@ -61,15 +61,15 @@ def send_request(timer_list, url, speed_up):
 
 
 if __name__ == "__main__":
-    csv_folder = '../database_scroll/csv/'
-    csv_file = "sensor_data_episode_20190228-150037_51.csv"
+    csv_folder = 'data/'
+    csv_file = "1person_with_border_noise.csv"
     POST_url = "http://localhost:5000/sensor/simulate_no_save"
 
     amount_sensors = 1
 
     speed_up = 1/amount_sensors
 
-    csv_data = load_csv('51.csv', to_numpy=False)
+    csv_data = load_csv(csv_folder+csv_file, to_numpy=False)
 
     timing_list = create_timing_list(csv_data, random_id=True, amount_id=amount_sensors)
 

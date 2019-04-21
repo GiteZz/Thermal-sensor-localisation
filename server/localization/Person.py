@@ -4,7 +4,7 @@ import numpy as np
 class Person:
 
     TTL_initial_value = 2
-    TTS_initial_value = 2
+    TTS_initial_value = 5
 
     def __init__(self,ID,pos,timestamp):
         self.time_to_show = 5 # time before being considered as a "valid" person  in seconds
@@ -17,8 +17,8 @@ class Person:
         self.TTS = Person.TTS_initial_value
 
     def __repr__(self):
-        return (f"{self.ID} => loc = {self.kalmanfilter.x[0]},{self.kalmanfilter.x[1]}"
-              f" speed = {self.kalmanfilter.x[2]},{self.kalmanfilter.x[3]} at {self.kalmanfilter.previous_timestamp}")
+        return (f"{self.ID} => loc = {self.kalmanfilter.x[0]},{self.kalmanfilter.x[2]}"
+              f" speed = {self.kalmanfilter.x[1]},{self.kalmanfilter.x[3]} at {self.kalmanfilter.previous_timestamp}")
 
     def get_location(self):
         return self.kalmanfilter.get_location()

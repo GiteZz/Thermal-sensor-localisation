@@ -24,7 +24,6 @@ class Tracker:
         :return: None
         '''
         timestamp = timestamp.timestamp()
-
         if self.last_tracker_timestamp is None:
             self.last_tracker_timestamp = timestamp
 
@@ -35,24 +34,30 @@ class Tracker:
             filter = self.persons[pers_index].kalmanfilter
             filter.predict(timestamp)
 
+
             #if its not yet time to show, decrement TTS
+            print(self.persons[pers_index])
             if self.persons[pers_index].TTS > 0:
                 last_person_timestamp = self.persons[pers_index].kalmanfilter.previous_timestamp
+                print(timestamp-last_person_timestamp)
                 self.persons[pers_index].TTS -= (timestamp - last_person_timestamp)
 
-            #rest the TTL to the initial value
+            filter.update(positions[pos_index], timestamp) #!important this must be after TTS update because stamp is updated
+            updated_pers_index.append(pers_index)
+            #reset the TTL to the initial value
             self.persons[pers_index].TTL = Person.TTL_initial_value
 
-            filter.update(positions[pos_index],timestamp)
-            updated_pers_index.append(pers_index)
+
         
         #decrement all the other Person's TTL
         for pers_index in range(len(self.persons)):
             if pers_index not in updated_pers_index:
                 if (self.last_tracker_timestamp < timestamp):
                     self.persons[pers_index].TTL -= (timestamp - self.last_tracker_timestamp)
-                    if self.persons[pers_index].TTL <= 0:
-                        del self.persons[pers_index]
+
+        for person in self.persons:
+            if person.TTL <= 0:
+                self.persons.remove(person)
                 
         for pos_index in new_positions:
             self.persons.append(Person(self.id_counter,positions[pos_index],timestamp))
@@ -60,7 +65,7 @@ class Tracker:
 
         self.visualisations_update()
         self.last_tracker_timestamp = timestamp
-        #print("tracker updated")
+        print("tracker updated")
 
     def get_matrix(self,positions,timestamp):
         '''
@@ -72,7 +77,7 @@ class Tracker:
         matrix = np.zeros((len(self.persons),len(positions)))
         for i in range(len(self.persons)):
             for j in range(len(positions)):
-                matrix[i,j]= self._prob(self.persons[i].kalmanfilter.x[0:2],positions[j])
+                matrix[i,j]= self._prob(self.persons[i],positions[j],timestamp)
         return matrix
 
 
@@ -99,24 +104,28 @@ class Tracker:
         vis_dict = {}
         for person in self.persons:
             if person.TTS <= 0:
-                sp1 = round(person.kalmanfilter.x[2], 2)
+                sp1 = round(person.kalmanfilter.x[1], 2)
                 sp2 = round(person.kalmanfilter.x[3], 2)
                 ttl_round = round(person.TTL, 2)
-                vis_dict[person.ID] = {'position':person.get_location(), 'timelived': ttl_round, 'v_x': sp1, 'v_y': sp2}
+                vis_dict[person.ID] = {'position':(person.get_location()[0],person.get_location()[1]), 'timelived': ttl_round, 'v_x': sp1, 'v_y': sp2}
             
 
         for vis_object in self.visualisations:
             vis_object.tracker_update(vis_dict)
 
 
-    def _prob(self, x, y):
+    def _prob(self, person, y,timestamp):
         '''
-        for the moment this is just the euclidean distance
-        :param x: 2D np array
+        for the moment this is just the euclidean distance which means less is more..
+        :param filter: kalman of person
         :param y: 2D np array
         :return:
         '''
-        return np.sum(np.power(x-y,2))
+        filter = person.kalmanfilter
+        x,P = filter.get_prediction(timestamp)
+        pos = np.array([x[0],x[2]])
+        #favor long living objects by multiplying
+        return np.sum(np.power(pos-y,2)) * Person.TTL_initial_value* (1+person.TTL)
         #TODO: tresh the distance
         #perhaps on two*sigma
 
