@@ -118,10 +118,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.move_time_or_frame(-self.frame_jump)
 
     def move_time_or_frame(self, frame_jump):
-        if self.episode_index < 0 or self.episode_index >= len(self.episodes[0]):
-            return
-
-        if 0 <= self.frame_index + frame_jump < len(self.episodes[0]):
+        if 0 <= self.frame_index + frame_jump < len(self.episodes[self.episode_index]):
             self.frame_index += frame_jump
 
         self.adjust_after_shift()

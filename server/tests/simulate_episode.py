@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     speed_up = 1/amount_sensors
 
-    csv_data = load_csv(csv_folder+csv_file, to_numpy=False)
+    csv_data = load_csv('51.csv', to_numpy=False)
 
     timing_list = create_timing_list(csv_data, random_id=True, amount_id=amount_sensors)
 
