@@ -57,13 +57,11 @@ class ServerBridge:
             amount_active_sensors = len(self.localization_dict)
             if sensor_id not in self.current_calibrate['img_data']:
                 processor=self.localization_dict[sensor_id].processor
-                processor.process(data)
-                print(f'amount of centroid: {len(processor.centroids)}')
-                if len(processor.centroids) == 1:
-                    self.current_calibrate['img_data'][sensor_id] = processor.centroids[0]
-                else:
-                #this means the sensor does not "see" this frame so we put an arbitrary negative value
-                    self.current_calibrate['img_data'][sensor_id]=[-1,-1]
+                processor.set_thermal_data(data)
+                data = processor.get_calib_points()
+                print("calib point ="  + str(data))
+                self.current_calibrate['img_data'][sensor_id] = data
+
 
 
             if len(self.current_calibrate['img_data']) == amount_active_sensors:

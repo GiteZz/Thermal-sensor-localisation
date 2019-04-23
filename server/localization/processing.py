@@ -133,8 +133,8 @@ class ImageProcessor:
         max_temp = 0
         max_co = (-1, -1)
         for centroid in self.centroids:
-            if self.smooth_data(centroid) > max_temp:
-                max_temp = self.smooth_data(centroid)
+            if self.smooth_data[centroid[1], centroid[0]] > max_temp:
+                max_temp = self.smooth_data[centroid[1], centroid[0]]
                 max_co = centroid
 
         return max_co

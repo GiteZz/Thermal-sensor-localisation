@@ -26,10 +26,12 @@ class Localiser:
             self.__add_calibration_point(self,x_i,y_i)
 
     def __determine_matrix(self):
-        assert(len(self.calibration_points)>=4)
-        self.calibration_points=np.array(self.calibration_points).astype(np.float32)
-        self.matrix,h=cv2.findHomography(self.calibration_points[:,0],self.calibration_points[:,1])
-        return self.matrix
+        if len(self.calibration_points)>=4:
+            self.calibration_points=np.array(self.calibration_points).astype(np.float32)
+            self.matrix,h=cv2.findHomography(self.calibration_points[:,0],self.calibration_points[:,1])
+            return self.matrix
+        else:
+            print("NOT ENOUGH POINTS")
 
     def __update_world_co(self, centroids):
         # each value in centroids should be a pair (loc, timestamp)
@@ -38,6 +40,7 @@ class Localiser:
     def get_world_cords(self, points):
         if len(self.matrix) ==0:
             print("not yet callibrated")
+            return points
         else:
             world_cords = []
             for point in points:

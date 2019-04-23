@@ -62,10 +62,10 @@ def send_request(timer_list, url, speed_up):
 
 if __name__ == "__main__":
     csv_folder = 'data/'
-    csv_file = "1person_with_border_noise.csv"
+    csv_file = "stationary.csv"
     POST_url = "http://localhost:5000/sensor/simulate_no_save"
 
-    amount_sensors = 1
+    amount_sensors = 6
 
     speed_up = 1/amount_sensors
 
