@@ -23,6 +23,21 @@ class DB_Bridge:
 
         return id_list
 
+    def get_distinct_ids(self, param):
+        basic_query = self.session.query(Measurement_db)
+
+        if param['act_start']:
+            basic_query = basic_query.filter(Measurement_db.timestamp > param['time_start'])
+
+        if param['act_stop']:
+            basic_query = basic_query.filter(Measurement_db.timestamp < param['time_stop'])
+
+        sensor_ids = basic_query.distinct(Measurement_db.sensor_id).all()
+
+        id_list = [meas.sensor_id for meas in sensor_ids]
+
+        return id_list
+
     def get_values(self, sensor_id, param):
         basic_query = self.session.query(Measurement_db).filter(Measurement_db.sensor_id == sensor_id)
 

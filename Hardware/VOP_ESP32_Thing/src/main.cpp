@@ -124,7 +124,7 @@ void loop() {
 
   //root.set("device_id", MLX90640_address);
   //root.set("device_id", sequence_id);
-  root["device_id"] = 65;
+  root["device_id"] = 69;
   root["sequence"] = sequence_id;
   JsonArray& data = root.createNestedArray("data");
   //CborArray array = CborArray(cBuffer);

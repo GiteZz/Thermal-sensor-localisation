@@ -128,13 +128,24 @@ class ImageProcessor:
         """
         return self.centroids
 
+    @decorators.check_centroids
+    def get_calib_points(self):
+        max_temp = 0
+        max_co = (-1, -1)
+        for centroid in self.centroids:
+            if self.smooth_data(centroid) > max_temp:
+                max_temp = self.smooth_data(centroid)
+                max_co = centroid
+
+        return max_co
+
     def get_imgs(self):
         """
         This function save all the steps in the processing process as images.
         TODO: complete with additional steps
         :return:
         """
-        img1 = self._get_scaled_img()
+        img1 = self.get_scaled_img()
         img2 = self._get_smooth_img()
         img3 = self._get_thresh_img()
         img4 = self._get_all_centroid_img()
@@ -324,9 +335,10 @@ class ImageProcessor:
 
             self.centroids.append([cX, cY])
 
+    # @decorators.allow_rgb_switch
     @decorators.check_scaled_data
     @decorators.check_deltas
-    def _get_scaled_img(self):
+    def get_scaled_img(self):
         return fast_thermal_image(self.scaled_data, deltas=self.deltas, dim=self.scaled_data.shape)
 
     @decorators.check_smooth_data

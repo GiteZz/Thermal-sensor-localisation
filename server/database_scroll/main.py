@@ -418,7 +418,7 @@ class MyUI(QtWidgets.QMainWindow):
         """
         self.clear_sources('sensor')
 
-        id_list = self.db_bridge.get_distinct_ids()
+        id_list = self.db_bridge.get_distinct_ids(self.get_query_param())
         for id in id_list:
             self.add_source('sensor', id)
 
