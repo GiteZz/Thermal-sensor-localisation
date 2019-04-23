@@ -2,8 +2,9 @@ from flask_server import socketio
 from help_module.img_helper import combine_imgs, PIL_to_64
 
 class ComModule:
+    amount_connections = 0
     def __init__(self):
-        self.amount_connections = 0
+        pass
 
     def distribute_imgs(self, id, imgs):
         img = combine_imgs(imgs)
@@ -21,13 +22,15 @@ class ComModule:
 
         socketio.emit('localiser_update', new_coords)
 
-    @socketio.on('connect')
-    def new_connection(self):
-        self.amount_connections += 1
+    @staticmethod
+    def new_connection():
+        print("New client")
+        ComModule.amount_connections += 1
 
-    @socketio.on('disconnect')
-    def left_connection(self):
-        self.amount_connections -= 1
+    @staticmethod
+    def left_connection():
+        print("Client left")
+        ComModule.amount_connections -= 1
 
     def any_clients(self):
-        return True
+        return ComModule.amount_connections >= 0

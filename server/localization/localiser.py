@@ -90,8 +90,6 @@ class Localiser:
                 self.com_module.localiser_update(world_coords)
 
 
-
-
 if __name__=='__main__':
     loc=Localiser(65)
     loc.calibrate_data()
