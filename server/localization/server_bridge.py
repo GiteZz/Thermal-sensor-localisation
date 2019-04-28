@@ -4,14 +4,28 @@ from localization.com_module import ComModule
 from help_module.calibration_helper import save_calibration_data
 
 class ServerBridge:
+
+    trackers = []
+
     def __init__(self):
         self.localization_dict = {}
         self.tracker = Tracker()
+        ServerBridge.trackers.append(self.tracker)
         self.com_module = ComModule()
         self.tracker.add_visualisation(self.com_module)
         self.calibrate_data = []
         self.current_calibrate = None
         self.auto_localiser = True
+
+    @staticmethod
+    def reset_trackers():
+        """
+        Called from the socketio 'reset_trackers' event defined in the routes_io
+        :return:
+        """
+        print("resetting trackers")
+        for tracker in ServerBridge.trackers:
+            tracker.reset_tracker()
 
     def update(self, sensor_id, data, timestamp):
         """
@@ -25,7 +39,6 @@ class ServerBridge:
         if sensor_id not in self.localization_dict:
             self.__add_localiser(sensor_id)
         self.localization_dict[sensor_id].update(data, timestamp)
-
 
     def __add_localiser(self, sensor_id, calibrate_data=None):
         """
@@ -61,8 +74,6 @@ class ServerBridge:
                 data = processor.get_calib_points()
                 print("calib point ="  + str(data))
                 self.current_calibrate['img_data'][sensor_id] = data
-
-
 
             if len(self.current_calibrate['img_data']) == amount_active_sensors:
                 print("Saved the calibration point")

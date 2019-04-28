@@ -341,6 +341,7 @@ class ImageProcessor:
     def get_scaled_img(self):
         return fast_thermal_image(self.scaled_data, deltas=self.deltas, dim=self.scaled_data.shape)
 
+    @decorators.allow_rgb_switch
     @decorators.check_smooth_data
     @decorators.check_deltas
     def _get_smooth_img(self):

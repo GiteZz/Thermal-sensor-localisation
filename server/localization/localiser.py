@@ -14,7 +14,7 @@ class Localiser:
         # if this flag is true, all centroids are converted to world coords before
         # sending to the tracker
         self.WORLD_CORDS_FLAG = True
-        self.calibrated = False
+        self.calibrated = True
 
     def __add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])

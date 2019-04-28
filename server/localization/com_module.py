@@ -3,6 +3,7 @@ from help_module.img_helper import combine_imgs, PIL_to_64
 
 class ComModule:
     amount_connections = 0
+
     def __init__(self):
         pass
 
@@ -25,11 +26,17 @@ class ComModule:
     @staticmethod
     def new_connection():
         print("New client")
+        """
+        Connection with the socketio 'connect' event in the routes io
+        """
         ComModule.amount_connections += 1
 
     @staticmethod
     def left_connection():
         print("Client left")
+        """
+            Connection with the socketio 'disconnect' event in the routes io
+        """
         ComModule.amount_connections -= 1
 
     def any_clients(self):

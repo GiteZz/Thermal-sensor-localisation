@@ -29,19 +29,20 @@ with open(folder_location + file_name) as csvfile:
 
         centroid_frame = Image.fromarray(pros.plot_centroids(rgb=True), 'RGB')
 
-        raw_data = Image.fromarray(pros.get_scaled_img(rgb=True), 'RGB')
+        pros_imgs = pros.get_imgs()
 
         img_width = centroid_frame.size[0]
         img_height = centroid_frame.size[1]
         comp = Image.new('RGB', (img_width, img_height + timestamp_top_margin))
-
         d = ImageDraw.Draw(comp)
         d.text((0, 0), local_time, fill=(255, 255, 255))
 
-        comp.paste(centroid_frame, (0, 20))
-        comp.save(folder_location + video_folder_name + f'{str(index).zfill(5)}.png')
+        for index, img in enumerate(pros_imgs):
+            comp.paste(img, (0, 20))
+            comp.save(folder_location + video_folder_name + f'{index}_{str(index).zfill(5)}.png')
 
-        comp.paste(raw_data, (0, 20))
-        comp.save(folder_location + video_folder_name + f'{str(index).zfill(5)}.png')
+
+
+
 
 # ffmpeg -r 12 -f image2 -s 1920x1080 -i %05d.png -vcodec libx264 -crf 10  -pix_fmt yuv420p test.mp4

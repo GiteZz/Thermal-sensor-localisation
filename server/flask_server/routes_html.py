@@ -41,3 +41,8 @@ def config_webcams():
 def config_calibrate():
     current_points = get_calibration_points()
     return render_template('config_calibrate.html', current_points=current_points)
+
+@app.route('/config/tracker')
+def config_tracker():
+    current_points = get_calibration_points()
+    return render_template('config_tracker.html')
