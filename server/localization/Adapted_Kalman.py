@@ -24,7 +24,7 @@ class AdaptedKalmanFilter(KalmanFilter):
 
 
         super().__init__(dim_x,dim_z)
-        self.x = np.asarray([position[0], 0, position[1], 0])
+        self.x = np.asarray([position[0], 1, position[1], 1])
         #De gemiddelde snelheid van een wandelaar is 1.38 m/s, dus pak geprojecteerd op de assen 0.98 m/s
         #We ronden af naar één
 

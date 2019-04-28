@@ -62,14 +62,14 @@ def send_request(timer_list, url, speed_up):
 
 if __name__ == "__main__":
     csv_folder = 'data/'
-    csv_file = "stationary.csv"
+    csv_file = "2moving_low_border_noise.csv"
     POST_url = "http://localhost:5000/sensor/simulate_no_save"
 
-    amount_sensors = 6
+    amount_sensors = 1
 
-    speed_up = 1/amount_sensors
+    speed_up = amount_sensors
 
-    csv_data = load_csv('51.csv', to_numpy=False)
+    csv_data = load_csv(csv_folder+csv_file, to_numpy=False)
 
     timing_list = create_timing_list(csv_data, random_id=True, amount_id=amount_sensors)
 

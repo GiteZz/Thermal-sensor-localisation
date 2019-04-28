@@ -2,12 +2,15 @@ from localization.Person import Person
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 import time
+import math
 class Tracker:
     def __init__(self):
         self.id_counter = 0
         self.persons = []
         self.visualisations = []
         self.last_tracker_timestamp = time.time()
+
+        self.dist_thresh = 75
 
     def add_visualisation(self,vis):
         assert(hasattr(vis, "tracker_update")) # must have update method to send new positions to
@@ -27,8 +30,8 @@ class Tracker:
         if self.last_tracker_timestamp is None:
             self.last_tracker_timestamp = timestamp
 
-        prob_matrix = self.get_matrix(positions,timestamp)
-        tups, new_positions = self.get_assignment(prob_matrix)
+        dist_matrix = self.get_matrix(positions,timestamp)
+        tups, new_positions = self.get_assignment(dist_matrix)
         updated_pers_index = []
         for pers_index, pos_index in tups:
             filter = self.persons[pers_index].kalmanfilter
@@ -77,21 +80,42 @@ class Tracker:
         matrix = np.zeros((len(self.persons),len(positions)))
         for i in range(len(self.persons)):
             for j in range(len(positions)):
-                matrix[i,j]= self._prob(self.persons[i],positions[j],timestamp)
+                matrix[i,j]= self._dist(self.persons[i], positions[j], timestamp)
         return matrix
 
 
-    def get_assignment(self,prob_matrix):
+    def get_assignment(self,dist_matrix,greedy = True):
         '''
         makes global optimal assignment of the prop matrix
-        :param prob_matrix:
+        :param dist_matrix:
         :return: a tuple , first part is an array of tupples person_index, position_index
                 second part are just positions
         '''
-        person_index, position_index = linear_sum_assignment(prob_matrix)
+        if not greedy:
+            person_index, position_index = linear_sum_assignment(dist_matrix)
+        else:
+            person_index = []
+            position_index = []
+            rows = dist_matrix.shape[0]
+            cols = dist_matrix.shape[1]
+
+            total_match = min([rows, cols])
+            if total_match <=0:
+                max_value = -1
+            else:
+                max_value = np.max(dist_matrix)
+
+            for idx in range(0, total_match):
+                min_idx = np.unravel_index(np.argmin(dist_matrix, axis=None), dist_matrix.shape)
+                if not dist_matrix[min_idx] == max_value:
+                    person_index.append(min_idx[0])
+                    position_index.append(min_idx[1])
+                    dist_matrix[min_idx[0], :] = max_value
+                    dist_matrix[:, min_idx[1]] = max_value
+
         tups = zip(person_index,position_index)
         new_objects = []
-        for i in range(prob_matrix.shape[1]):
+        for i in range(dist_matrix.shape[1]):
             if not i in position_index:
                 new_objects.append(i)
         return tups, new_objects
@@ -114,7 +138,7 @@ class Tracker:
             vis_object.tracker_update(vis_dict)
 
 
-    def _prob(self, person, y,timestamp):
+    def _dist(self, person, y, timestamp):
         '''
         for the moment this is just the euclidean distance which means less is more..
         :param filter: kalman of person
@@ -124,10 +148,27 @@ class Tracker:
         filter = person.kalmanfilter
         x,P = filter.get_prediction(timestamp)
         pos = np.array([x[0],x[2]])
-        #favor long living objects by multiplying
-        return np.sum(np.power(pos-y,2)) * Person.TTL_initial_value* (1+person.TTL)
-        #TODO: tresh the distance
-        #perhaps on two*sigma
+        line = y-pos
+        dist = np.sqrt(np.sum(np.power(pos-y,2)))
+        vel = np.array([filter.x[1],filter.x[3]])
+        speed = np.sqrt(np.sum(np.power(vel,2)))
+        angle = math.atan(vel[1]/vel[0])- math.atan(line[1]/line[0])
+        abs_angle = math.fabs(angle)
+        print("------stats-----")
+        print(line)
+        print(vel)
+        print(abs_angle)
+        print(dist)
+        print(self.dist_thresh*speed)
+
+        if dist < self.dist_thresh: #*speed:
+            dist *= (Person.TTL_initial_value+1- person.TTL)/ (Person.TTL_initial_value+1) #favor long living objects by multiplying
+            #dist *= angle
+
+            return dist
+        else:
+            return  math.inf
+
 
     def __repr__(self):
         s = ("____TRACKER STATE_____ \n")

@@ -4,16 +4,15 @@ import numpy as np
 class Person:
 
     TTL_initial_value = 3
-    TTS_initial_value = 5
+    TTS_initial_value = 4
 
     def __init__(self,ID,pos,timestamp):
-        self.time_to_show = 5 # time before being considered as a "valid" person  in seconds
         self.ID = ID
         self.kalmanfilter = AdaptedKalmanFilter(pos,timestamp)
         self.locations = {timestamp:pos} #dicts automatic ordered!
         self.locations.setdefault(None)
 
-        self.TTL = Person.TTL_initial_value
+        self.TTL = Person.TTL_initial_value/2
         self.TTS = Person.TTS_initial_value
 
     def __repr__(self):
