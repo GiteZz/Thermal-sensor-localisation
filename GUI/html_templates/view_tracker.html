@@ -1,7 +1,7 @@
 {% extends "main.html" %}
 
 {% block content %}
-
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/debug_tracker.css')}}">
 <script>
     $(document).ready(function(){
         var socket = io.connect('http://'+ document.domain+':'+location.port);

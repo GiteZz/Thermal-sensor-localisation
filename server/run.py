@@ -1,8 +1,7 @@
 from flask_server import app, socketio
 import socket
-from help_module.webcam_helper import start_webcams
 
-run_local = True
+run_local = False
 
 ip_adresses = socket.gethostbyname_ex(socket.gethostname())[-1]
 local_ip = None
