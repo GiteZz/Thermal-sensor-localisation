@@ -26,18 +26,20 @@ class Localiser:
             self.__add_calibration_point(self,x_i,y_i)
 
     def __determine_matrix(self):
-        if len(self.calibration_points)>=4:
-            self.calibration_points=np.array(self.calibration_points).astype(np.float32)
-            self.matrix,h=cv2.findHomography(self.calibration_points[:,0],self.calibration_points[:,1])
-            return self.matrix
-        else:
+        if not len(self.calibration_points)>=4:
             print("NOT ENOUGH POINTS")
+        self.calibration_points=np.array(self.calibration_points).astype(np.float32)
+        self.matrix,h=cv2.findHomography(self.calibration_points[:,0],self.calibration_points[:,1])
+        return self.matrix
+
+
 
     def __update_world_co(self, centroids):
         # each value in centroids should be a pair (loc, timestamp)
         self.tracker.update(centroids)
 
     def get_world_cords(self, points):
+        print("localiser for" + str(self.sensor_id))
         if len(self.matrix) ==0:
             print("not yet callibrated")
             return points
@@ -52,7 +54,7 @@ class Localiser:
 
     def calibrate_data(self):
         print("Calibrating data")
-        with open('configuration_files/calibration_configuration.json', 'r') as f:
+        with open(r'C:\Users\thoma\School\VOP\VOP\server\configuration_files\calibration_configuration.json', 'r') as f:
             print("opened file")
             config = json.load(f)
             data=config['calibration_data']
@@ -94,9 +96,9 @@ class Localiser:
 
 
 if __name__=='__main__':
-    loc=Localiser(65)
+    loc=Localiser(70)
     loc.calibrate_data()
-    print(loc.get_world_cords([[194,79],[194,90]]))
+    print(loc.get_world_cords([[108,203]]))
     print(loc.calibrated)
 
 
