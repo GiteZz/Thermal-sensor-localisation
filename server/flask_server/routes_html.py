@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect, request, jsonify
 from flask_server import app
 from flask_server.models import *
 from help_module.webcam_helper import get_values
-from help_module.calibration_helper import get_calibration_points
+from help_module.calibration_helper import get_calibration_points, get_calibration_sensor_ids
 
 @app.route("/")
 def home():
@@ -40,9 +40,11 @@ def config_webcams():
 @app.route('/config/calibrate')
 def config_calibrate():
     current_points = get_calibration_points()
-    return render_template('config_calibrate.html', current_points=current_points)
+    sensor_ids = get_calibration_sensor_ids()
+    return render_template('config_calibrate.html', current_points=current_points, sensor_ids=sensor_ids)
 
 @app.route('/config/tracker')
 def config_tracker():
     current_points = get_calibration_points()
+
     return render_template('config_tracker.html')

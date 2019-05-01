@@ -1,7 +1,7 @@
 from localization.Tracker import Tracker
 from localization.localiser import Localiser
 from localization.com_module import ComModule
-from help_module.calibration_helper import save_calibration_data
+from help_module.calibration_helper import save_calibration_data, get_calibration_co
 
 
 class ServerBridge:
@@ -27,6 +27,8 @@ class ServerBridge:
         print("resetting trackers")
         for tracker in ServerBridge.trackers:
             tracker.reset_tracker()
+
+
     def update(self, sensor_id, data, timestamp):
         """
         This is the main input of the ServerBridge, accepts thermal input and will send is the a localiser.
@@ -56,9 +58,20 @@ class ServerBridge:
 
         self.localization_dict[sensor_id] = new_localiser
 
-    def calibrate_point(self,name,  co):
-        if self.current_calibrate is None:
-            self.current_calibrate = {'name': name, 'co': co, 'img_data': {}}
+    def calibrate_point(self, name,  sensor_ids):
+        """
+        The self.current_calibrate is a dict that contains information about the points that need to be calibrated.
+        When it is not None the check_calibrate function will safe the img in the self.current_calibrate when
+        the right sensor sends its information
+        :param name:
+        :param sensor_ids:
+        :return:
+        """
+
+        co = get_calibration_co(name)
+        if self.current_calibrate is None and len(sensor_ids) > 0:
+            self.current_calibrate = {'name': name, 'co': co, 'img_data': {}, 'sensor_ids': sensor_ids}
+            print("Set calibration point ready in server_bridge")
         else:
             print('WARNING there is still a calibration point active')
 
@@ -66,16 +79,22 @@ class ServerBridge:
         self.check_calibrate(sensor_id, data, timestamp)
 
     def check_calibrate(self, sensor_id, data, timestamp):
+        """
+        This function checks if the current update contains useful data for calibration.
+        :param sensor_id:
+        :param data:
+        :param timestamp:
+        :return:
+        """
         if self.current_calibrate is not None:
-            amount_active_sensors = len(self.localization_dict)
-            if sensor_id not in self.current_calibrate['img_data']:
-                processor=self.localization_dict[sensor_id].processor
+            if sensor_id not in self.current_calibrate['img_data'] and sensor_id in self.current_calibrate['sensor_ids']:
+                processor = self.localization_dict[sensor_id].processor
                 processor.set_thermal_data(data)
                 data = processor.get_calib_points()
-                print("calib point ="  + str(data))
+                print("calib point =" + str(data))
                 self.current_calibrate['img_data'][sensor_id] = data
 
-            if len(self.current_calibrate['img_data']) == amount_active_sensors:
+            if len(self.current_calibrate['img_data']) == self.current_calibrate['sensor_ids']:
                 print("Saved the calibration point")
 
                 self.calibrate_data.append(self.current_calibrate)
