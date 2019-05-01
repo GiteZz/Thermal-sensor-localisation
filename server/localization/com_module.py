@@ -17,11 +17,9 @@ class ComModule:
         socketio.emit('tracker_update', data_dict)
 
     def localiser_update(self, coord_list):
-        new_coords = []
-        for coord in coord_list:
-            new_coords.append([int(coord[0]), int(coord[1])])
+        print(coord_list)
 
-        socketio.emit('localiser_update', new_coords)
+        socketio.emit('localiser_update', coord_list)
 
     @staticmethod
     def new_connection():

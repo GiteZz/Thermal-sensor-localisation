@@ -84,12 +84,12 @@ class Localiser:
             self.com_module.distribute_imgs(self.sensor_id, imgs)
         if not self.WORLD_CORDS_FLAG:
             print('img cords update by localiser')
-            self.tracker.update(self.processor.get_centroids(), timestamp)
+            # self.tracker.update(self.processor.get_centroids(), timestamp)
         else:
             if self.calibrated:
                 print('world cord update by localiser')
-                world_coords = self.get_world_cords(self.processor.get_centroids())
-                self.tracker.update(world_coords, timestamp)
+                world_coords = self.get_world_cords({'co': self.processor.get_centroids(), 'id': self.sensor_id})
+                # self.tracker.update(world_coords, timestamp)
                 self.com_module.localiser_update(world_coords)
 
 

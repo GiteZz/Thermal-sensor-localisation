@@ -12,46 +12,42 @@
         var img = document.getElementById("dot_page");
         var legend = document.getElementById("id_list");
 
-        var dots = [];
-        var legend_items = [];
+        var id_to_dot = {};
 
         socket.on('connect', function(){
             console.log('Im Connected');
            });
 
         socket.on('localiser_update', function(data){
-            console.log("update received");
             console.log(data);
 
+            sensor_id = data['id'];
 
-            img.innerHTML = '';
+            if(sensor_id in id_to_dot){
+                for(i = 0; i < id_to_dot[sensor_id].length; i++){
+                    img.removeChild(id_to_dot[sensor_id][i]);
+                }
+            }
+            id_to_dot[sensor_id] = [];
+
 
             legend.innerHTML = '';
 
-            for(i = 0; i < data.length; i++){
-                person_loc = data[i];
+
+
+            for(i = 0; i < data['co'].length; i++){
+                person_loc = data['co'][i];
                 var dot = document.createElement("div");
                 dot.className = "dot";
                 dot.style.top = String(parseInt(person_loc[0])-10) + "px";
                 dot.style.left = String(parseInt(person_loc[1])-10) + "px";
                 dot.style.backgroundColor = "#000000";
                 img.appendChild(dot);
+                id_to_dot[sensor_id].push(dot)
             }
         });
 
     });
-
-    function intToRGB(i) {
-    var hex = (((i*30)<<2)&0xFF).toString(16) +
-            (((i*15417))&0xFF).toString(16) +
-            (((i*127)>>8)&0xFF).toString(16) +
-            ((i*19)&0xFF).toString(16);
-    // Sometimes the string returned will be too short so we 
-    // add zeros to pad it out, which later get removed if
-    // the length is greater than six.
-    hex += '000000';
-    return hex.substring(0, 6);
-}
 </script>
 <h1>Localisation output</h1>
 <div class="main_wrapper">
