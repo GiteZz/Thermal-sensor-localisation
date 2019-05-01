@@ -213,7 +213,10 @@ class ImageProcessor:
 
     @decorators.check_thermal_data
     def _set_scaled_data(self):
-        self.scaled_data = np.reshape(self.thermal_data, (24, 32))
+        ######CUT AWAY THE EDGES#################
+        #full_image = np.reshape(self.thermal_data, (24, 32))
+        #self.scaled_data =  full_image[4:20,8:24]
+        ######CUT AWAY THE EDGES#################
         self.scaled_data = self.scaled_data.repeat(10, axis=0)
         self.scaled_data = self.scaled_data.repeat(10, axis=1)
 

@@ -154,12 +154,12 @@ class Tracker:
         speed = np.sqrt(np.sum(np.power(vel,2)))
         angle = math.atan(vel[1]/vel[0])- math.atan(line[1]/line[0])
         abs_angle = math.fabs(angle)
-        print("------stats-----")
+        '''print("------stats-----")
         print(line)
         print(vel)
         print(abs_angle)
         print(dist)
-        print(self.dist_thresh*speed)
+        print(self.dist_thresh*speed)'''
 
         if dist < self.dist_thresh: #*speed:
             dist *= (Person.TTL_initial_value+1- person.TTL)/ (Person.TTL_initial_value+1) #favor long living objects by multiplying
@@ -181,9 +181,9 @@ class Tracker:
         '''
         This function resets the whole state of the tracker
         '''
+        print("tracker reset by tracker")
         self.id_counter = 0
         self.persons = []
-        self.visualisations = []
         self.last_tracker_timestamp = time.time()
 
 

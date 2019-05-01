@@ -27,7 +27,6 @@ class ServerBridge:
         print("resetting trackers")
         for tracker in ServerBridge.trackers:
             tracker.reset_tracker()
-
     def update(self, sensor_id, data, timestamp):
         """
         This is the main input of the ServerBridge, accepts thermal input and will send is the a localiser.
