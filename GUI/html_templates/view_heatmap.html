@@ -15,7 +15,6 @@
 
         // progression in colors: dark blue to dark red, in the same way of a thermal image
         // ! these are not the colors eventually shown in the image, because of the lower opacity
-        var colors = ["#0000a5", "#0000ff", "#00deff", "#5bffa6", "#bcff44", "#ffff00", "#ff9f00", "#ff0000", "#be0000"];
         var max_int = 1000;
 
         socket.on('connect', function(){
@@ -112,6 +111,7 @@
             return [new_x, new_y];
         }
 
+        //TODO: use tracker updates instead of localiser
         socket.on('localiser_update', function(data){
             console.log("update received");
             console.log(data);
@@ -126,8 +126,8 @@
                 if (val_matrix[square_loc[0]][square_loc[1]] + 5 < max_int) {
                     val_matrix[square_loc[0]][square_loc[1]] = 5 + val_matrix[square_loc[0]][square_loc[1]];
                     div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[square_loc[0]][square_loc[1]]);
-                    //updateSurroundingSquares(square_loc[0], square_loc[1], 1);
-                    //updateSurroundingSquares(square_loc[0], square_loc[1], 2);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 1);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 2);
                 }
             }
         });
