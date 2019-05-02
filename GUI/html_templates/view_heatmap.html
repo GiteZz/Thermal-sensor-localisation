@@ -24,25 +24,25 @@
 
         // making matrix to store all the divs that make up the squares
         var div_matrix = [];
-        for (i=0; i<squares_height;i+=1){
+        for (i=0; i<squares_height;i++){
             div_matrix[i] = [];
-            for (j=0;j<squares_width;j+=1){
+            for (j=0;j<squares_width;j++){
                 div_matrix[i][j] = undefined;
             }
         }
 
         // making matrix with values indicating the amount of times there was a person in a certain position
         var val_matrix = [];
-        for (i=0; i<squares_height;i+=1){
+        for (i=0; i<squares_height;i++){
             val_matrix[i] = [];
-            for (j=0;j<squares_width;j+=1){
+            for (j=0;j<squares_width;j++){
                 val_matrix[i][j] = 0;
             }
         }
 
         //drawing initial heatmap, everything is dark blue
-        for (i=0; i<squares_height;i+=1) {
-                for (j=0; j<squares_width;j+=1) {
+        for (i=0; i<squares_height;i++) {
+                for (j=0; j<squares_width;j++) {
                     var grid_el = document.createElement('div');
                     grid_el.className = "grid_element";
                     grid_el.style.top = String(10*i) + "px";
@@ -106,19 +106,28 @@
             }
         }
 
+        function scale_coords(coords){
+            new_x = Math.round(squares_height*coords[0]/477);
+            new_y = Math.round(squares_width*coords[1]/750);
+            return [new_x, new_y];
+        }
+
         socket.on('localiser_update', function(data){
             console.log("update received");
             console.log(data);
 
+
             img.innerHTML = '';
 
             // for every person detected, the values of the exact square and the surrounding squares are increased
-            for(i = 0; i < data.length; i++){
-                person_loc = data[i];
-                val_matrix[person_loc[0]][person_loc[1]]+=20;
-                div_matrix[person_loc[0]][person_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[person_loc[0]][person_loc[1]]);
-                updateSurroundingSquares(person_loc[0], person_loc[1], 1);
-                updateSurroundingSquares(person_loc[0], person_loc[1], 2);
+            for(i = 0; i < data['co'].length; i++){
+                person_loc = data['co'][i];
+                square_loc = scale_coords(person_loc);
+                val_matrix[square_loc[0]][square_loc[1]]= 20 + val_matrix[square_loc[0]][square_loc[1]];
+                div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[square_loc[0]][square_loc[1]]);
+                updateSurroundingSquares(square_loc[0], square_loc[1], 1);
+                updateSurroundingSquares(square_loc[0], square_loc[1], 2);
+                document.getElementById("hex_val").innerHTML = "got element in for loop"
             }
         });
 
