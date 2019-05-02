@@ -10,6 +10,9 @@ body {
 .debug_img{
     grid-column: 1;
     position: relative;
+    &:hover .overlay{
+        left: 0;
+    }
 }
 
 
@@ -30,3 +33,4 @@ body {
     top: -10px;
     left: -10px;
 }
+

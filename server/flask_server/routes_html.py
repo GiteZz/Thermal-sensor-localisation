@@ -24,6 +24,10 @@ def get_view_localiser():
 def get_view_tracker():
     return render_template('view_tracker.html')
 
+@app.route("/view/heatmap")
+def get_view_heatmap():
+    return render_template('view_heatmap.html')
+
 @app.route("/socketio_test")
 def get_socketio_test():
     return render_template('test_socketio.html')
