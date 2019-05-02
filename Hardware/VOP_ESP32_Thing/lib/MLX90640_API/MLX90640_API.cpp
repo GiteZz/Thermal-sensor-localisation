@@ -34,8 +34,52 @@ void ExtractCPParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 void ExtractCILCParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 int ExtractDeviatingPixels(uint16_t *eeData, paramsMLX90640 *mlx90640);
 int CheckAdjacentPixels(uint16_t pix1, uint16_t pix2);
-int CheckEEPROMValid(uint16_t *eeData);  
+int CheckEEPROMValid(uint16_t *eeData);
 
+int MLX90640_FullSetup(uint8_t slaveAddr, uint8_t FPS, uint16_t *eeData, paramsMLX90640 *mlx90640) {
+    MLX90640_SetDeviceMode(slaveAddr, 0);
+    MLX90640_SetSubPageRepeat(slaveAddr, 0);
+    switch(FPS){
+        case 1:
+            MLX90640_SetRefreshRate(slaveAddr, 0b001);
+            break;
+        case 2:
+            MLX90640_SetRefreshRate(slaveAddr, 0b010);
+            break;
+        case 4:
+            MLX90640_SetRefreshRate(slaveAddr, 0b011);
+            break;
+        case 8:
+            MLX90640_SetRefreshRate(slaveAddr, 0b100);
+            break;
+        case 16:
+            MLX90640_SetRefreshRate(slaveAddr, 0b101);
+            break;
+        case 32:
+            MLX90640_SetRefreshRate(slaveAddr, 0b110);
+            break;
+        case 64:
+            MLX90640_SetRefreshRate(slaveAddr, 0b111);
+            break;
+        
+        default:
+            return 1;
+  }
+  
+  MLX90640_SetChessMode(slaveAddr);
+  MLX90640_DumpEE(slaveAddr, eeData);
+  MLX90640_ExtractParameters(eeData, mlx90640);
+
+  return 0;
+}
+
+int MLX90640_GetFrameTo(uint8_t slaveAddr, uint16_t *frameData, uint16_t *eepromData,
+                        paramsMLX90640 *params, float emissivity, float *result) {
+  MLX90640_GetFrameData(slaveAddr, frameData);
+  MLX90640_InterpolateOutliers(frameData, eepromData);
+  MLX90640_CalculateTo(frameData, params, emissivity, MLX90640_GetTa(frameData, params), result);
+  return 0;
+}
   
 int MLX90640_DumpEE(uint8_t slaveAddr, uint16_t *eeData)
 {
@@ -81,6 +125,8 @@ int MLX90640_GetData(uint8_t slaveAddr, uint16_t *frameData)
     
     frameData[832] = controlRegister1;
     frameData[833] = statusRegister & 0x0001; // Populate the subpage number 
+
+    return error;
 }
 
 int MLX90640_InterpolateOutliers(uint16_t *frameData, uint16_t *eepromData)
