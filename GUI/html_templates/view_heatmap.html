@@ -95,17 +95,30 @@
             return hex.substring(0,7);
         }
 
+        function updateSurroundingSquares(sq_x, sq_y, dist){
+            for(i=-dist;i<dist+1;i++){
+                for (j=-dist;j<dist+1;j++){
+                    if(sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
+                        val_matrix[sq_x+i][sq_y+j] += 10/dist;
+                        div_matrix[sq_x+i][sq_y+j].style.backgroundColor = intToRGBHex(val_matrix[sq_x+i][sq_y+j]);
+                    }
+                }
+            }
+        }
+
         socket.on('localiser_update', function(data){
             console.log("update received");
             console.log(data);
 
             img.innerHTML = '';
 
-            // for every person detected, the value is increased by 1 + squares are updated accordingly
+            // for every person detected, the values of the exact square and the surrounding squares are increased
             for(i = 0; i < data.length; i++){
                 person_loc = data[i];
                 val_matrix[person_loc[0]][person_loc[1]]+=20;
                 div_matrix[person_loc[0]][person_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[person_loc[0]][person_loc[1]]);
+                updateSurroundingSquares(person_loc[0], person_loc[1], 1);
+                updateSurroundingSquares(person_loc[0], person_loc[1], 2);
             }
         });
 
