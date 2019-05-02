@@ -92,9 +92,9 @@ class Localiser:
         else:
             if self.calibrated:
                 print('world cord update by localiser')
-                world_coords = self.get_world_cords({'co': self.processor.get_centroids(), 'id': self.sensor_id})
+                world_coords = self.get_world_cords(self.processor.get_centroids())
                 self.tracker.update(world_coords, timestamp)
-                self.com_module.localiser_update(world_coords)
+                self.com_module.localiser_update({'co': world_coords, 'id': self.sensor_id})
 
 
 if __name__=='__main__':

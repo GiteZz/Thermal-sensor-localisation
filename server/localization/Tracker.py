@@ -26,6 +26,11 @@ class Tracker:
         :param positions: list of np arrays (x,y)
         :return: None
         '''
+
+        print(f'positions: {positions}')
+        # positions = np.array(positions['co'])
+        # print(positions)
+
         timestamp = timestamp.timestamp()
         if self.last_tracker_timestamp is None:
             self.last_tracker_timestamp = timestamp
@@ -61,9 +66,9 @@ class Tracker:
         for person in self.persons:
             if person.TTL <= 0:
                 self.persons.remove(person)
-                
+
         for pos_index in new_positions:
-            self.persons.append(Person(self.id_counter,positions[pos_index],timestamp))
+            self.persons.append(Person(self.id_counter, positions[pos_index], timestamp))
             self.id_counter+=1
 
         self.visualisations_update()

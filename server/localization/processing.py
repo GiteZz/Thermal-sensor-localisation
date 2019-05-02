@@ -29,6 +29,7 @@ class ImageProcessor:
         self.sensor_id = None
 
         self.log_system = logging.getLogger('ImageProcessingLogger')
+        self.enable_logging()
 
     class decorators:
         """
@@ -39,6 +40,7 @@ class ImageProcessor:
         @staticmethod
         def check_scaled_data(func):
             def wrapper(self, *args, **kwargs):
+                self.log_system.info('check_scaled_data')
                 if self.scaled_data is None:
                     self._set_scaled_data()
                 return func(self, *args, **kwargs)
@@ -48,6 +50,7 @@ class ImageProcessor:
         @staticmethod
         def check_smooth_data(func):
             def wrapper(self, *args, **kwargs):
+                self.log_system.info('check_smooth_data')
                 if self.smooth_data is None:
                     self._set_smooth_data()
                 return func(self, *args, **kwargs)
@@ -57,6 +60,7 @@ class ImageProcessor:
         @staticmethod
         def check_tresh_data(func):
             def wrapper(self, *args, **kwargs):
+                self.log_system.info('check_thresh_data')
                 if self.thresh_data is None:
                     self.thresh_method()
                 return func(self, *args, **kwargs)
@@ -66,6 +70,7 @@ class ImageProcessor:
         @staticmethod
         def check_centroids(func):
             def wrapper(self, *args, **kwargs):
+                self.log_system.info('check_centroids')
                 if self.centroids is None:
                     self._set_centroids()
                 return func(self, *args, **kwargs)
@@ -75,6 +80,7 @@ class ImageProcessor:
         @staticmethod
         def check_deltas(func):
             def wrapper(self, *args, **kwargs):
+                self.log_system.info('check_deltas_data')
                 if self.deltas is None:
                     self._set_deltas()
                 return func(self, *args, **kwargs)
@@ -84,6 +90,7 @@ class ImageProcessor:
         @staticmethod
         def check_thermal_data(func):
             def wrapper(self, *args, **kwargs):
+                self.log_system.info('check_thermal_data')
                 if self.thermal_data is None:
                     raise Exception('Processing: thermal_data not set')
                 return func(self, *args, **kwargs)
@@ -117,8 +124,8 @@ class ImageProcessor:
         :param thermal_data: numpy array with dim 786
         :return:
         """
+        self.log_system.info('setting thermal data')
         self.thermal_data = thermal_data
-        print(f'setting thermal: {self.thermal_data}')
         self._reset()
 
     @decorators.check_centroids
@@ -205,6 +212,8 @@ class ImageProcessor:
         old values are invalid.
         :return:
         """
+        self.log_system.info('resetting')
+
         self.contours = None
         self.centroids = None
         self.thresh_data = None
@@ -290,6 +299,7 @@ class ImageProcessor:
         bigger contours.
         :return:
         """
+        print("setting centroids")
         self.log_system.info("Setting centroids")
 
         self.centroids = []
