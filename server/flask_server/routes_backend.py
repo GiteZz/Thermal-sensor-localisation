@@ -10,8 +10,8 @@ import datetime
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
-    print(data)
-    print("---")
+    # print(data)
+    # print("---")
     data['data'] = [0 if math.isnan(a) else a * 5 for a in data['data']]
 
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=2)
@@ -20,7 +20,7 @@ def receive_sensor_debug():
 
     # socketio.emit('new_image', {'device_id': data['device_id']})
     # save_webcam_frame(new_db_data)
-    print(data['data'])
+    # print(data['data'])
     loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
 
     return "Hello World!"

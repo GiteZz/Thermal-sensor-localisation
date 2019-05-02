@@ -29,7 +29,7 @@ class ImageProcessor:
         self.sensor_id = None
 
         self.log_system = logging.getLogger('ImageProcessingLogger')
-        self.enable_logging()
+        # self.enable_logging()
 
     class decorators:
         """
@@ -274,7 +274,7 @@ class ImageProcessor:
                 peaks.append(hist_temp[i])
         thresh = self.smooth_data.copy()
 
-        thresh[thresh <= math.ceil(peaks[1])] = 0
+        thresh[thresh <= math.ceil(peaks[2])] = 0
         thresh = cv2.erode(thresh, None, iterations=self.erode)
         self.thresh_data = thresh
 

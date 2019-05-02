@@ -19,7 +19,7 @@
            });
 
         socket.on('localiser_update', function(data){
-            console.log(data);
+            console.log(data['co'][0]);
 
             sensor_id = data['id'];
 

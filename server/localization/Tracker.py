@@ -27,7 +27,7 @@ class Tracker:
         :return: None
         '''
 
-        print(f'positions: {positions}')
+        # print(f'positions: {positions}')
         # positions = np.array(positions['co'])
         # print(positions)
 
@@ -44,10 +44,10 @@ class Tracker:
 
 
             #if its not yet time to show, decrement TTS
-            print(self.persons[pers_index])
+            # print(self.persons[pers_index])
             if self.persons[pers_index].TTS > 0:
                 last_person_timestamp = self.persons[pers_index].kalmanfilter.previous_timestamp
-                print(timestamp-last_person_timestamp)
+                # print(timestamp-last_person_timestamp)
                 self.persons[pers_index].TTS -= (timestamp - last_person_timestamp)
 
             filter.update(positions[pos_index], timestamp) #!important this must be after TTS update because stamp is updated
@@ -73,7 +73,7 @@ class Tracker:
 
         self.visualisations_update()
         self.last_tracker_timestamp = timestamp
-        print("tracker updated")
+        # print("tracker updated")
 
     def get_matrix(self,positions,timestamp):
         '''
