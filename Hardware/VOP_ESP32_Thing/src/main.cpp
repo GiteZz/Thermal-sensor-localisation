@@ -20,7 +20,7 @@ const char* password = "Marijnsuckt";
 
 const char* host = "Thermal sensor 0x33";
 
-const char* rasp_ip = "192.168.1.32"; //"<rasp-ip>/sensor/debug";
+const char* rasp_ip = "192.168.1.31"; //"<rasp-ip>/sensor/debug";
 const int rasp_port = 5000;
 const char* rasp_path = "/sensor/debug";
 

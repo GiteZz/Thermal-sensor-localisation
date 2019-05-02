@@ -40,6 +40,7 @@ class ServerBridge:
         self.check_updates(sensor_id, data, timestamp)
         if sensor_id not in self.localization_dict:
             self.__add_localiser(sensor_id)
+        print(data)
         self.localization_dict[sensor_id].update(data, timestamp)
 
     def __add_localiser(self, sensor_id, calibrate_data=None):

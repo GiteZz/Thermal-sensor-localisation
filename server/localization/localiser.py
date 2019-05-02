@@ -28,8 +28,10 @@ class Localiser:
     def __determine_matrix(self):
         if not len(self.calibration_points)>=4:
             print("NOT ENOUGH POINTS")
-        self.calibration_points=np.array(self.calibration_points).astype(np.float32)
-        self.matrix,h=cv2.findHomography(self.calibration_points[:,0],self.calibration_points[:,1])
+            self.matrix = None
+        else:
+            self.calibration_points = np.array(self.calibration_points).astype(np.float32)
+            self.matrix, h = cv2.findHomography(self.calibration_points[:, 0], self.calibration_points[:, 1])
         return self.matrix
 
 
@@ -40,7 +42,7 @@ class Localiser:
 
     def get_world_cords(self, points):
         print("localiser for" + str(self.sensor_id))
-        if len(self.matrix) ==0:
+        if self.matrix is None:
             print("not yet callibrated")
             return points
         else:
@@ -54,7 +56,7 @@ class Localiser:
 
     def calibrate_data(self):
         print("Calibrating data")
-        with open(r'C:\Users\thoma\School\VOP\VOP\server\configuration_files\calibration_configuration.json', 'r') as f:
+        with open('configuration_files\calibration_configuration.json', 'r') as f:
             print("opened file")
             config = json.load(f)
             data=config['calibration_data']
@@ -86,12 +88,12 @@ class Localiser:
             self.com_module.distribute_imgs(self.sensor_id, imgs)
         if not self.WORLD_CORDS_FLAG:
             print('img cords update by localiser')
-            # self.tracker.update(self.processor.get_centroids(), timestamp)
+            self.tracker.update(self.processor.get_centroids(), timestamp)
         else:
             if self.calibrated:
                 print('world cord update by localiser')
                 world_coords = self.get_world_cords({'co': self.processor.get_centroids(), 'id': self.sensor_id})
-                # self.tracker.update(world_coords, timestamp)
+                self.tracker.update(world_coords, timestamp)
                 self.com_module.localiser_update(world_coords)
 
 
