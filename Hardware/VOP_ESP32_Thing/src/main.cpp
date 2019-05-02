@@ -73,56 +73,6 @@ void setup() {
 void loop() {
 
   auto start = std::chrono::system_clock::now();
-<<<<<<< HEAD
-=======
-  MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
-  MLX90640_InterpolateOutliers(frame, eeMLX90640);
-
-  eTa = MLX90640_GetTa(frame, &mlx90640);
-  MLX90640_CalculateTo(frame, &mlx90640, emissivity, eTa, mlx90640To);
-
-  //auto end = std::chrono::system_clock::now();
-  //auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-  //long stopTime = millis();
-
-  HTTPClient http;
-  http.begin(rasp_ip, rasp_port, rasp_path);
-  http.addHeader("Content-Type", "application/json"); //TODO
-
-  DynamicJsonBuffer jBuffer; //TODO make static
-  JsonObject& root = jBuffer.createObject();
-  //CborBuffer cBuffer(1000);
-  //CborObject root = CborObject(cBuffer);
-
-  //root.set("device_id", MLX90640_address);
-  //root.set("device_id", sequence_id);
-  root["device_id"] = 70;
-  root["sequence"] = sequence_id;
-  JsonArray& data = root.createNestedArray("data");
-  //CborArray array = CborArray(cBuffer);
-  
-  for (int i = 0; i < 768; i++) {
-     data.add(mlx90640To[i]);
-    //uint8_t val;
-    //if (mlx90640To[i] >= TEMP_THRESHOLD) {
-    //  val = 1;
-    //}
-    //else {
-    //  val = 0;
-    //}
-    //array.add(val);
-  }
-
-  //root.set("array", array);
-
-  char* jsonRaw = (char*)calloc(sizeof(char), root.measureLength() + 1);
-  //Serial.println("ROOT MEASURELENGTH");
-  //Serial.println(root.measureLength());
-  
-  //root.prettyPrintTo(Serial);
-  
-  root.printTo(jsonRaw, root.measureLength() + 1);
->>>>>>> 156416c8292fb1dd6173fefe6f57f62f5b97b4d5
 
   MLX90640_GetFrameTo(MLX_I2C_ADDR, frame, eeMLX90640, &mlx90640, 1, mlx90640To);
   jsonRaw = ESP32_JsonPacket(mlx90640To, DEFAULT_DEVICE_ID, sequence_id, 0);
