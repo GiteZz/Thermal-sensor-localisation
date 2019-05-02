@@ -9,7 +9,7 @@ from datetime import datetime
 import time
 from help_module.csv_helper import read_data
 from help_module.img_processing_helper import ImageProcessor
-
+import base64
 import math
 
 def raw_color_plot(pixels, to_pil=True):
@@ -192,6 +192,11 @@ def grid_plot(images, locs, width, height, margin):
     return grid_img
 
 
+def get_thermal_color_tuples():
+    return ((0, 0, 0), (68, 1, 84), (70, 50, 126), (54, 92, 141), (39, 127, 142), (31, 161, 135), (74, 193, 109),
+              (160, 218, 57), (253, 231, 37))
+
+
 def fast_thermal_image(pixels, scale=1, smooth=False, side=False, deltas=None, dim=(24, 32), as_numpy=False):
     """
     Return PIL image with a heatmap of the pixels, this should be faster then a matplotlib plot,
@@ -217,8 +222,7 @@ def fast_thermal_image(pixels, scale=1, smooth=False, side=False, deltas=None, d
     if deltas is None:
         deltas = get_deltas_img(img_ar)
 
-    colors = ((0, 0, 0), (68, 1, 84), (70, 50, 126), (54, 92, 141), (39, 127, 142), (31, 161, 135), (74, 193, 109),
-              (160, 218, 57), (253, 231, 37))
+    colors = get_thermal_color_tuples()
 
     if side:
         rgb_img = np.zeros((dim[0], dim[1] + 15, 3), dtype=np.uint8)
@@ -261,6 +265,14 @@ def fast_thermal_image(pixels, scale=1, smooth=False, side=False, deltas=None, d
 
     return img
 
+def color_from_indices(img):
+    colors = get_thermal_color_tuples()
+    new_rgb = np.zeros((img.shape[0], img.shape[1], 3)).astype(np.uint8)
+    for i in range(len(colors)):
+        new_rgb[img == i] = np.array(colors[i])
+
+    return new_rgb
+
 
 def test_speed(img, function, dim):
     """
@@ -290,14 +302,21 @@ def PIL_to_bytes(img):
     img_io.seek(0)
     return img_io.getvalue()
 
+def PIL_to_64(img):
+    buffered = io.BytesIO()
+    img.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue())
+
+    return img_str
+
 def get_grid_form(amount):
     """
     Given an amount of items in the grid this gives the amount of rows and columns
     :param amount:
     :return:
     """
-    plot_sizes = [1, 2, 4, 6, 9]
-    grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3]]
+    plot_sizes = [1, 2, 4, 6, 9, 12, 15, 20]
+    grid_sizes = [[1, 1], [2, 1], [2, 2], [3, 2], [3, 3], [3, 4], [3, 5], [4, 5]]
     grid = grid_sizes[0]
 
     for index in range(len(grid_sizes)):
@@ -339,13 +358,5 @@ def combine_imgs(img_list, title=None):
 
 
 if __name__ == "__main__":
-    result = read_data("9.csv")
-    frame = result[30][0]
-
-    img = np.reshape(frame, (24, 32))
-    img = img.repeat(10, axis=0)
-    img = img.repeat(10, axis=1)
-
-    img = fil.gaussian_filter(img, 10)
-
-    test_speed(img, fast_thermal_image, (240,320))
+    for i in range(9):
+        print(f'{i}: {get_grid_form(i)}')

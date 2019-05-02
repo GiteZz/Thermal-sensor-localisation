@@ -41,3 +41,9 @@ def save_calibration_data(calibration_points):
         f.seek(0)
         json.dump(data, f, indent=4)
         f.truncate()
+
+
+def get_calibration_sensor_ids():
+    with open(config_file, 'r') as f:
+        data = json.load(f)
+        return data['sensor_ids']

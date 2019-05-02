@@ -5,21 +5,23 @@ import json
 import math
 from help_module.webcam_helper import config_webcam_ip, save_webcam_frame, start_webcams, remove_webcam, stop_webcams
 from help_module.calibration_helper import add_calibration_point, get_calibration_points, remove_calibration_point, get_calibration_co
+import datetime
 
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
     print(data)
-    data['data'] = [0 if math.isnan(a) else a for a in data['data']]
+    print("---")
+    data['data'] = [0 if math.isnan(a) else a * 5 for a in data['data']]
 
-    new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=0)
+    new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=2)
     db.session.add(new_db_data)
     db.session.commit()
 
-    socketio.emit('new_image', {'device_id': data['device_id']})
+    # socketio.emit('new_image', {'device_id': data['device_id']})
     # save_webcam_frame(new_db_data)
-    print(data)
-    # loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
+    print(data['data'])
+    loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
 
     return "Hello World!"
 
@@ -31,9 +33,18 @@ def receive_simulate():
     db.session.add(new_db_data)
     db.session.commit()
 
-    socketio.emit('new_image', {'device_id': data['device_id']})
+    # socketio.emit('new_image', {'device_id': data['device_id']})
 
     loc_bridge.update(data["device_id"], data["data"], new_db_data.timestamp)
+
+    return "Succes"
+
+@app.route('/sensor/simulate_no_save', methods=['POST'])
+def receive_simulate_no_save():
+    # print("Simulated request")
+    data = request.json
+
+    loc_bridge.update(data["device_id"], data["data"], datetime.datetime.now())
 
     return "Succes"
 
@@ -136,13 +147,5 @@ def config_save_calibration_data():
     loc_bridge.bridge_save_cal_data()
     return redirect(url_for('config_calibrate'))
 
-'''
-request of form: IP:5000/tracker/update?ID=<>&position_x=<>&position_y=<>
-'''
-@app.route('/tracker/update', methods=['POST'])
-def tracker_vis_update():
-    data= request.args
-    socketio.emit('tracker_update',{'ID':data['ID'],'position':(data["position_x"],data["position_y"])})
-    return 'update received and relayed by server'
 
 

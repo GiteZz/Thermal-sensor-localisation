@@ -1,0 +1,172 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/debug_tracker.css')}}">
+
+<script>
+    $(document).ready(function(){
+        var img = document.getElementById("dot_page");
+        var socket = io.connect('http://'+ document.domain+':'+location.port);
+
+        // number of squares to cover the whole image with squares of 10px by 10px
+        var squares_height = 48;
+        var squares_width = 75;
+
+        // progression in colors: dark blue to dark red, in the same way of a thermal image
+        // ! these are not the colors eventually shown in the image, because of the lower opacity
+        var max_int = 1000;
+
+        socket.on('connect', function(){
+            console.log('Im Connected');
+           });
+
+        // making matrix to store all the divs that make up the squares
+        var div_matrix = [];
+        for (i=0; i<squares_height;i++){
+            div_matrix[i] = [];
+            for (j=0;j<squares_width;j++){
+                div_matrix[i][j] = undefined;
+            }
+        }
+
+        // making matrix with values indicating the amount of times there was a person in a certain position
+        var val_matrix = [];
+        for (i=0; i<squares_height;i++){
+            val_matrix[i] = [];
+            for (j=0;j<squares_width;j++){
+                val_matrix[i][j] = 0;
+            }
+        }
+
+        //drawing initial heatmap, everything is dark blue
+        for (i=0; i<squares_height;i++) {
+                for (j=0; j<squares_width;j++) {
+                    var grid_el = document.createElement('div');
+                    grid_el.className = "grid_element";
+                    grid_el.style.top = String(10*i) + "px";
+                    grid_el.style.left = String(10*j) + "px";
+                    grid_el.style.backgroundColor = "#0000ff";
+                    document.getElementById("grid").appendChild(grid_el);
+                    div_matrix[i][j] = grid_el;
+                }
+            }
+
+        // needed functions
+        function getBlueValue(i){
+            var bhex;
+            if (i>=0 && i<=0.5){
+                bhex = (Math.round(255-510*i)).toString(16);
+            } else {
+                bhex = "00";
+            }
+            bhex+="00";
+            return bhex.substring(0,2);
+        }
+        function getGreenValue(i){
+            var ghex;
+            if (i>=0 && i<=0.5){
+                ghex = (Math.round(510*i)).toString(16);
+            } else if (i>0.5 && i <=1){
+                ghex = (Math.round(255-510*(i-0.5))).toString(16);
+            } else {
+                ghex = "00"
+            }
+            ghex+="00";
+            return ghex.substring(0,2);
+        }
+        function getRedValue(i){
+            var rhex;
+            if (i>=0.5 && i<=1){
+                rhex = (Math.round(510*i)).toString(16);
+            } else {
+                rhex = "00";
+            }
+            rhex+="00";
+            return rhex.substring(0,2);
+        }
+        function intToRGBHex(i) {
+            var scaled_int = i/max_int;
+            var blue_val = getBlueValue(scaled_int);
+            var red_val = getRedValue(scaled_int);
+            var green_val = getGreenValue(scaled_int);
+            var hex = "#" + red_val + green_val + blue_val;
+            return hex.substring(0,7);
+        }
+
+        function updateSurroundingSquares(sq_x, sq_y, dist){
+            for(i=-dist;i<dist+1;i++){
+                for (j=-dist;j<dist+1;j++){
+                    if(sq_x+i > 0 && sq_y+j > 0 && sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
+                        val_matrix[sq_x+i][sq_y+j] += 2/dist;
+                        div_matrix[sq_x+i][sq_y+j].style.backgroundColor = intToRGBHex(val_matrix[sq_x+i][sq_y+j]);
+                    }
+                }
+            }
+        }
+
+        function scale_coords(coords){
+            new_x = Math.round(squares_height*coords[0]/477);
+            new_y = Math.round(squares_width*coords[1]/750);
+            return [new_x, new_y];
+        }
+
+        //TODO: use tracker updates instead of localiser
+        socket.on('localiser_update', function(data){
+            console.log("update received");
+            console.log(data);
+
+
+            img.innerHTML = '';
+
+            // for every person detected, the values of the exact square and the surrounding squares are increased
+            for(i = 0; i < data['co'].length; i++){
+                person_loc = data['co'][i];
+                square_loc = scale_coords(person_loc);
+                if (val_matrix[square_loc[0]][square_loc[1]] + 5 < max_int) {
+                    val_matrix[square_loc[0]][square_loc[1]] = 5 + val_matrix[square_loc[0]][square_loc[1]];
+                    div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[square_loc[0]][square_loc[1]]);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 1);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 2);
+                }
+            }
+        });
+
+
+    });
+</script>
+
+<html>
+<head>
+    <title>CSS Grids</title>
+    <style>
+        .grid_container{
+            left: 0;
+            top: 0;
+            position: absolute;
+        }
+        .grid_element{
+            height: 10px;
+            width: 10px;
+            position: absolute;
+            opacity: 0.5;
+
+        }
+    </style>
+</head>
+<body>
+    <h1>Heatmap</h1>
+    <div class="main_wrapper">
+        <div class="debug_img" id="img">
+            <img src="../static/Img/layout.png" alt="" >
+            <div id="dot_page" style="height: 100%; width: 100%; left: 0;top: 0; position: absolute;"></div>
+            <div class="grid_container" id="grid">
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<div class="main_wrapper">
+
+</div>
+{% endblock %}

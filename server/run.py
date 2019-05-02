@@ -1,6 +1,5 @@
 from flask_server import app, socketio
 import socket
-from help_module.webcam_helper import start_webcams
 
 run_local = True
 

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog, QCheckBox, QLabel, QHBoxLayout
 from help_module.csv_helper import load_csv
-from help_module.data_model_helper import Measurement, Base, CSV_Measurement
+from help_module.data_model_helper import Measurement_db, Base, CSV_Measurement, Measurement
 from help_module.img_helper import fast_thermal_image, plt_fig_to_PIL, get_deltas_img, grid_plot, hist_plot
 from help_module.time_helper import abs_diff
 from localization.processing import ImageProcessor
@@ -95,30 +95,23 @@ class Sensor:
     def load_sensor(self):
         """
         Uses a database query to get measurements from the sensor with id == sensor_id
+        Explanation for converting to different class is written in the data_model_helper.py
 
         :param sensor_id:
         :return:
         """
         param = self.app.get_query_param()
-        return self.db_bridge.get_values(self.sensor_id, param)
+        db_values = self.db_bridge.get_values(self.sensor_id, param)
+        sens_values = [Measurement(meas) for meas in db_values]
+
+        return sens_values
 
     def get_default_vis(self, index):
         thermal_data = self.meas_list[index].data
         self.img_processor.set_thermal_data(thermal_data)
-        centr = Image.fromarray(self.img_processor.plot_centroids(), 'RGB')
-        img = np.reshape(thermal_data, (24, 32))
-        img = img.repeat(10, axis=0)
-        img = img.repeat(10, axis=1)
+        imgs_batch_1 = self.img_processor.get_imgs()
 
-        img = filter.gaussian_filter(img, 15)
-        hist_amount,  hist_temp = np.histogram(img)
-        max_temp_index = np.argmax(hist_amount)
-        # img[img <= hist_temp[max_temp_index]] = 0
-        # print(hist_data)
-
-        fast = fast_thermal_image(img, dim=(240, 320), scale=1)
-        hist = hist_plot(np.reshape(img, (-1, 1)).ravel())
-        return [fast, hist, centr]
+        return imgs_batch_1
 
     def get_multi_processing(self, index):
         hist_amount = self.img_processor.get_hist_length()
@@ -143,42 +136,3 @@ class Sensor:
                 min_index = index
 
         return min_index
-
-    def multi_plot(self, thermal_data, blur=False, size=10):
-        thermal_data = thermal_data.repeat(size, axis=0)
-        thermal_data = thermal_data.repeat(size, axis=1)
-        if blur:
-            thermal_data = filter.gaussian_filter(thermal_data, 10)
-
-
-        deltas = get_deltas_img(thermal_data)
-        imgs = []
-        hists = []
-        locs = []
-
-        for x in range(3):
-            for y in range(4):
-                sub_img = thermal_data[x * size * 8:(x + 1) * size * 8, y * size * 8:(y + 1) * size * 8]
-
-                n_img = fast_thermal_image(sub_img, deltas=deltas, dim=(8 * size, 8 * size), side=False)
-                n_hist = hist_plot(sub_img.reshape((-1,1)).ravel())
-                imgs.append(n_img)
-                hists.append(n_hist)
-                locs.append((y, x))
-
-        imgs_offset = []
-        locs_offset = []
-
-        for x in range(2):
-            for y in range(3):
-                sub_img = thermal_data[x * size * 8 + size * 4:(x + 1) * size * 8 + size * 4, y * size * 8 + size * 4:(y + 1) * size * 8 + size * 4]
-
-                n_img = fast_thermal_image(sub_img, deltas=deltas, dim=(size * 8, size * 8), side=False)
-                imgs_offset.append(n_img)
-                locs_offset.append((y, x))
-
-        plot1 = grid_plot(imgs, locs, 100, 100, 15)
-        plot2 = grid_plot(hists, locs, 100, 100, 15)
-        plot3 = grid_plot(imgs_offset, locs_offset, 100, 100, 15)
-
-        return [plot1, plot2, plot3]

@@ -17,7 +17,6 @@ class ZoomQGraphicsView(QtWidgets.QGraphicsView):
         oldPos = self.mapToScene(event.pos())
 
         # Zoom
-        print(event.angleDelta())
         if event.angleDelta().y() > 0:
             zoomFactor = zoomInFactor
         else:
