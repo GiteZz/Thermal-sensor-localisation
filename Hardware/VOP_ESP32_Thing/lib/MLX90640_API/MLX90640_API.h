@@ -70,4 +70,7 @@
     int MLX90640_SetInterleavedMode(uint8_t slaveAddr);
     int MLX90640_SetChessMode(uint8_t slaveAddr);
     
+    int MLX90640_FullSetup(uint8_t slaveAddr, uint8_t FPS, uint16_t *eeData, paramsMLX90640 *mlx90640); 
+    int MLX90640_GetFrameTo(uint8_t slaveAddr, uint16_t *frameData, uint16_t *eepromData,
+                            paramsMLX90640 *params, float emissivity, float *result);
 #endif

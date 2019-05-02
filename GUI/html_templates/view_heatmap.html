@@ -15,7 +15,6 @@
 
         // progression in colors: dark blue to dark red, in the same way of a thermal image
         // ! these are not the colors eventually shown in the image, because of the lower opacity
-        var colors = ["#0000a5", "#0000ff", "#00deff", "#5bffa6", "#bcff44", "#ffff00", "#ff9f00", "#ff0000", "#be0000"];
         var max_int = 1000;
 
         socket.on('connect', function(){
@@ -47,7 +46,7 @@
                     grid_el.className = "grid_element";
                     grid_el.style.top = String(10*i) + "px";
                     grid_el.style.left = String(10*j) + "px";
-                    grid_el.style.backgroundColor = "#0000a5";
+                    grid_el.style.backgroundColor = "#0000ff";
                     document.getElementById("grid").appendChild(grid_el);
                     div_matrix[i][j] = grid_el;
                 }
@@ -98,8 +97,8 @@
         function updateSurroundingSquares(sq_x, sq_y, dist){
             for(i=-dist;i<dist+1;i++){
                 for (j=-dist;j<dist+1;j++){
-                    if(sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
-                        val_matrix[sq_x+i][sq_y+j] += 10/dist;
+                    if(sq_x+i > 0 && sq_y+j > 0 && sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
+                        val_matrix[sq_x+i][sq_y+j] += 2/dist;
                         div_matrix[sq_x+i][sq_y+j].style.backgroundColor = intToRGBHex(val_matrix[sq_x+i][sq_y+j]);
                     }
                 }
@@ -112,6 +111,7 @@
             return [new_x, new_y];
         }
 
+        //TODO: use tracker updates instead of localiser
         socket.on('localiser_update', function(data){
             console.log("update received");
             console.log(data);
@@ -123,11 +123,12 @@
             for(i = 0; i < data['co'].length; i++){
                 person_loc = data['co'][i];
                 square_loc = scale_coords(person_loc);
-                val_matrix[square_loc[0]][square_loc[1]]= 20 + val_matrix[square_loc[0]][square_loc[1]];
-                div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[square_loc[0]][square_loc[1]]);
-                updateSurroundingSquares(square_loc[0], square_loc[1], 1);
-                updateSurroundingSquares(square_loc[0], square_loc[1], 2);
-                document.getElementById("hex_val").innerHTML = "got element in for loop"
+                if (val_matrix[square_loc[0]][square_loc[1]] + 5 < max_int) {
+                    val_matrix[square_loc[0]][square_loc[1]] = 5 + val_matrix[square_loc[0]][square_loc[1]];
+                    div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[square_loc[0]][square_loc[1]]);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 1);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 2);
+                }
             }
         });
 
@@ -161,10 +162,6 @@
             <div id="dot_page" style="height: 100%; width: 100%; left: 0;top: 0; position: absolute;"></div>
             <div class="grid_container" id="grid">
             </div>
-        </div>
-        <div id = hex_val>
-        </div>
-        <div id = teller_val>
         </div>
     </div>
 </body>
