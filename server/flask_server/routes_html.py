@@ -28,9 +28,9 @@ def get_view_tracker():
 def get_view_heatmap():
     return render_template('view_heatmap.html')
 
-@app.route("/view/heatmap")
-def get_view_heatmapfs():
-    return render_template('view_heatmap.html')
+@app.route("/view/tracing")
+def get_view_tracing():
+    return render_template('view_tracing.html')
 
 @app.route("/socketio_test")
 def get_socketio_test():
