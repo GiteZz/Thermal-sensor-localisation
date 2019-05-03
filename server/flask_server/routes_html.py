@@ -29,7 +29,7 @@ def get_view_heatmap():
     return render_template('view_heatmap.html')
 
 @app.route("/view/heatmap")
-def get_view_heatmap():
+def get_view_heatmapfs():
     return render_template('view_heatmap.html')
 
 @app.route("/socketio_test")
