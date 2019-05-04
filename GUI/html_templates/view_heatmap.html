@@ -112,7 +112,7 @@
         }
 
         //TODO: use tracker updates instead of localiser
-        socket.on('localiser_update', function(data){
+        socket.on('tracker_update', function(data){
             console.log("update received");
             console.log(data);
 
@@ -120,8 +120,8 @@
             img.innerHTML = '';
 
             // for every person detected, the values of the exact square and the surrounding squares are increased
-            for(i = 0; i < data['co'].length; i++){
-                person_loc = data['co'][i];
+            for(person_id in data){
+                person_loc = data[person_id]["position"];
                 square_loc = scale_coords(person_loc);
                 if (val_matrix[square_loc[0]][square_loc[1]] + 5 < max_int) {
                     val_matrix[square_loc[0]][square_loc[1]] = 5 + val_matrix[square_loc[0]][square_loc[1]];
