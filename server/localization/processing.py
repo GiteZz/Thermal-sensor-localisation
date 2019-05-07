@@ -29,7 +29,7 @@ class ImageProcessor:
         self.sensor_id = None
 
         self.log_system = logging.getLogger('ImageProcessingLogger')
-        self.enable_logging()
+        # self.enable_logging()
 
     class decorators:
         """
@@ -274,22 +274,25 @@ class ImageProcessor:
                 peaks.append(hist_temp[i])
         thresh = self.smooth_data.copy()
 
-        thresh[thresh <= math.ceil(peaks[1])] = 0
+        thresh[thresh <= math.ceil(peaks[2])] = 0
         thresh = cv2.erode(thresh, None, iterations=self.erode)
         self.thresh_data = thresh
 
     @decorators.check_deltas
     @decorators.check_smooth_data
     def _set_bin_thresh(self):
-        self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
-        for value_range, value in zip(reversed(self.deltas), reversed(range(len(self.deltas)))):
-            self.thresh_data[self.smooth_data <= value_range] = value
+        if np.max(self.thermal_data) - np.min(self.thermal_data) <= 15:
+            self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
+        else:
+            self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
+            for value_range, value in zip(reversed(self.deltas), reversed(range(len(self.deltas)))):
+                self.thresh_data[self.smooth_data <= value_range] = value
 
-        hist_amount, hist_temp = np.histogram(self.thresh_data, bins=len(self.deltas))
-        max_temp_index = np.argmax(hist_amount)
-        self.thresh_data[self.thresh_data <= hist_temp[max_temp_index] + 2] = 0
+            hist_amount, hist_temp = np.histogram(self.thresh_data, bins=len(self.deltas))
+            max_temp_index = np.argmax(hist_amount)
+            self.thresh_data[self.thresh_data <= hist_temp[max_temp_index] + 2] = 0
 
-        self.thresh_data = cv2.erode(self.thresh_data, None, iterations=2)
+            self.thresh_data = cv2.erode(self.thresh_data, None, iterations=2)
 
     @decorators.check_tresh_data
     def _set_centroids(self):

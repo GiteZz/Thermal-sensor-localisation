@@ -13,6 +13,8 @@
         var squares_height = 48;
         var squares_width = 75;
 
+        var prev_locs = {};
+
         //this number indicates the biggest reachable value of the elements in the val_matrix
         var max_int = 1000;
 
@@ -49,10 +51,50 @@
             return [new_x, new_y];
         }
 
-        socket.on('localiser_update', function(data){
+        //gives squares connecting the two given coords
+        function getConnectingSquares(prev, curr){
+            px = prev[0];
+            py = prev[1];
+            cx = curr[0];
+            cy = curr[1];
+
+            squares = [];
+
+            if (cx >= px){
+                for (i = px; i<cx; i++){
+                    squares.push(div_matrix[i][py]);
+                }
+                if (cy >= py){
+                    for (i = py; i<cy; i++){
+                        squares.push(div_matrix[cx][i]);
+                    }
+                } else {
+                    for (i = cy; i<py; i++){
+                        squares.push(div_matrix[cx][i]);
+                    }
+                }
+            } else {
+                for (i = cx; i<px; i++){
+                    squares.push(div_matrix[i][py]);
+                }
+                if (cy >= py){
+                    for (i = py; i<cy; i++){
+                        squares.push(div_matrix[cx][i]);
+                    }
+                } else {
+                    for (i = cy; i<py; i++){
+                        squares.push(div_matrix[cx][i]);
+                    }
+                }
+            }
+            return squares;
+        }
+
+        socket.on('tracker_update', function(data){
             console.log("update received");
             console.log(data);
 
+            curr_persons = {};
 
             img.innerHTML = '';
 
@@ -61,9 +103,19 @@
                 person_loc = data[person_id]["position"];
                 color_hex = intToRGB(person_id);
                 square_loc = scale_coords(person_loc);
+                curr_persons[person_id] = square_loc;
 
                 div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = color_hex;
+
+
+                if (prev_persons[person_id] != null){
+                    connecting_squares = getConnectingSquares(prev_persons[person_id], square_loc);
+                    for (sq in connecting_squares){
+                        sq.style.backgroundColor = color_hex;
+                    }
+                }
             }
+            prev_persons = curr_persons;
         });
 
 

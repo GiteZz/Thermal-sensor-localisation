@@ -1,7 +1,7 @@
 from localization.Tracker import Tracker
 from localization.localiser import Localiser
 from localization.com_module import ComModule
-from help_module.calibration_helper import save_calibration_data, get_calibration_co
+from help_module.calibration_helper import save_calibration_data, get_calibration_co, add_calibration_point
 
 
 class ServerBridge:
@@ -17,6 +17,7 @@ class ServerBridge:
         self.calibrate_data = []
         self.current_calibrate = None
         self.auto_localiser = True
+        self.calibrate_index = 0
 
     @staticmethod
     def reset_trackers():
@@ -40,8 +41,14 @@ class ServerBridge:
         self.check_updates(sensor_id, data, timestamp)
         if sensor_id not in self.localization_dict:
             self.__add_localiser(sensor_id)
-        print(data)
         self.localization_dict[sensor_id].update(data, timestamp)
+
+        if self.calibrate_index > 0:
+            self.calibrate_index -= 1
+
+        if self.calibrate_index == 0 and self.current_calibrate is not None:
+            self.current_calibrate = None
+            print('deleted current calibrate')
 
     def __add_localiser(self, sensor_id, calibrate_data=None):
         """
@@ -72,6 +79,7 @@ class ServerBridge:
         co = get_calibration_co(name)
         if self.current_calibrate is None and len(sensor_ids) > 0:
             self.current_calibrate = {'name': name, 'co': co, 'img_data': {}, 'sensor_ids': sensor_ids}
+            self.calibrate_index = 10
             print("Set calibration point ready in server_bridge")
         else:
             print('WARNING there is still a calibration point active')
@@ -95,9 +103,12 @@ class ServerBridge:
                 print("calib point =" + str(data))
                 self.current_calibrate['img_data'][sensor_id] = data
 
-            if len(self.current_calibrate['img_data']) == self.current_calibrate['sensor_ids']:
-                print("Saved the calibration point")
+            print(f'Current length img data: {len(self.current_calibrate["img_data"])}')
+            print(f'Current lenght sensor_ids: {len(self.current_calibrate["sensor_ids"])}')
 
+            if len(self.current_calibrate['img_data']) == len(self.current_calibrate['sensor_ids']):
+                print("Saved the calibration point")
+                # self.current_calibrate = {'name': name, 'co': co, 'img_data': {}, 'sensor_ids': sensor_ids}
                 self.calibrate_data.append(self.current_calibrate)
                 save_calibration_data(self.calibrate_data)
                 self.current_calibrate = None

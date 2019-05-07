@@ -4,7 +4,8 @@ import numpy as np
 class Person:
 
     TTL_initial_value = 3
-    TTS_initial_value = 4
+    TTS_initial_value = 5
+    liveness = 1 # how long no updates can be received before not updating listeners location of this position
 
     def __init__(self,ID,pos,timestamp):
         self.ID = ID

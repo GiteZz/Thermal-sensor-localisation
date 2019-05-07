@@ -1,6 +1,7 @@
 #include <MLX90640_Shield.h>
 
 void MLX90640_Shield_setup() {
+    /*
     pinMode(LEDPIN0, OUTPUT);
     pinMode(LEDPIN1, OUTPUT);
     pinMode(LEDPIN2, OUTPUT);
@@ -9,9 +10,11 @@ void MLX90640_Shield_setup() {
     pinMode(LEDPIN5, OUTPUT);
     pinMode(LEDPIN6, OUTPUT);
     pinMode(LEDPIN7, OUTPUT);
+    */
 }
 
 int MLX90640_Shield_WriteByte(uint8_t byte) {
+    /*
     digitalWrite(LEDPIN1, LOW);
     digitalWrite(LEDPIN2, LOW);
     digitalWrite(LEDPIN3, LOW);
@@ -59,6 +62,6 @@ int MLX90640_Shield_WriteByte(uint8_t byte) {
     if (byte) {
         digitalWrite(LEDPIN7, HIGH);
     }
-
+    */
     return 0;
 }

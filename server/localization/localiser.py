@@ -26,12 +26,12 @@ class Localiser:
             self.__add_calibration_point(self,x_i,y_i)
 
     def __determine_matrix(self):
-        if not len(self.calibration_points)>=4:
+        if not len(self.calibration_points)>=3:
             print("NOT ENOUGH POINTS")
             self.matrix = None
         else:
             self.calibration_points = np.array(self.calibration_points).astype(np.float32)
-            self.matrix, h = cv2.findHomography(self.calibration_points[:, 0], self.calibration_points[:, 1])
+            self.matrix, h = cv2.findHomography(self.calibration_points[:, 0], self.calibration_points[:, 1],cv2.LMEDS)
         return self.matrix
 
 
@@ -41,7 +41,7 @@ class Localiser:
         self.tracker.update(centroids)
 
     def get_world_cords(self, points):
-        print("localiser for" + str(self.sensor_id))
+        # print("localiser for" + str(self.sensor_id))
         if self.matrix is None:
             print("not yet callibrated")
             return points
@@ -87,11 +87,11 @@ class Localiser:
             imgs = self.processor.get_imgs()
             self.com_module.distribute_imgs(self.sensor_id, imgs)
         if not self.WORLD_CORDS_FLAG:
-            print('img cords update by localiser')
+            # print('img cords update by localiser')
             self.tracker.update(self.processor.get_centroids(), timestamp)
         else:
             if self.calibrated:
-                print('world cord update by localiser')
+                # print('world cord update by localiser')
                 world_coords = self.get_world_cords(self.processor.get_centroids())
                 self.tracker.update(world_coords, timestamp)
                 self.com_module.localiser_update({'co': world_coords, 'id': self.sensor_id})

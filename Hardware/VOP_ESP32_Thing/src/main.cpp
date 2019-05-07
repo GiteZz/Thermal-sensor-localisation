@@ -21,8 +21,10 @@
 #define DEFAULT_SERIAL_SPEED 400000
 #define DEFAULT_I2C_SPEED 115200
 
-#define DEFAULT_DEVICE_ID 1
+#define DEFAULT_DEVICE_ID 36
 #define MLX_I2C_ADDR 0x33
+
+#define VERBOSE_MODE 1
 
 #include <chrono>
 #include <thread>
