@@ -42,11 +42,10 @@ class Tracker:
             filter = self.persons[pers_index].kalmanfilter
             filter.predict(timestamp)
 
-
             #if its not yet time to show, decrement TTS
             # print(self.persons[pers_index])
             if self.persons[pers_index].TTS > 0:
-                last_person_timestamp = self.persons[pers_index].kalmanfilter.previous_timestamp
+                last_person_timestamp = filter.previous_timestamp
                 # print(timestamp-last_person_timestamp)
                 self.persons[pers_index].TTS -= (timestamp - last_person_timestamp)
 
@@ -55,8 +54,6 @@ class Tracker:
             #reset the TTL to the initial value
             self.persons[pers_index].TTL = Person.TTL_initial_value
 
-
-        
         #decrement all the other Person's TTL
         for pers_index in range(len(self.persons)):
             if pers_index not in updated_pers_index:
@@ -89,7 +86,7 @@ class Tracker:
         return matrix
 
 
-    def get_assignment(self,dist_matrix,greedy = True):
+    def get_assignment(self,dist_matrix,greedy = False):
         '''
         makes global optimal assignment of the prop matrix
         :param dist_matrix:
@@ -132,7 +129,7 @@ class Tracker:
         '''
         vis_dict = {}
         for person in self.persons:
-            if person.TTS <= 0:
+            if person.TTS <= 0: #and TTL > TTL_init - liveness
                 sp1 = round(person.kalmanfilter.x[1], 2)
                 sp2 = round(person.kalmanfilter.x[3], 2)
                 ttl_round = round(person.TTL, 2)
@@ -169,10 +166,9 @@ class Tracker:
         if dist < self.dist_thresh: #*speed:
             dist *= (Person.TTL_initial_value+1- person.TTL)/ (Person.TTL_initial_value+1) #favor long living objects by multiplying
             #dist *= angle
-
             return dist
         else:
-            return  math.inf
+            return  100000 # math.inf isn't handled by the hungarian algorithm so choose a random value that's never reached
 
 
     def __repr__(self):
