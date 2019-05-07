@@ -57,7 +57,7 @@ class Tracker:
             filter.update(positions[pos_index], timestamp) #!important this must be after TTS update because stamp is updated
             ##quick fix for Gilles##
             #TODO: check & test!
-            self.persons[pers_index].locations[timestamp] = positions[pos_index]
+            self.persons[pers_index].locations[timestamp] = self.persons[pers_index].get_location()
             #################
             updated_pers_index.append(pers_index)
             #reset the TTL to the initial value
