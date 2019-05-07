@@ -43,16 +43,16 @@
 
         //drawing initial heatmap, everything is white
         for (i=0; i<squares_height;i++) {
-                for (j=0; j<squares_width;j++) {
-                    var grid_el = document.createElement('div');
-                    grid_el.className = "grid_element";
-                    grid_el.style.top = String(pixel_size*i) + "px";
-                    grid_el.style.left = String(pixel_size*j) + "px";
-                    grid_el.style.backgroundColor = "#ffffff";
-                    document.getElementById("grid").appendChild(grid_el);
-                    div_matrix[i][j] = grid_el;
-                }
+            for (j = 0; j < squares_width; j++) {
+                var grid_el = document.createElement('div');
+                grid_el.className = "grid_element";
+                grid_el.style.top = String(pixel_size * i) + "px";
+                grid_el.style.left = String(pixel_size * j) + "px";
+                grid_el.style.backgroundColor = "#ffffff";
+                document.getElementById("grid").appendChild(grid_el);
+                div_matrix[i][j] = grid_el;
             }
+        }
 
         // needed functions
         function getBlueValue(i){
@@ -181,7 +181,6 @@
                         }
                     }
                     break;
-
             }
         }
 
@@ -198,7 +197,7 @@
 
             img.innerHTML = '';
 
-            // for every person detected, the values of the exact square and the surrounding squares are increased
+            // for every person detected, the trace is continued
             for(person_id in data){
                 person_loc = data[person_id]["position"];
                 square_loc = scale_coords(person_loc);
