@@ -9,9 +9,11 @@
         var img = document.getElementById("dot_page");
         var socket = io.connect('http://'+ document.domain+':'+location.port);
 
-        // number of squares to cover the whole image with squares of 10px by 10px
-        var squares_height = 48;
-        var squares_width = 75;
+        // WARNING: if pixel size is changed, don't forget to change this in the html part as wel!
+        //      -> .grid_element: height and width
+        var squares_height = 96;
+        var squares_width = 150;
+        var pixel_size = 5;
 
         // progression in colors: dark blue to dark red, in the same way of a thermal image
         // ! these are not the colors eventually shown in the image, because of the lower opacity
@@ -44,8 +46,8 @@
                 for (j=0; j<squares_width;j++) {
                     var grid_el = document.createElement('div');
                     grid_el.className = "grid_element";
-                    grid_el.style.top = String(10*i) + "px";
-                    grid_el.style.left = String(10*j) + "px";
+                    grid_el.style.top = String(pixel_size*i) + "px";
+                    grid_el.style.left = String(pixel_size*j) + "px";
                     grid_el.style.backgroundColor = "#ffffff";
                     document.getElementById("grid").appendChild(grid_el);
                     div_matrix[i][j] = grid_el;
@@ -126,13 +128,60 @@
         }
 
         function updateSurroundingSquares(sq_x, sq_y, dist){
-            for(i=-dist;i<dist+1;i++){
-                for (j=-dist;j<dist+1;j++){
-                    if(sq_x+i > 0 && sq_y+j > 0 && sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
-                        val_matrix[sq_x+i][sq_y+j] += (2/dist);
-                        div_matrix[sq_x+i][sq_y+j].style.backgroundColor = intToRGBHex(val_matrix[sq_x+i][sq_y+j]);
+            switch(dist){
+                case 1:
+                    for(i=-1;i<2;i++){
+                        for (j=-1;j<2;j++){
+                            if(sq_x+i > 0 && sq_y+j > 0 && sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
+                            val_matrix[sq_x+i][sq_y+j] = val_matrix[sq_x+i][sq_y+j] + 8;
+                            div_matrix[sq_x+i][sq_y+j].style.backgroundColor = intToRGBHex(val_matrix[sq_x+i][sq_y+j]);
+                            }
+                        }
                     }
-                }
+                    break;
+                case 2:
+                    for(i=-2;i<3;i++){
+                        for (j=-2;j<3;j++){
+                            if(sq_x+i > 0 && sq_y+j > 0 && sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
+                            val_matrix[sq_x+i][sq_y+j] = val_matrix[sq_x+i][sq_y+j] + 6;
+                            div_matrix[sq_x+i][sq_y+j].style.backgroundColor = intToRGBHex(val_matrix[sq_x+i][sq_y+j]);
+                            }
+                        }
+                    }
+                    break;
+                case 3:
+                    for(i=-3;i<4;i++){
+                        for (j=-3;j<4;j++){
+                            if(sq_x+i > 0 && sq_y+j > 0 && sq_x+i < val_matrix[0].length && sq_y+j < val_matrix.length && !(i==0 && j==0)){
+                                if(!(i==-3 && j==-3) && !(i==-3 && j==3) && !(i==3 && j==3) && !(i==3 && j==-3)) {
+                                    val_matrix[sq_x + i][sq_y + j] = val_matrix[sq_x + i][sq_y + j] + 4;
+                                    div_matrix[sq_x + i][sq_y + j].style.backgroundColor = intToRGBHex(val_matrix[sq_x + i][sq_y + j]);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case 4:
+                    for (i=-1; i<2;i++) {
+                        if (sq_x + i > 0 && sq_y + 4 > 0 && sq_x + i < val_matrix[0].length && sq_y + 4 < val_matrix.length) {
+                            val_matrix[sq_x + i][sq_y + 4] = val_matrix[sq_x + i][sq_y + 4] + 2;
+                            div_matrix[sq_x + i][sq_y + 4].style.backgroundColor = intToRGBHex(val_matrix[sq_x + i][sq_y + 4]);
+                        }
+                        if (sq_x + i > 0 && sq_y - 4 > 0 && sq_x + i < val_matrix[0].length && sq_y - 4 < val_matrix.length) {
+                            val_matrix[sq_x + i][sq_y - 4] = val_matrix[sq_x + i][sq_y - 4] + 2;
+                            div_matrix[sq_x + i][sq_y - 4].style.backgroundColor = intToRGBHex(val_matrix[sq_x + i][sq_y - 4]);
+                        }
+                        if (sq_x + 4 > 0 && sq_y + i > 0 && sq_x + 4 < val_matrix[0].length && sq_y + i < val_matrix.length) {
+                            val_matrix[sq_x + 4][sq_y + i] = val_matrix[sq_x + 4][sq_y + i] + 2;
+                            div_matrix[sq_x + 4][sq_y + i].style.backgroundColor = intToRGBHex(val_matrix[sq_x + 4][sq_y + i]);
+                        }
+                        if (sq_x - 4 > 0 && sq_y + i > 0 && sq_x - 4 < val_matrix[0].length && sq_y + i < val_matrix.length) {
+                            val_matrix[sq_x - 4][sq_y + i] = val_matrix[sq_x - 4][sq_y + i] + 2;
+                            div_matrix[sq_x - 4][sq_y + i].style.backgroundColor = intToRGBHex(val_matrix[sq_x - 4][sq_y + i]);
+                        }
+                    }
+                    break;
+
             }
         }
 
@@ -153,13 +202,16 @@
             for(person_id in data){
                 person_loc = data[person_id]["position"];
                 square_loc = scale_coords(person_loc);
-                if (val_matrix[square_loc[0]][square_loc[1]] + 5 < max_int) {
-                    val_matrix[square_loc[0]][square_loc[1]] += 5;
+                if (val_matrix[square_loc[0]][square_loc[1]] + 10 < max_int) {
+                    val_matrix[square_loc[0]][square_loc[1]] = val_matrix[square_loc[0]][square_loc[1]]+10;
                     div_matrix[square_loc[0]][square_loc[1]].style.backgroundColor = intToRGBHex(val_matrix[square_loc[0]][square_loc[1]]);
                     updateSurroundingSquares(square_loc[0], square_loc[1], 1);
                     updateSurroundingSquares(square_loc[0], square_loc[1], 2);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 3);
+                    updateSurroundingSquares(square_loc[0], square_loc[1], 4);
                 }
             }
+            document.getElementById("hex_val").innerHTML = val_matrix[28][10];
         });
 
 
@@ -176,8 +228,8 @@
             position: absolute;
         }
         .grid_element{
-            height: 10px;
-            width: 10px;
+            height: 5px;
+            width: 5px;
             position: absolute;
             opacity: 0.5;
 
@@ -192,6 +244,9 @@
             <div id="dot_page" style="height: 100%; width: 100%; left: 0;top: 0; position: absolute;"></div>
             <div class="grid_container" id="grid">
             </div>
+        </div>
+        <div id="hex_val">
+
         </div>
     </div>
 </body>
