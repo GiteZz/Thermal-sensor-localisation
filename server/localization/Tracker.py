@@ -149,10 +149,12 @@ class Tracker:
         if len(self.SMA_window) < self.SMA_window_length:
             self.SMA_window.append(len(self.persons))
         else:
-            self.SMA_window.pop()
+            self.SMA_window.popleft()
+            self.SMA_window.append(len(self.persons))
 
         self.SMA = np.mean(np.asarray(self.SMA_window))
-        print(self.SMA)
+        print(round(self.SMA))
+        print(self.SMA_window)
         
 
 
