@@ -1,6 +1,7 @@
 from localization.Person import Person
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from collections import deque
 import time
 import math
 class Tracker:
@@ -11,6 +12,10 @@ class Tracker:
         self.last_tracker_timestamp = time.time()
 
         self.dist_thresh = 75
+        self.SMA_window = deque([]) #FIFO-queue
+        self.SMA_window_length = 10
+        self.SMA = 0
+        
 
     def add_visualisation(self,vis):
         assert(hasattr(vis, "tracker_update")) # must have update method to send new positions to
@@ -72,6 +77,7 @@ class Tracker:
             self.persons.append(Person(self.id_counter, positions[pos_index], timestamp))
             self.id_counter+=1
 
+        self._add_SMA_average()
         self.visualisations_update()
         self.last_tracker_timestamp = timestamp
         # print("tracker updated")
@@ -137,11 +143,22 @@ class Tracker:
                 sp1 = round(person.kalmanfilter.x[1], 2)
                 sp2 = round(person.kalmanfilter.x[3], 2)
                 ttl_round = round(person.TTL, 2)
-                vis_dict[person.ID] = {'position':(person.get_location()[0],person.get_location()[1]), 'timelived': ttl_round, 'v_x': sp1, 'v_y': sp2}
-            
+                vis_dict[person.ID] = {'position':(person.get_location()[0],person.get_location()[1]), 'timelived': ttl_round, 'v_x': sp1, 'v_y': sp2, 'SMA' : self.SMA}
 
         for vis_object in self.visualisations:
             vis_object.tracker_update(vis_dict)
+
+    def _add_SMA_average(self):
+        if len(self.SMA_window) < self.SMA_window_length:
+            self.SMA_window.append(len(self.persons))
+        else:
+            self.SMA_window.popleft()
+            self.SMA_window.append(len(self.persons))
+
+        self.SMA = np.mean(np.asarray(self.SMA_window))
+        print(round(self.SMA))
+        print(self.SMA_window)
+        
 
 
     def _dist(self, person, y, timestamp):
@@ -177,6 +194,9 @@ class Tracker:
 
     def __repr__(self):
         s = ("____TRACKER STATE_____ \n")
+        s += "moving average: " 
+        s += self.SMA 
+        s += "\n"
         for person in self.persons:
             s += person.__repr__()
             s += "\n"
@@ -187,6 +207,8 @@ class Tracker:
         This function resets the whole state of the tracker
         '''
         print("tracker reset by tracker")
+        self.SMA_window = deque([])
+        self.SMA = 0.0 
         self.id_counter = 0
         self.persons = []
         self.last_tracker_timestamp = time.time()
