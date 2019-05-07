@@ -111,6 +111,8 @@ class Sensor:
         self.img_processor.set_thermal_data(thermal_data)
         imgs_batch_1 = self.img_processor.get_imgs()
 
+        print(f'diff in thermal_data: {np.max(thermal_data) - np.min(thermal_data)}')
+
         return imgs_batch_1
 
     def get_multi_processing(self, index):
