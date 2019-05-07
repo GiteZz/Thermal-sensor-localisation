@@ -6,7 +6,7 @@ from localization.processing import ImageProcessor
 class Localiser:
     def __init__(self, sensor_id):
         self.sensor_id=sensor_id
-        self.matrix=[]
+        self.matrix=None
         self.calibration_points=[] # key=px_index, val=world_coord
         self.tracker = None
         self.processor = ImageProcessor()
@@ -56,7 +56,7 @@ class Localiser:
 
     def calibrate_data(self):
         print("Calibrating data")
-        with open('configuration_files\calibration_configuration.json', 'r') as f:
+        with open('../configuration_files\calibration_configuration.json', 'r') as f:
             print("opened file")
             config = json.load(f)
             data=config['calibration_data']
@@ -94,7 +94,8 @@ class Localiser:
                 # print('world cord update by localiser')
                 world_coords = self.get_world_cords(self.processor.get_centroids())
                 self.tracker.update(world_coords, timestamp)
-                self.com_module.localiser_update({'co': world_coords, 'id': self.sensor_id})
+                if self.com_module is not None:
+                    self.com_module.localiser_update({'co': world_coords, 'id': self.sensor_id})
 
 
 if __name__=='__main__':

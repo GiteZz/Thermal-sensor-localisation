@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw
 
-def get_bounding_box(co):
-    c_width = 4
+
+def get_bounding_box(co, c_width=4):
     x1 = co[0] - c_width
     x2 = co[0] + c_width
     y1 = co[1] - c_width

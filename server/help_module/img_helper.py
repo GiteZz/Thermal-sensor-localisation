@@ -133,7 +133,10 @@ def get_deltas_img(img):
     :param img:
     :return:
     """
-    min_img = np.min(img[img != 0])
+    try:
+        min_img = np.min(img[img != 0])
+    except:
+        min_img = 0
     max_img = np.max(img)
 
     return get_deltas(min_img, max_img)
@@ -355,6 +358,15 @@ def combine_imgs(img_list, title=None):
         current_height += img.size[1]
 
     return comp
+
+
+def get_bounding_box(co, c_width=4):
+    x1 = co[0] - c_width
+    x2 = co[0] + c_width
+    y1 = co[1] - c_width
+    y2 = co[1] + c_width
+
+    return [x1, y1, x2, y2]
 
 
 if __name__ == "__main__":

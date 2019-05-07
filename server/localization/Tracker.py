@@ -4,6 +4,12 @@ from scipy.optimize import linear_sum_assignment
 from collections import deque
 import time
 import math
+from collections import defaultdict
+
+from PIL import Image, ImageDraw
+from help_module.img_helper import get_bounding_box
+from random import randint
+
 class Tracker:
     def __init__(self):
         self.id_counter = 0
@@ -15,6 +21,9 @@ class Tracker:
         self.SMA_window = deque([]) #FIFO-queue
         self.SMA_window_length = 10
         self.SMA = 0
+
+        self.tracker_colors = {}
+        self.prev_points = defaultdict(list)
         
 
     def add_visualisation(self,vis):
@@ -72,6 +81,9 @@ class Tracker:
         for pos_index in new_positions:
             self.persons.append(Person(self.id_counter, positions[pos_index], timestamp))
             self.id_counter+=1
+
+        for person in self.persons:
+            self.prev_points[person.ID].append((person.get_location()[0], person.get_location()[1]))
 
         self._add_SMA_average()
         self.visualisations_update()
@@ -186,6 +198,29 @@ class Tracker:
             return dist
         else:
             return  100000 # math.inf isn't handled by the hungarian algorithm so choose a random value that's never reached
+
+    def get_vis(self):
+        img = Image.open("../../GUI/static/Img/layout_even.png")
+        d = ImageDraw.Draw(img)
+
+        for person in self.persons:
+            box1 = get_bounding_box((person.get_location()[0], person.get_location()[1]))
+            if person.ID in self.tracker_colors:
+                color = self.tracker_colors[person.ID]
+            else:
+                color = (randint(0, 255), randint(0, 255), randint(0, 255))
+                self.tracker_colors[person.ID] = color
+
+            prev_points = self.prev_points[person.ID]
+            print(f'amount prev points: {len(prev_points)}')
+            print(person.locations)
+            print(prev_points)
+            for i in range(len(prev_points) - 1):
+                d.line([prev_points[i], prev_points[i + 1]], fill=color, width=3)
+
+            d.ellipse(box1, fill=color)
+
+        return img
 
 
     def __repr__(self):
