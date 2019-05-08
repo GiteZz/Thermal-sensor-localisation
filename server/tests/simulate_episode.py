@@ -57,12 +57,12 @@ def send_request(timer_list):
 
 
 if __name__ == "__main__":
-    csv_folder = '../../data/'
-    csv_file = "2_sensors.csv"
+    csv_folder = 'data/'
+    csv_file = "sensor_data_episode_20190503-125450_70.csv"
 
     csv_data = load_csv(csv_folder+csv_file, to_numpy=False)
 
-    timing_list = create_timing_list(csv_data, speed_up=5)
+    timing_list = create_timing_list(csv_data, speed_up=1)
 
     timer = threading.Timer(0, send_request, [timing_list])
     timer.start()
