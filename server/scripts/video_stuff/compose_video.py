@@ -6,35 +6,35 @@ from help_module.time_helper import clean_diff, abs_diff, get_time_str
 from localization.processing import ImageProcessor
 from localization.Tracker import Tracker
 from localization.localiser import Localiser
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 import os
 import math
 from PIL import Image, ImageDraw
-
-date_conv = '%Y-%m-%d %H:%M:%S.%f%z'
-
-start_time_str = "2019-05-09 12:55:21.000000+02:00"
-start_time = convert_to_datetime(start_time_str)
-stop_time_str = "2019-05-09 13:00:04.000000+02:00"
-stop_time = convert_to_datetime(stop_time_str)
+import time as time_module
 
 
+scenario_folder = 'D:/VOP_scenarios/scenarios/'
+cur_scenario = '1_person_1_sensor/03/'
 
-csv_folder = "../../scenarios/1_person_1_sensor/013"
-csv_file = 'sensor_data.csv'
-frame_folder = csv_folder + 'frames_tracking/'
+vol_scen_folder = scenario_folder + cur_scenario
+
+rgb_folder = vol_scen_folder + 'actual_frames/'
+
+csv_file = vol_scen_folder + 'sensor_data.csv'
+frame_folder = vol_scen_folder + 'comp_frames/'
 
 if not os.path.exists(frame_folder):
     os.mkdir(frame_folder)
 
-measurements = load_csv(csv_folder + csv_file, to_numpy=True, split=False, csv_tag=False)
-
-start_time = measurements[0].timestamp
-end_time = measurements[-1].timestamp
-cur_time = start_time
+measurements = load_csv(csv_file, to_numpy=True, split=False, csv_tag=False)
 
 
-time_diff = clean_diff(end_time, start_time)
+video_start = datetime.combine(measurements[0].timestamp.date(), time(hour=12, minute=55, second=21)).timestamp()
+video_stop = datetime.combine(measurements[0].timestamp.date(), time(hour=13, minute=00, second=4)).timestamp()
+
+cur_time = video_start
+
+time_diff = video_stop - video_start
 time_jumps = 8138
 time_jump = time_diff / time_jumps
 
@@ -48,12 +48,15 @@ prev_frame = tracker.get_vis()
 
 rgb_frame_start_index = 11
 
+test_start = measurements[0].timestamp.timestamp()
+
+comp_img = Image.new('RGB', (1500, 480+720))
+pros_imgs = []
 for i in range(time_jumps):
     print(i)
-    cur_time += timedelta(seconds=time_jump)
+    cur_time += time_jump
 
-    # cur_time > measurement
-    while clean_diff(measurements[0].timestamp, cur_time) < 0:
+    while measurements[0].timestamp.timestamp() < cur_time:
         cur_meas = measurements.pop(0)
 
         if cur_meas.sensor_id not in loc_dict:
@@ -70,7 +73,16 @@ for i in range(time_jumps):
 
         prev_frame = tracker.get_vis()
 
+    rgb_img = Image.open(rgb_folder + ('000000' + str(i + rgb_frame_start_index))[-6:] + '.png')
 
+    comp_img.paste(rgb_img, (0, 480))
+    comp_img.paste(prev_frame, (0, 0))
+    if len(pros_imgs) > 0:
+        comp_img.paste(pros_imgs[0], (754, 0))
+
+    d = ImageDraw.Draw(comp_img)
+    local_time = time_module.strftime('%Y-%m-%d %H:%M:%S', time_module.localtime(cur_time))
+    d.text((10, 490), local_time, fill=(255,0,0))
     img_name = f'{frame_folder}' + ('000000' + str(i))[-6:] + '.png'
 
-    prev_frame.save(img_name)
+    comp_img.save(img_name)

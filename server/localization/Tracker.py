@@ -198,14 +198,14 @@ class Tracker:
             #dist *= angle
             return dist
         else:
-            return  100000 # math.inf isn't handled by the hungarian algorithm so choose a random value that's never reached
+            return 100000 # math.inf isn't handled by the hungarian algorithm so choose a random value that's never reached
 
     def get_vis(self):
-        img = Image.open("../../GUI/static/Img/layout_even.png")
+        img = Image.open("D:/VOP_scenarios/tracker_imgs/layout_even.png")
         d = ImageDraw.Draw(img)
 
         for person in self.persons:
-            box1 = get_bounding_box((person.get_location()[0], person.get_location()[1]))
+            box1 = get_bounding_box((person.get_location()[1], person.get_location()[0]))
             if person.ID in self.tracker_colors:
                 color = self.tracker_colors[person.ID]
             else:
@@ -217,8 +217,8 @@ class Tracker:
             print(prev_points)
             for i in range(len(prev_points) - 1):
                 if prev_points[i] is not None and prev_points[i + 1] is not None:
-                    cur_point = (prev_points[i][0], prev_points[i][1])
-                    next_point = (prev_points[i + 1][0], prev_points[i + 1][1])
+                    cur_point = (prev_points[i][1], prev_points[i][0])
+                    next_point = (prev_points[i + 1][1], prev_points[i + 1][0])
                     d.line([cur_point, next_point], fill=color, width=3)
 
             d.ellipse(box1, fill=color)

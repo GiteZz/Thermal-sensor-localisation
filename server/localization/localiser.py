@@ -59,7 +59,7 @@ class Localiser:
 
     def calibrate_data(self):
         print("Calibrating data")
-        with open('configuration_files\calibration_configuration.json', 'r') as f:
+        with open(r'D:\Programmeer projecten\VOP\server\configuration_files\calibration_configuration.json', 'r') as f:
             print("opened file")
             config = json.load(f)
             data=config['calibration_data']
@@ -111,12 +111,12 @@ class Localiser:
         img_width = img.size[0]
         img_height = img.size[1]
         comp = Image.new('RGB', (img_width, img_height + 20))
-
+        comp.paste(img, (0, 20))
         local_time = get_time_str(self.timestamp, microseconds=True, seconds=True)
         d = ImageDraw.Draw(comp)
         d.text((0, 0), local_time, fill=(255, 255, 255))
-        img.thumbnail(des_size, Image.ANTIALIAS)
-        return img
+        comp.thumbnail(des_size, Image.ANTIALIAS)
+        return comp
 
 
 if __name__=='__main__':
