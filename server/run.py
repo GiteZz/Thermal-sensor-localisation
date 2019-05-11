@@ -1,7 +1,7 @@
 from flask_server import app, socketio
 import socket
 
-run_local = False
+run_local = True
 
 ip_adresses = socket.gethostbyname_ex(socket.gethostname())[-1]
 local_ip = None

@@ -14,7 +14,7 @@ class Tracker:
     def __init__(self):
         self.id_counter = 0
         self.persons = []
-        self.visualisations = []
+        self.listeners = []
         self.last_tracker_timestamp = time.time()
 
         self.dist_thresh = 75
@@ -28,7 +28,7 @@ class Tracker:
 
     def add_visualisation(self,vis):
         assert(hasattr(vis, "tracker_update")) # must have update method to send new positions to
-        self.visualisations.append(vis)
+        self.listeners.append(vis)
 
     def update(self, positions, timestamp):
         '''
@@ -88,7 +88,7 @@ class Tracker:
 
 
         self._add_SMA_average()
-        self.visualisations_update()
+        self.listeners_update()
         self.last_tracker_timestamp = timestamp
         # print("tracker updated")
 
@@ -142,7 +142,7 @@ class Tracker:
                 new_objects.append(i)
         return tups, new_objects
 
-    def visualisations_update(self):
+    def listeners_update(self):
         '''
         sends new positions to listeners
         :return:
@@ -155,7 +155,7 @@ class Tracker:
                 ttl_round = round(person.TTL, 2)
                 vis_dict[person.ID] = {'position':(person.get_location()[0],person.get_location()[1]), 'timelived': ttl_round, 'v_x': sp1, 'v_y': sp2, 'SMA' : self.SMA}
 
-        for vis_object in self.visualisations:
+        for vis_object in self.listeners:
             vis_object.tracker_update(vis_dict)
 
     def _add_SMA_average(self):
