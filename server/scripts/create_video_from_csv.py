@@ -45,4 +45,4 @@ with open(folder_location + file_name) as csvfile:
 
 
 
-# ffmpeg -r 12 -f image2 -s 1920x1080 -i %05d.png -vcodec libx264 -crf 10  -pix_fmt yuv420p test.mp4
+# ffmpeg -r 12 -f image2 -s 320x260 -i 70_%06d.png -vcodec libx264 -crf 10  -pix_fmt yuv420p pros.mp4

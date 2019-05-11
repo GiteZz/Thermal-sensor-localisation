@@ -10,10 +10,10 @@ import datetime
 @app.route('/sensor/debug', methods=['POST'])
 def receive_sensor_debug():
     data = request.json
-    print(data)
-    print("---")
+    # print(data)
+    # print("---")
     data['data'] = [0 if math.isnan(a) else a * 5 for a in data['data']]
-    print(data["data"])
+    # print(data["data"])
     new_db_data = Measurement(sensor_id=data["device_id"], data=data["data"], sequence_id=data["sequence"], data_type=2)
     db.session.add(new_db_data)
     db.session.commit()

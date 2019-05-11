@@ -86,8 +86,6 @@ class Tracker:
             self.persons.append(Person(self.id_counter, positions[pos_index], timestamp))
             self.id_counter+=1
 
-        for person in self.persons:
-            self.prev_points[person.ID].append((person.get_location()[0], person.get_location()[1]))
 
         self._add_SMA_average()
         self.visualisations_update()
@@ -168,8 +166,7 @@ class Tracker:
             self.SMA_window.append(len(self.persons))
 
         self.SMA = np.mean(np.asarray(self.SMA_window))
-        print(round(self.SMA))
-        print(self.SMA_window)
+
         
 
 
@@ -215,12 +212,14 @@ class Tracker:
                 color = (randint(0, 255), randint(0, 255), randint(0, 255))
                 self.tracker_colors[person.ID] = color
 
-            prev_points = self.prev_points[person.ID]
+            prev_points = list(person.locations.values())
             print(f'amount prev points: {len(prev_points)}')
-            print(person.locations)
             print(prev_points)
             for i in range(len(prev_points) - 1):
-                d.line([prev_points[i], prev_points[i + 1]], fill=color, width=3)
+                if prev_points[i] is not None and prev_points[i + 1] is not None:
+                    cur_point = (prev_points[i][0], prev_points[i][1])
+                    next_point = (prev_points[i + 1][0], prev_points[i + 1][1])
+                    d.line([cur_point, next_point], fill=color, width=3)
 
             d.ellipse(box1, fill=color)
 

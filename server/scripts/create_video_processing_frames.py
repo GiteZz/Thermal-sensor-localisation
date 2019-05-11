@@ -6,7 +6,7 @@ import os
 import math
 from PIL import Image, ImageDraw
 
-def save_video_frames(sensor_id, measurements, FPS=30):
+def save_video_frames(sensor_id, measurements, FPS=28.84):
     start_time = measurements[0].timestamp
     end_time = measurements[-1].timestamp
     cur_time = start_time
@@ -46,7 +46,7 @@ def save_video_frames(sensor_id, measurements, FPS=30):
         comp.save(img_name)
 
 
-csv_folder = "../../scenarios/1_person_1_sensor/01/"
+csv_folder = "../../scenarios/1_person_1_sensor/02/"
 csv_file = 'sensor_data.csv'
 frame_folder = csv_folder + 'frames/'
 
