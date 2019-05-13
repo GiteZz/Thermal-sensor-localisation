@@ -78,7 +78,7 @@ class Tracker:
             self.id_counter+=1
 
         self._add_SMA_average()
-        self.visualisations_update()
+        self.listeners_update()
         self.last_tracker_timestamp = timestamp
         # print("tracker updated")
 
