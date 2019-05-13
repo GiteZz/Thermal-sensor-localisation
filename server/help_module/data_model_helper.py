@@ -72,6 +72,7 @@ class CSV_Measurement:
             self.sensor_id = row[3]
         self.or_index = None
         self.sensor = None
+        self.data_type = 0
 
     def set_values(self, sensor_id, data, sequence_id, timestamp, data_type):
         self.sensor_id = sensor_id

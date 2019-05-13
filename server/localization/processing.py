@@ -281,16 +281,14 @@ class ImageProcessor:
     @decorators.check_deltas
     @decorators.check_smooth_data
     def _set_bin_thresh(self):
-        if np.max(self.thermal_data) - np.min(self.thermal_data) <= 15:
+        if np.max(self.thermal_data) - np.min(self.thermal_data) <= 20:
             self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
         else:
             self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
             for value_range, value in zip(reversed(self.deltas), reversed(range(len(self.deltas)))):
                 self.thresh_data[self.smooth_data <= value_range] = value
 
-            hist_amount, hist_temp = np.histogram(self.thresh_data, bins=len(self.deltas))
-            max_temp_index = np.argmax(hist_amount)
-            self.thresh_data[self.thresh_data <= hist_temp[max_temp_index] + 2] = 0
+            self.thresh_data[self.thresh_data <= 5] = 0
 
             self.thresh_data = cv2.erode(self.thresh_data, None, iterations=2)
 

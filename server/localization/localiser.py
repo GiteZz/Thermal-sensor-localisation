@@ -2,11 +2,13 @@ import cv2
 import numpy as np
 import json
 from localization.processing import ImageProcessor
+from help_module.time_helper import clean_diff, abs_diff, get_time_str
+from PIL import Image, ImageDraw
 
 class Localiser:
     def __init__(self, sensor_id):
         self.sensor_id=sensor_id
-        self.matrix=[]
+        self.matrix=None
         self.calibration_points=[] # key=px_index, val=world_coord
         self.tracker = None
         self.processcor = ImageProcessor()
@@ -15,6 +17,7 @@ class Localiser:
         # sending to the tracker
         self.WORLD_CORDS_FLAG = True
         self.calibrated = True
+        self.timestamp = None
 
     def __add_calibration_point(self,cam_x,cam_y,world_x,world_y):
         self.calibration_points.append([[cam_x,cam_y],[world_x,world_y]])
@@ -56,7 +59,7 @@ class Localiser:
 
     def calibrate_data(self):
         print("Calibrating data")
-        with open('configuration_files\calibration_configuration.json', 'r') as f:
+        with open(r'D:\Programmeer projecten\VOP\server\configuration_files\calibration_configuration.json', 'r') as f:
             print("opened file")
             config = json.load(f)
             data=config['calibration_data']
@@ -82,6 +85,7 @@ class Localiser:
         self.com_module = com_module
 
     def update(self, data, timestamp):
+        self.timestamp = timestamp
         self.processor.set_thermal_data(data)
         if self.com_module is not None and self.com_module.any_clients():
             imgs = self.processor.get_imgs()
@@ -94,7 +98,25 @@ class Localiser:
                 # print('world cord update by localiser')
                 world_coords = self.get_world_cords(self.processor.get_centroids())
                 self.tracker.update(world_coords, timestamp)
-                self.com_module.localiser_update({'co': world_coords, 'id': self.sensor_id})
+                if self.com_module is not None:
+                    self.com_module.localiser_update({'co': world_coords, 'id': self.sensor_id})
+
+    def get_scaled_img(self, des_size):
+        img = self.processor.plot_centroids(rgb=True)
+        img = img.repeat(2, axis=0)
+        img = img.repeat(2, axis=1)
+
+        img = Image.fromarray(img, 'RGB')
+
+        img_width = img.size[0]
+        img_height = img.size[1]
+        comp = Image.new('RGB', (img_width, img_height + 20))
+        comp.paste(img, (0, 20))
+        local_time = get_time_str(self.timestamp, microseconds=True, seconds=True)
+        d = ImageDraw.Draw(comp)
+        d.text((0, 0), local_time, fill=(255, 255, 255))
+        comp.thumbnail(des_size, Image.ANTIALIAS)
+        return comp
 
 
 if __name__=='__main__':
