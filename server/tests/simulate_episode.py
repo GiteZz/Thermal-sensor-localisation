@@ -57,8 +57,8 @@ def send_request(timer_list):
 
 
 if __name__ == "__main__":
-    csv_folder = 'data/'
-    csv_file = "sensor_data_episode_20190503-125450_70.csv"
+    csv_folder = 'E:/VOP_backup/2_personen/'
+    csv_file = "shortened.csv"
 
     csv_data = load_csv(csv_folder+csv_file, to_numpy=False)
 

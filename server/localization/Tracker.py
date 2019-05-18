@@ -212,7 +212,7 @@ class Tracker:
                 color = (randint(0, 255), randint(0, 255), randint(0, 255))
                 self.tracker_colors[person.ID] = color
 
-            prev_points = list(person.locations.values())
+            prev_points = list(person.locations.values())[-10:]
             print(f'amount prev points: {len(prev_points)}')
             print(prev_points)
             for i in range(len(prev_points) - 1):

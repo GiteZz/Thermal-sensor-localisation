@@ -28,8 +28,13 @@ class ImageProcessor:
 
         self.sensor_id = None
 
+        self.scale_imgs = 1
+
         self.log_system = logging.getLogger('ImageProcessingLogger')
-        # self.enable_logging()
+        self.enable_checkerboard = True
+
+        self.checkerboard = np.array([[0,1] * 16, [1, 0] * 16] * 12)
+        a = 5
 
     class decorators:
         """
@@ -168,14 +173,14 @@ class ImageProcessor:
 
     @decorators.allow_rgb_switch
     @decorators.check_centroids
-    def plot_centroids(self, rel_pos=True):
+    def plot_centroids(self, rel_pos=False):
         '''
         Function that plots the centroids on a representation of the thermal data (fast_thermal_img)
         :param rel_pos: determines whether the relative coords are added to the figure
         :return: np array in RGB format
         '''
         # add centroids
-        draw_img = cv2.cvtColor(self._get_thresh_img(as_numpy=True), cv2.COLOR_RGB2BGR)
+        draw_img = cv2.cvtColor(self._get_thresh_img(as_numpy=True, scale=1), cv2.COLOR_RGB2BGR)
 
         for centroid in self.centroids:
             [cX, cY] = centroid
@@ -198,13 +203,44 @@ class ImageProcessor:
     @decorators.allow_rgb_switch
     @decorators.check_centroids
     def plot_all_contours(self):
-        draw_img = cv2.cvtColor(self._get_thresh_img(as_numpy=True), cv2.COLOR_RGB2BGR)
+        draw_img = cv2.cvtColor(self._get_thresh_img(as_numpy=True, scale=1), cv2.COLOR_RGB2BGR)
 
         # add contours
         for contours in self.contour_hier:
             draw_img = cv2.drawContours(draw_img, contours, -1, (0, 0, 255), thickness=1)
 
         return draw_img
+
+    @decorators.allow_rgb_switch
+    @decorators.check_centroids
+    def plot_contour_progression(self):
+        mod_thresh = self.thresh_data.copy()
+        unique_val = np.unique(mod_thresh)
+        img_array = []
+
+        # Add biggest contours
+        or_contours, hierarchy = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        prev_contours = [or_contours]
+        draw_img = self._get_thresh_img(as_numpy=True, scale=1, numpy_img=mod_thresh)
+        draw_img = cv2.drawContours(draw_img, or_contours, -1, (255,0,0), thickness=2)
+        img_array.append(Image.fromarray(draw_img, 'RGB'))
+
+        # Add contours within other contours
+        for i in range(1, unique_val.size - 1):
+            mod_thresh[mod_thresh == unique_val[i]] = 0
+            con, _ = cv2.findContours(mod_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            draw_img = self._get_thresh_img(as_numpy=True, scale=1, numpy_img=mod_thresh)
+            draw_img = cv2.drawContours(draw_img, con, -1, (255, 0, 0), thickness=2)
+
+            for prev_con in prev_contours:
+                draw_img = cv2.drawContours(draw_img, prev_con, -1, (255, 255, 255), thickness=1)
+
+            prev_contours.append(con)
+            img_array.append(Image.fromarray(draw_img, 'RGB'))
+
+        return img_array
+
 
     def _reset(self):
         """
@@ -227,7 +263,8 @@ class ImageProcessor:
         # full_image = np.reshape(self.thermal_data, (24, 32))
         # self.scaled_data =  full_image[4:20,8:24]
         #####CUT AWAY THE EDGES#################
-        self.scaled_data = np.reshape(self.thermal_data, (24, 32))
+        self.scaled_data = np.reshape(self.thermal_data, (24, 32)) * self.checkerboard
+        # self.scaled_data = np.reshape(self.thermal_data, (24, 32))
         self.scaled_data = self.scaled_data.repeat(10, axis=0)
         self.scaled_data = self.scaled_data.repeat(10, axis=1)
 
@@ -281,7 +318,10 @@ class ImageProcessor:
     @decorators.check_deltas
     @decorators.check_smooth_data
     def _set_bin_thresh(self):
-        if np.max(self.thermal_data) - np.min(self.thermal_data) <= 20:
+        diff = np.max(self.thermal_data) - np.min(self.thermal_data)
+
+        print(f'diff is {diff}')
+        if diff <= 20:
             self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
         else:
             self.thresh_data = np.zeros(self.smooth_data.shape).astype(np.uint8)
@@ -350,39 +390,55 @@ class ImageProcessor:
                 cX, cY = 0, 0
 
             self.centroids.append([cX, cY])
+        self.centroids = self.remove_corners(self.centroids)
+        print(self.centroids)
+
+    def get_scaled(self, img, scale):
+        new_img = img.copy()
+        new_img = new_img.repeat(scale, axis=0)
+        new_img = new_img.repeat(scale, axis=1)
+        return new_img
 
     # @decorators.allow_rgb_switch
     @decorators.check_scaled_data
     @decorators.check_deltas
     def get_scaled_img(self):
-        return fast_thermal_image(self.scaled_data, deltas=self.deltas, dim=self.scaled_data.shape)
+        img = self.get_scaled(self.scaled_data, self.scale_imgs)
+        return fast_thermal_image(img, dim=img.shape)
 
     @decorators.allow_rgb_switch
     @decorators.check_smooth_data
     @decorators.check_deltas
     def _get_smooth_img(self):
-        return fast_thermal_image(self.smooth_data, deltas=self.deltas, dim=self.smooth_data.shape)
+        img = self.get_scaled(self.smooth_data, self.scale_imgs)
+        return fast_thermal_image(img, deltas=self.deltas, dim=img.shape)
 
     @decorators.check_tresh_data
     @decorators.check_deltas
-    def _get_thresh_img(self, as_numpy=False):
+    def _get_thresh_img(self, as_numpy=False, scale=1, numpy_img=None):
+        if numpy_img is None:
+            numpy_img = self.thresh_data
         colors = get_thermal_color_tuples()
-        new_rgb = np.zeros((self.thresh_data.shape[0], self.thresh_data.shape[1], 3)).astype(np.uint8)
+        new_rgb = np.zeros((numpy_img.shape[0], numpy_img.shape[1], 3)).astype(np.uint8)
         for i in range(len(colors)):
-            new_rgb[self.thresh_data == i] = np.array(colors[i])
+            new_rgb[numpy_img == i] = np.array(colors[i])
+
+        img = self.get_scaled(new_rgb, scale)
 
         if not as_numpy:
-            return Image.fromarray(new_rgb, 'RGB')
+            return Image.fromarray(img, 'RGB')
         else:
-            return new_rgb
+            return img
 
     def _get_centroid_img(self):
         plot_img = self.plot_centroids(rgb=True)
-        return Image.fromarray(plot_img, 'RGB')
+        img = self.get_scaled(plot_img, self.scale_imgs)
+        return Image.fromarray(img, 'RGB')
 
     def _get_all_centroid_img(self):
         plot_img = self.plot_all_contours(rgb=True)
-        return Image.fromarray(plot_img, 'RGB')
+        img = self.get_scaled(plot_img, self.scale_imgs)
+        return Image.fromarray(img, 'RGB')
 
     @decorators.check_centroids
     @decorators.check_tresh_data
@@ -416,4 +472,12 @@ class ImageProcessor:
             imgs.append(Image.fromarray(cv2.cvtColor(img_ar, cv2.COLOR_RGB2BGR), 'RGB'))
 
         return imgs
+
+    def remove_corners(self, centroid_list):
+        new_centroids = []
+        for centroid in centroid_list:
+            if 10 <= centroid[0] <= 310 and 10 <= centroid[1] <= 230:
+                new_centroids.append(centroid)
+
+        return new_centroids
 
