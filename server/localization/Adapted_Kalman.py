@@ -45,9 +45,8 @@ class AdaptedKalmanFilter(KalmanFilter):
         self.u = np.zeros((1)) #no controller actions
         self.F = np.eye(dim_x) # velocity is updated in update_time_diff
 
-        self.R = np.diag([1,1])*500
-        self.Q *= 500
-        #Ik heb geen idee van hoe we R kunnen initialiseren
+        self.R = np.diag([1,1])*1000
+        self.Q *= 200
 
 
     def predict(self,timestamp):

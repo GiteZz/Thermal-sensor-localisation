@@ -67,7 +67,7 @@ class CSV_Measurement:
         self.timestamp = convert_to_datetime(row[1])
         self.sequence_id = int(row[2])
         if csv_tag:
-            self.sensor_id = 'csv_' + row[3]
+            self.sensor_id = row[3]
         else:
             self.sensor_id = row[3]
         self.or_index = None

@@ -64,6 +64,7 @@ class Localiser:
             config = json.load(f)
             data=config['calibration_data']
             print(data)
+            print(self.sensor_id)
             for key,value in data.items():
                 debug = value.get(str(self.sensor_id),None)
                 if value.get(str(self.sensor_id),None):
