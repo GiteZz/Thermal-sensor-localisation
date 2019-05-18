@@ -11,7 +11,7 @@ class Localiser:
         self.matrix=None
         self.calibration_points=[] # key=px_index, val=world_coord
         self.tracker = None
-        self.processor = ImageProcessor()
+        self.processcor = ImageProcessor()
         self.com_module = None
         # if this flag is true, all centroids are converted to world coords before
         # sending to the tracker
