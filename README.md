@@ -8,7 +8,7 @@ Deze Repository bevat alle code voor het Vakoverschrijdend Project in de derde b
 
 ### Meerdere personen één sensor
 
-[![full_processing](https://github.ugent.be/tlips/VOP/blob/master/doc_imgs/youtube_meerdere_personen_één_sensor.PNG)](https://www.youtube.com/watch?v=q0jCeN6Ps-k "Click to Watch!")
+[![full_processing](https://github.ugent.be/tlips/VOP/blob/master/doc_imgs/youtube_meerdere_personen_%C3%A9%C3%A9n_sensor.PNG)](https://www.youtube.com/watch?v=q0jCeN6Ps-k "Click to Watch!")
 
 
 
