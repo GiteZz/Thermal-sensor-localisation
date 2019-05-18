@@ -11,7 +11,7 @@ class Localiser:
         self.matrix=None
         self.calibration_points=[] # key=px_index, val=world_coord
         self.tracker = None
-        self.processcor = ImageProcessor()
+        self.processor = ImageProcessor()
         self.com_module = None
         # if this flag is true, all centroids are converted to world coords before
         # sending to the tracker
@@ -59,7 +59,7 @@ class Localiser:
 
     def calibrate_data(self):
         print("Calibrating data")
-        with open(r'D:\Programmeer projecten\VOP\server\configuration_files\calibration_configuration.json', 'r') as f:
+        with open(r'configuration_files\calibration_configuration.json', 'r') as f:
             print("opened file")
             config = json.load(f)
             data=config['calibration_data']

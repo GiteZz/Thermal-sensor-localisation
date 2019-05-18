@@ -201,7 +201,7 @@ class Tracker:
             return 100000 # math.inf isn't handled by the hungarian algorithm so choose a random value that's never reached
 
     def get_vis(self):
-        img = Image.open("D:/VOP_scenarios/tracker_imgs/layout_even.png")
+        img = Image.open("../../GUI/static/Img/layout_even.png")
         d = ImageDraw.Draw(img)
 
         for person in self.persons:
